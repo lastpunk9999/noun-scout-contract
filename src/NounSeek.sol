@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "./NounsInterfaces.sol";
-import "./ReentrancyGuard.sol";
+import "forge-std/console2.sol";
 
-contract NounSeek is ReentrancyGuard {
+contract NounSeek {
     /// @notice Retreives historical mapping of nounId -> seed
     INounsTokenLike public immutable nouns;
 
@@ -31,12 +31,12 @@ contract NounSeek is ReentrancyGuard {
 
     /// @notice Number used to signify "any value" or "no preference"
     /// @dev Noun traits are 0-indexed so the Solidity default of 0 cannot be used
-    uint256 public immutable NO_PREFERENCE = 256256;
+    uint48 public immutable NO_PREFERENCE = 256256;
 
     /// @notice Stored to save gas
     uint256 private immutable NO_NOUN_ID = type(uint256).max;
 
-    /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a Noun with those traits
+    /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a matching Noun
     struct Seek {
         uint48 body;
         uint48 accessory;
@@ -55,9 +55,31 @@ contract NounSeek is ReentrancyGuard {
         uint256 seekId;
     }
 
-    mapping(uint256 => Seek) public seeks;
-    mapping(uint256 => Request) public requests;
+    mapping(uint256 => Seek) internal _seeks;
+    mapping(uint256 => Request) internal _requests;
     mapping(bytes32 => uint256) public traitsHashToSeekId;
+
+    event SeekAdded(
+        uint256 seekId,
+        uint48 body,
+        uint48 accessory,
+        uint48 head,
+        uint48 glasses,
+        uint256 nounId,
+        bool onlyAuctionedNoun
+    );
+
+    event SeekAmountUpdated(uint256 seekId, uint256 amount);
+    event SeekRemoved(uint256 seekId);
+    event RequestAdded(
+        uint256 requestId,
+        uint256 seekId,
+        address seeker,
+        uint256 amount
+    );
+    event RequestRemoved(uint256 requestId);
+    event SeekMatched(uint256 seekId, uint256 nounId, address finder);
+    event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
 
     /**
     -----------------------------
@@ -71,13 +93,13 @@ contract NounSeek is ReentrancyGuard {
 
         // Cannot executed within a time from an auction's start
         require(
-            block.timestamp - auction.startTime >= AUCTION_START_LIMIT,
+            block.timestamp - auction.startTime > AUCTION_START_LIMIT,
             "Too soon"
         );
 
         // Cannot executed within a time period from an auction's end
         require(
-            auction.endTime - block.timestamp >= AUCTION_END_LIMIT,
+            auction.endTime - block.timestamp > AUCTION_END_LIMIT,
             "Too late"
         );
         _;
@@ -113,6 +135,65 @@ contract NounSeek is ReentrancyGuard {
     ----------------------------------
      */
 
+    function seeks(uint256 seekId) public view returns (Seek memory) {
+        return _seeks[seekId];
+    }
+
+    function requests(uint256 requestId) public view returns (Request memory) {
+        return _requests[requestId];
+    }
+
+    function traitsHashToSeek(bytes32 traitsHash)
+        public
+        view
+        returns (Seek memory)
+    {
+        return _seeks[traitsHashToSeekId[traitsHash]];
+    }
+
+    function traitsToSeekIdAndHash(
+        uint48 body,
+        uint48 accessory,
+        uint48 head,
+        uint48 glasses,
+        uint256 nounId,
+        bool onlyAuctionedNoun
+    ) public view returns (uint256, bytes32) {
+        // A unique identifier for Seek parameters
+        bytes32 traitsHash = keccak256(
+            abi.encodePacked(
+                body,
+                accessory,
+                head,
+                glasses,
+                nounId,
+                onlyAuctionedNoun
+            )
+        );
+
+        return (traitsHashToSeekId[traitsHash], traitsHash);
+    }
+
+    function traitsToSeekIdAndHash(Seek memory seek)
+        public
+        view
+        returns (uint256, bytes32)
+    {
+        // A unique identifier for Seek parameters
+        bytes32 traitsHash = keccak256(
+            abi.encodePacked(
+                seek.body,
+                seek.accessory,
+                seek.head,
+                seek.glasses,
+                seek.nounId,
+                seek.onlyAuctionedNoun
+            )
+        );
+
+        return (traitsHashToSeekId[traitsHash], traitsHash);
+    }
+
     /**
      * @notice Determines if a desired set of traits in a Seek are found to match the combination of Noun seed and id
      * @param seed Struct of Noun trait ids
@@ -124,7 +205,7 @@ contract NounSeek is ReentrancyGuard {
         INounsSeederLike.Seed memory seed,
         uint256 seekId
     ) public view returns (bool) {
-        Seek memory seek = seeks[seekId];
+        Seek memory seek = _seeks[seekId];
 
         // The Seek has been previously matched
         if (seek.finder != address(0)) {
@@ -188,27 +269,30 @@ contract NounSeek is ReentrancyGuard {
         uint256 nounId,
         bool onlyAuctionedNoun
     ) public payable withinRequestWindow returns (uint256, uint256) {
+        require(
+            body + accessory + head + glasses < NO_PREFERENCE * 4,
+            "No preferences"
+        );
+
+        require(msg.value > 0, "No value sent");
+
         // if `nounId` is specified, set correct value for `onlyAuctionedNoun`;
         if (nounId % 10 == 0) {
             onlyAuctionedNoun = false;
         } else if (nounId < NO_PREFERENCE) {
             onlyAuctionedNoun = true;
         }
-        // A unique identifier for Seek parameters
-        bytes32 traitsHash = keccak256(
-            abi.encodePacked(
-                body,
-                accessory,
-                head,
-                glasses,
-                nounId,
-                onlyAuctionedNoun
-            )
-        );
-
         // Look up seek Id by its paramater hash
-        uint256 seekId = traitsHashToSeekId[traitsHash];
-        Seek memory seek = seeks[seekId];
+        (uint256 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
+            body,
+            accessory,
+            head,
+            glasses,
+            nounId,
+            onlyAuctionedNoun
+        );
+        Seek memory seek = _seeks[seekId];
+        uint256 amount = seek.amount;
 
         // If lookup doesn't find a Seek or the Seek has been found, reset paramaters and create a new Seek
         if (seekId == 0 || seek.finder != address(0)) {
@@ -220,19 +304,34 @@ contract NounSeek is ReentrancyGuard {
             seek.head = head;
             seek.glasses = glasses;
             seek.finder = address(0);
-            seek.amount = 0;
+            amount = 0;
             traitsHashToSeekId[traitsHash] = seekId;
+
+            emit SeekAdded(
+                seekId,
+                body,
+                accessory,
+                head,
+                glasses,
+                nounId,
+                onlyAuctionedNoun
+            );
         }
-        seek.amount += msg.value;
-        seeks[seekId] = seek;
-        requests[++requestCount] = Request({
+        amount += msg.value;
+        seek.amount = amount;
+        _seeks[seekId] = seek;
+        uint256 requestId = ++requestCount;
+        _requests[requestId] = Request({
             seeker: msg.sender,
             seekId: seekId,
             amount: msg.value
         });
 
-        // emit events
-        return (requestCount, seekCount);
+        emit SeekAmountUpdated(seekId, amount);
+
+        emit RequestAdded(requestId, seekId, msg.sender, msg.value);
+
+        return (requestId, seekId);
     }
 
     /**
@@ -245,16 +344,31 @@ contract NounSeek is ReentrancyGuard {
         withinRequestWindow
         returns (bool)
     {
-        Request memory request = requests[requestId];
+        Request memory request = _requests[requestId];
         require(request.seeker == msg.sender, "Not authorized");
-        require(seeks[request.seekId].finder == address(0), "Already found");
 
-        seeks[request.seekId].amount -= request.amount;
+        Seek memory seek = _seeks[request.seekId];
 
-        delete requests[requestId];
+        require(seek.finder == address(0), "Already found");
 
-        (bool success, ) = msg.sender.call{value: request.amount, gas: 30_000}(
-            new bytes(0)
+        seek.amount -= request.amount;
+
+        delete _requests[requestId];
+
+        if (seek.amount > 0) {
+            _seeks[request.seekId] = seek;
+            emit SeekAmountUpdated(request.seekId, seek.amount);
+        } else {
+            (, bytes32 traitsHash) = traitsToSeekIdAndHash(seek);
+            delete _seeks[request.seekId];
+            delete traitsHashToSeekId[traitsHash];
+            emit SeekRemoved(request.seekId);
+        }
+
+        emit RequestRemoved(requestId);
+
+        (bool success, ) = msg.sender.call{value: request.amount, gas: 10_000}(
+            ""
         );
 
         return success;
@@ -294,13 +408,9 @@ contract NounSeek is ReentrancyGuard {
     /**
      * @notice Matches the next minted Noun (and/or the the following Noun the next mint will not be auctioned) with a set of Seeks and settles the current auction.
      * @dev Will revert if there is no match on any seekId.
-     * @dev nonReentrancy is needed because malicious contract can re-enter on Nouns settlement after the auction id has been incremented with a new set of Seeks
      * @param seekIds An array of seekIds that might match the current Noun and/or the previous Noun if it was not auctioned
      */
-    function matchWithNextAndSettle(uint256[] memory seekIds)
-        public
-        nonReentrant
-    {
+    function matchWithNextAndSettle(uint256[] memory seekIds) public {
         INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
 
         // The set of 2 Noun ids to be checked and used to retreive seeds
@@ -320,6 +430,7 @@ contract NounSeek is ReentrancyGuard {
         // throw if any Seeks to not match
         _matchAndSetFinder(nounIds, nounSeeds, seekIds, true);
 
+        // settle does not provide enough gas to re-enter
         auctionHouse.settleCurrentAndCreateNewAuction();
     }
 
@@ -329,12 +440,10 @@ contract NounSeek is ReentrancyGuard {
      * @return bool Success
      */
     function withdraw(uint256 seekId) public returns (bool) {
-        Seek memory seek = seeks[seekId];
+        Seek memory seek = _seeks[seekId];
         require(seek.finder == msg.sender, "Not finder");
-        seeks[seekId].amount = 0;
-        (bool success, ) = msg.sender.call{value: seek.amount, gas: 30_000}(
-            new bytes(0)
-        );
+        _seeks[seekId].amount = 0;
+        (bool success, ) = msg.sender.call{value: seek.amount, gas: 10_000}("");
         return success;
     }
 
@@ -361,28 +470,26 @@ contract NounSeek is ReentrancyGuard {
         uint256 _length = seekIds.length;
         bool[] memory matched = new bool[](_length);
 
-        // Two Nouns can be minted during settlement, so both must be checked for a match. Only one set of traits can match a Seek
         for (uint256 i = 0; i < _length; i++) {
-            matched[i] = seekMatchesTraits(
-                nounIds[0],
-                nounSeeds[0],
-                seekIds[i]
-            );
-            // No more Noun Ids to check or there's already a match
-            if (nounIds[1] == NO_NOUN_ID || matched[i]) continue;
-            matched[i] = seekMatchesTraits(
-                nounIds[1],
-                nounSeeds[1],
-                seekIds[i]
-            );
-        }
+            // Two Nouns can be minted during settlement, so both must be checked for a match
+            // A Seek can only be matched once
+            for (uint256 n = 0; n < 2; n++) {
+                // Seek has already been matched or there is no Noun to check, continue
+                if (matched[i] || nounIds[n] == NO_NOUN_ID) continue;
 
-        for (uint256 i = 0; i < _length; i++) {
-            if (matched[i]) {
-                seeks[seekIds[i]].finder = msg.sender;
-                continue;
+                matched[i] = seekMatchesTraits(
+                    nounIds[n],
+                    nounSeeds[n],
+                    seekIds[i]
+                );
+
+                if (matched[i]) {
+                    _seeks[seekIds[i]].finder = msg.sender;
+                    emit SeekMatched(seekIds[i], nounIds[n], msg.sender);
+                } else {
+                    require(!shouldRevert, "No match");
+                }
             }
-            require(!shouldRevert, "No match");
         }
 
         return matched;

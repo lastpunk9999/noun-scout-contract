@@ -24,6 +24,33 @@ contract NounSeekTest is EnhancedTest {
     MockAuctionHouse mockAuctionHouse;
     MockDescriptor mockDescriptor;
 
+    struct Log {
+        bytes32[] topics;
+        bytes data;
+    }
+
+    event SeekAdded(
+        uint256 seekId,
+        uint48 body,
+        uint48 accessory,
+        uint48 head,
+        uint48 glasses,
+        uint256 nounId,
+        bool onlyAuctionedNoun
+    );
+
+    event SeekAmountUpdated(uint256 seekId, uint256 amount);
+    event SeekRemoved(uint256 seekId);
+    event RequestAdded(
+        uint256 requestId,
+        uint256 seekId,
+        address seeker,
+        uint256 amount
+    );
+    event RequestRemoved(uint256 requestId);
+    event SeekMatched(uint256 seekId, uint256 nounId, address finder);
+    event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
+
     address user1 = mkaddr("user1");
     address user2 = mkaddr("user2");
     address user3 = mkaddr("user3");
@@ -32,7 +59,7 @@ contract NounSeekTest is EnhancedTest {
 
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
-    uint256 NO_PREFERENCE;
+    uint48 NO_PREFERENCE;
 
     function setUp() public {
         mockSeeder = new MockSeeder();
@@ -46,12 +73,6 @@ contract NounSeekTest is EnhancedTest {
     }
 
     function captureSnapshot() internal {
-        vm.warp(AUCTION_START_LIMIT * 3);
-        mockAuctionHouse.setStartTime(
-            block.timestamp - (AUCTION_START_LIMIT * 2)
-        );
-        mockAuctionHouse.setEndTime(block.timestamp + 24 hours);
-
         cleanSnapshot = vm.snapshot();
     }
 
@@ -62,166 +83,286 @@ contract NounSeekTest is EnhancedTest {
         captureSnapshot();
     }
 
-    // function test_ADD_NounIdNotMultipleOfTenOnlyAuctionedNoun() public {
-    //     vm.prank(user1);
-    //     nounSeek.add{value: 1}(5, 5, 5, 5, 11, true);
-    //     vm.stopPrank();
-    //     // vm.revertTo(cleanSnapshot);
-    // }
+    function _resetToRequestWindow() internal {
+        vm.revertTo(cleanSnapshot);
+        vm.warp(AUCTION_START_LIMIT * 3);
+        mockAuctionHouse.setStartTime(
+            block.timestamp - (AUCTION_START_LIMIT * 2) + 1
+        );
+        mockAuctionHouse.setEndTime(block.timestamp + 24 hours);
+    }
 
-    // function test_ADD_NounIdNotMultipleOfTenNotOnlyAuctionedNoun() public {
-    //     vm.prank(user1);
-    //     nounSeek.add{value: 1}(5, 5, 5, 5, 11, false);
-    //     vm.stopPrank();
-    //     // vm.revertTo(cleanSnapshot);
-    // }
+    function _addSeek(address user, uint256 value)
+        internal
+        returns (uint256, uint256)
+    {
+        vm.prank(user);
+        return
+            nounSeek.add{value: value}(
+                5,
+                5,
+                NO_PREFERENCE,
+                NO_PREFERENCE,
+                11,
+                true
+            );
+    }
 
-    // function test_ADD_NounIdMultipleOf10SetsOnlyAuctionedNounCorrectly()
-    //     public
-    // {
-    //     // vm.revertTo(cleanSnapshot);
-    //     vm.prank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         10,
-    //         true
-    //     );
+    function test_ADD_happyCaseNewSeek() public {
+        vm.revertTo(cleanSnapshot);
+        _resetToRequestWindow();
 
-    //     (, , , , , bool onlyAuctionedNoun, , ) = nounSeek.seeks(seekId);
-    //     assertEq(false, onlyAuctionedNoun);
-    // }
+        (uint256 receiptId, uint256 seekId) = _addSeek(user1, 1);
 
-    // function test_ADD_NO_PREFERENCENouNIdSetsOnlyAuctionedNounCorrectly() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         NO_PREFERENCE,
-    //         true
-    //     );
-    //     (, , , , , bool onlyAuctionedNoun, , ) = nounSeek.seeks(seekId);
-    //     assertEq(true, onlyAuctionedNoun);
+        assertEq(nounSeek.seekCount(), 1);
+        assertEq(nounSeek.requestCount(), 1);
 
-    //     (receiptId, seekId) = nounSeek.add{value: 1}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         NO_PREFERENCE,
-    //         false
-    //     );
-    //     (, , , , , onlyAuctionedNoun, , ) = nounSeek.seeks(seekId);
-    //     assertEq(false, onlyAuctionedNoun);
-    //     vm.stopPrank();
-    // }
+        NounSeek.Seek memory seek = nounSeek.seeks(seekId);
 
-    // function test_ADD_NounIdOnlyAuctionedNounCorrectly() public {
-    //     // vm.revertTo(cleanSnapshot);
-    //     vm.prank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         11,
-    //         false
-    //     );
+        assertEq(seek.body, 5);
+        assertEq(seek.accessory, 5);
+        assertEq(seek.head, NO_PREFERENCE);
+        assertEq(seek.glasses, NO_PREFERENCE);
+        assertEq(seek.nounId, 11);
+        assertEq(seek.onlyAuctionedNoun, true);
+        assertEq(seek.amount, 1);
+        assertEq(seek.finder, address(0));
 
-    //     (, , , , , bool onlyAuctionedNoun, , ) = nounSeek.seeks(seekId);
-    //     assertEq(true, onlyAuctionedNoun);
-    // }
+        bytes32 traitsHash = keccak256(
+            abi.encodePacked(
+                uint48(5),
+                uint48(5),
+                NO_PREFERENCE,
+                NO_PREFERENCE,
+                uint256(11),
+                true
+            )
+        );
+        assertEq(nounSeek.traitsHashToSeekId(traitsHash), seekId);
 
-    // function test_ADD_IncreaseSeekAndReceiptCountIfNewSeek() public {
-    //     // vm.revertTo(cleanSnapshot);
-    //     uint256 receiptCount_BEFORE = nounSeek.receiptCount();
-    //     uint256 seekCount_BEFORE = nounSeek.seekCount();
-    //     vm.prank(user1);
-    //     nounSeek.add{value: 1}(5, 5, 5, 5, 10, false);
-    //     vm.stopPrank();
-    //     assertEq(receiptCount_BEFORE + 1, nounSeek.receiptCount());
-    //     assertEq(seekCount_BEFORE + 1, nounSeek.seekCount());
-    // }
+        NounSeek.Request memory request = nounSeek.requests(receiptId);
 
-    // function test_ADD_IncreaseOnlyReceiptCountIfNewSeek() public {
-    //     // vm.revertTo(cleanSnapshot);
-    //     uint256 receiptCount_BEFORE = nounSeek.receiptCount();
-    //     uint256 seekCount_BEFORE = nounSeek.seekCount();
-    //     vm.prank(user1);
-    //     nounSeek.add{value: 1}(5, 5, 5, 5, 10, false);
-    //     nounSeek.add{value: 1}(5, 5, 5, 5, 10, false);
-    //     vm.stopPrank();
-    //     assertEq(receiptCount_BEFORE + 2, nounSeek.receiptCount());
-    //     assertEq(seekCount_BEFORE + 1, nounSeek.seekCount());
-    // }
+        assertEq(request.seeker, address(user1));
+        assertEq(request.amount, 1);
+        assertEq(request.seekId, 1);
 
-    // function test_ADD_seekAmountAndBalanceIncreasesCorrectly() public {
-    //     uint256 amount = 1;
-    //     // vm.revertTo(cleanSnapshot);
-    //     (, , , , , , uint256 amount_BEFORE, ) = nounSeek.seeks(1);
-    //     vm.prank(user1);
-    //     (uint256 receiptId1, ) = nounSeek.add{value: amount}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         10,
-    //         false
-    //     );
-    //     (uint256 receiptId2, ) = nounSeek.add{value: amount}(
-    //         5,
-    //         5,
-    //         5,
-    //         5,
-    //         10,
-    //         false
-    //     );
-    //     vm.stopPrank();
-    //     (, , , , , , uint256 amount_AFTER, ) = nounSeek.seeks(1);
-    //     (, uint256 receipt1Amount, ) = nounSeek.receipts(receiptId1);
-    //     (, uint256 receipt2Amount, ) = nounSeek.receipts(receiptId2);
-    //     assertEq(amount_BEFORE + (amount * 2), amount_AFTER);
-    //     assertEq(amount_AFTER, address(nounSeek).balance);
-    //     assertEq(amount_AFTER, receipt1Amount + receipt2Amount);
-    // }
+        assertEq(address(nounSeek).balance, 1);
+        // vm.revertTo(cleanSnapshot);
+    }
 
-    // function test_ADD_structsSetCorrectly() public {
-    //     // vm.revertTo(cleanSnapshot);
-    //     vm.prank(user1);
-    //     (uint256 receiptId, ) = nounSeek.add{value: 99}(1, 2, 3, 4, 5, true);
-    //     vm.stopPrank();
-    //     (address seeker, uint256 receiptAmount, uint256 seekId) = nounSeek
-    //         .receipts(receiptId);
-    //     (
-    //         uint48 b,
-    //         uint48 a,
-    //         uint48 h,
-    //         uint48 g,
-    //         uint256 nounId,
-    //         bool onlyAuctionedNoun,
-    //         uint256 amount,
-    //         address finder
-    //     ) = nounSeek.seeks(seekId);
-    //     bytes32 traitsHash = keccak256(
-    //         abi.encodePacked(b, a, h, g, nounId, onlyAuctionedNoun)
-    //     );
-    //     uint256 reverseSeekId = nounSeek.traitsHashToSeekId(traitsHash);
-    //     assertEq(reverseSeekId, seekId);
-    //     assertEq(seeker, address(user1));
-    //     assertEq(99, receiptAmount);
-    //     assertEq(1, b);
-    //     assertEq(2, a);
-    //     assertEq(3, h);
-    //     assertEq(4, g);
-    //     assertEq(5, nounId);
-    //     assertEq(true, onlyAuctionedNoun);
-    //     assertEq(99, amount);
-    //     assertEq(address(0), finder);
-    // }
+    function test_ADD_happyCaseExistingSeek() public {
+        // vm.revertTo(cleanSnapshot);
+        _resetToRequestWindow();
+
+        _addSeek(user1, 1);
+
+        (uint256 receiptId, uint256 seekId) = _addSeek(user2, 1);
+
+        assertEq(nounSeek.seekCount(), 1);
+        assertEq(nounSeek.requestCount(), 2);
+
+        NounSeek.Seek memory seek = nounSeek.seeks(seekId);
+
+        assertEq(seek.body, 5);
+        assertEq(seek.accessory, 5);
+        assertEq(seek.head, NO_PREFERENCE);
+        assertEq(seek.glasses, NO_PREFERENCE);
+        assertEq(seek.nounId, 11);
+        assertEq(seek.onlyAuctionedNoun, true);
+        assertEq(seek.amount, 2);
+        assertEq(seek.finder, address(0));
+
+        bytes32 traitsHash = keccak256(
+            abi.encodePacked(
+                uint48(5),
+                uint48(5),
+                NO_PREFERENCE,
+                NO_PREFERENCE,
+                uint256(11),
+                true
+            )
+        );
+        assertEq(nounSeek.traitsHashToSeekId(traitsHash), seekId);
+
+        NounSeek.Request memory request = nounSeek.requests(receiptId);
+
+        assertEq(request.seeker, address(user2));
+        assertEq(request.amount, 1);
+        assertEq(request.seekId, 1);
+
+        assertEq(address(nounSeek).balance, 2);
+    }
+
+    function test_ADD_failsWhenBeforeStartWindow() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setStartTime(timestamp);
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+
+        vm.warp(timestamp);
+        vm.expectRevert("Too soon");
+        _addSeek(user1, 1);
+
+        vm.warp(timestamp + AUCTION_START_LIMIT);
+        vm.expectRevert("Too soon");
+        _addSeek(user1, 1);
+    }
+
+    function test_ADD_failsWhenAfterEndWindow() public {
+        uint256 timestamp = 9999999999;
+        uint256 endTime = timestamp + 24 hours;
+        mockAuctionHouse.setStartTime(timestamp);
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(endTime - AUCTION_END_LIMIT);
+        vm.expectRevert("Too late");
+        _addSeek(user1, 1);
+
+        vm.warp(endTime);
+        vm.expectRevert("Too late");
+        _addSeek(user1, 1);
+    }
+
+    function test_REMOVE_happyCase() public {
+        _resetToRequestWindow();
+        (uint256 requestId1, uint256 seekId) = _addSeek(user1, 1);
+        (uint256 requestId2, ) = _addSeek(user2, 1);
+
+        assertEq(nounSeek.seeks(seekId).amount, 2);
+        assertEq(address(nounSeek).balance, 2);
+
+        vm.prank(user1);
+        vm.expectCall(address(user1), 1, "");
+        bool remove1 = nounSeek.remove(requestId1);
+
+        assertEq(remove1, true);
+
+        assertEq(nounSeek.requests(requestId1).seeker, address(0));
+        assertEq(nounSeek.requests(requestId1).amount, 0);
+        assertEq(nounSeek.requests(requestId1).seekId, 0);
+
+        assertEq(nounSeek.seekCount(), 1);
+        assertEq(nounSeek.requestCount(), 2);
+
+        assertEq(nounSeek.seeks(seekId).amount, 1);
+        assertEq(address(nounSeek).balance, 1);
+
+        vm.prank(user2);
+        vm.expectCall(address(user2), 1, "");
+        bool remove2 = nounSeek.remove(requestId2);
+
+        assertEq(remove2, true);
+
+        assertEq(nounSeek.requests(requestId2).seeker, address(0));
+        assertEq(nounSeek.requests(requestId2).amount, 0);
+        assertEq(nounSeek.requests(requestId2).seekId, 0);
+
+        assertEq(nounSeek.seekCount(), 1);
+        assertEq(nounSeek.requestCount(), 2);
+
+        assertEq(nounSeek.seeks(seekId).body, 0);
+        assertEq(nounSeek.seeks(seekId).accessory, 0);
+        assertEq(nounSeek.seeks(seekId).head, 0);
+        assertEq(nounSeek.seeks(seekId).glasses, 0);
+        assertEq(nounSeek.seeks(seekId).nounId, 0);
+        assertEq(nounSeek.seeks(seekId).onlyAuctionedNoun, false);
+        assertEq(nounSeek.seeks(seekId).amount, 0);
+        assertEq(address(nounSeek).balance, 0);
+    }
+
+    function test_REMOVE_failsWhenNotRequester() public {
+        _resetToRequestWindow();
+        (uint256 requestId, ) = _addSeek(user1, 1);
+        vm.prank(user2);
+        vm.expectRevert(bytes("Not authorized"));
+        nounSeek.remove(requestId);
+        vm.stopPrank();
+    }
+
+    function test_REMOVE_failsWhenAlreadyProcessed() public {
+        _resetToRequestWindow();
+        (uint256 requestId, ) = _addSeek(user1, 1);
+        vm.startPrank(user1);
+        nounSeek.remove(requestId);
+        vm.expectRevert(bytes("Not authorized"));
+        nounSeek.remove(requestId);
+        vm.stopPrank();
+    }
+
+    function test_REMOVE_failsWhenBeforeStartWindow() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setStartTime(timestamp);
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp + AUCTION_START_LIMIT + 1);
+        (uint256 requestId, ) = _addSeek(user1, 1);
+
+        vm.warp(timestamp);
+        vm.expectRevert("Too soon");
+        nounSeek.remove(requestId);
+
+        vm.warp(timestamp + AUCTION_START_LIMIT);
+        vm.expectRevert("Too soon");
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenAfterEndWindow() public {
+        uint256 timestamp = 9999999999;
+        uint256 endTime = timestamp + 24 hours;
+        mockAuctionHouse.setStartTime(timestamp);
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(endTime - AUCTION_END_LIMIT - 1);
+        (uint256 requestId, ) = _addSeek(user1, 1);
+
+        vm.warp(endTime - AUCTION_END_LIMIT);
+        vm.expectRevert("Too late");
+        nounSeek.remove(requestId);
+
+        vm.warp(endTime);
+        vm.expectRevert("Too late");
+        nounSeek.remove(requestId);
+    }
+
+    function test_ADD_NO_PREFERENCENouNIdSetsOnlyAuctionedNounCorrectly()
+        public
+    {
+        _resetToRequestWindow();
+        vm.prank(user1);
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            5,
+            5,
+            5,
+            5,
+            NO_PREFERENCE,
+            true
+        );
+        NounSeek.Seek memory seek = nounSeek.seeks(seekId);
+        assertEq(seek.onlyAuctionedNoun, true);
+
+        (receiptId, seekId) = nounSeek.add{value: 1}(
+            5,
+            5,
+            5,
+            5,
+            NO_PREFERENCE,
+            false
+        );
+        seek = nounSeek.seeks(seekId);
+        assertEq(seek.onlyAuctionedNoun, false);
+    }
+
+    function test_ADD_NounIdOnlyAuctionedNounCorrectly() public {
+        _resetToRequestWindow();
+        vm.prank(user1);
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            5,
+            5,
+            5,
+            5,
+            11,
+            false
+        );
+
+        NounSeek.Seek memory seek = nounSeek.seeks(seekId);
+        assertEq(seek.onlyAuctionedNoun, true);
+    }
 
     // function test_REMOVE_failsIfZeroAddress() public {
     //     // vm.revertTo(cleanSnapshot);
