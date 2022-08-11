@@ -92,6 +92,11 @@ contract NounSeekTest is EnhancedTest {
         mockAuctionHouse.setEndTime(block.timestamp + 24 hours);
     }
 
+    function _resetToMatchWindow() internal {
+        mockAuctionHouse.setStartTime(block.timestamp);
+        mockAuctionHouse.setEndTime(block.timestamp + 24 hours);
+    }
+
     function _addSeek(address user, uint256 value)
         internal
         returns (uint256, uint256)
@@ -476,314 +481,402 @@ contract NounSeekTest is EnhancedTest {
     //     vm.stopPrank();
     // }
 
-    // function test_ISMATCH_body_anyId_anyNounType() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         false
-    //     );
+    function test_SEEKMATCHESTRAITS_body_anyId_anyNounType() public {
+        vm.startPrank(user1);
+        _resetToRequestWindow();
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
 
-    //     INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
-    //         0,
-    //         11,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     // Correct Seed, Auctioned Noun
-    //     assertEq(true, nounSeek.traitsMatch(seed1, 5, seekId));
-    //     // Correct Seed, Non-Auctioned Noun
-    //     assertEq(true, nounSeek.traitsMatch(seed1, 20, seekId));
+        INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
+            0,
+            11,
+            0,
+            0,
+            0
+        );
+        // Correct Seed, Auctioned Noun
+        assertEq(true, nounSeek.seekMatchesTraits(5, seed1, seekId));
+        // Correct Seed, Non-Auctioned Noun
+        assertEq(true, nounSeek.seekMatchesTraits(20, seed1, seekId));
 
-    //     // Incorrect Seed, Auctioned Noun
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 5, seekId));
-    //     // Incorrect Seed, Non-Auctioned Noun
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 20, seekId));
-    // }
+        // Incorrect Seed, Auctioned Noun
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed2, seekId));
+        // Incorrect Seed, Non-Auctioned Noun
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed2, seekId));
+    }
 
-    // function test_ISMATCH_body_specificId_nonAuctioned() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         20,
-    //         true // sets only Auctioned Noun to true, contract wll set it to false
-    //     );
+    function test_SEEKMATCHESTRAITS_body_specificId_nonAuctioned() public {
+        _resetToRequestWindow();
+        vm.startPrank(user1);
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            20,
+            true // sets only Auctioned Noun to true, contract wll set it to false
+        );
 
-    //     INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
-    //         0,
-    //         11,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     // Correct Seed, non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed1, 5, seekId));
-    //     // Correct Seed, matching Id
-    //     assertEq(true, nounSeek.traitsMatch(seed1, 20, seekId));
+        INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
+            0,
+            11,
+            0,
+            0,
+            0
+        );
+        // Correct Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed1, seekId));
+        // Correct Seed, matching Id
+        assertEq(true, nounSeek.seekMatchesTraits(20, seed1, seekId));
 
-    //     // Incorrect Seed,  non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 5, seekId));
-    //     // Incorrect Seed, matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 20, seekId));
-    // }
+        // Incorrect Seed,  non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed2, seekId));
+        // Incorrect Seed, matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed2, seekId));
+    }
 
-    // function test_ISMATCH_body_specificId_Auctioned() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         5,
-    //         false // sets only Auctioned Noun to false, contract wll set it to true
-    //     );
+    function test_SEEKMATCHESTRAITS_body_specificId_Auctioned() public {
+        _resetToRequestWindow();
+        vm.startPrank(user1);
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            5,
+            false // sets only Auctioned Noun to false, contract wll set it to true
+        );
 
-    //     INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
-    //         0,
-    //         11,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     // Correct Seed, matching Id
-    //     assertEq(true, nounSeek.traitsMatch(seed1, 5, seekId));
-    //     // Correct Seed, non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed1, 20, seekId));
+        INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
+            0,
+            11,
+            0,
+            0,
+            0
+        );
+        // Correct Seed, matching Id
+        assertEq(true, nounSeek.seekMatchesTraits(5, seed1, seekId));
+        // Correct Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed1, seekId));
 
-    //     // Incorrect Seed,  matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 5, seekId));
-    //     // Incorrect Seed, non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 20, seekId));
-    // }
+        // Incorrect Seed,  matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed2, seekId));
+        // Incorrect Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed2, seekId));
+    }
 
-    // function test_ISMATCH_body_head_anyId_Auctioned() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         5,
-    //         false
-    //     );
+    function test_SEEKMATCHESTRAITS_body_head_anyId_Auctioned() public {
+        vm.startPrank(user1);
+        _resetToRequestWindow();
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            true
+        );
 
-    //     INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         10,
-    //         0,
-    //         0
-    //     );
-    //     INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     // Correct Seed, matching id
-    //     assertEq(true, nounSeek.traitsMatch(seed1, 5, seekId));
-    //     // Correct Seed, non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed1, 20, seekId));
+        INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
+            0,
+            10,
+            10,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        // Correct Seed, matching id
+        assertEq(true, nounSeek.seekMatchesTraits(5, seed1, seekId));
+        // Correct Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed1, seekId));
 
-    //     // Incorrect Seed,  matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 5, seekId));
-    //     // Incorrect Seed, non-matching Id
-    //     assertEq(false, nounSeek.traitsMatch(seed2, 20, seekId));
-    // }
+        // Incorrect Seed,  matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed2, seekId));
+        // Incorrect Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed2, seekId));
+    }
 
-    // function test_ISMATCH_alreadyFound() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         5,
-    //         false
-    //     );
+    function test_SEEKMATCHESTRAITS_body_head_anyId_nonAuctioned() public {
+        vm.startPrank(user1);
+        _resetToRequestWindow();
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
 
-    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         0,
-    //         0,
-    //         0
-    //     );
-    //     mockAuctionHouse.setNounId(6);
-    //     mockNouns.setSeed(seed, 5);
+        INounsSeederLike.Seed memory seed1 = INounsSeederLike.Seed(
+            0,
+            10,
+            10,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed2 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        // Correct Seed, matching id
+        assertEq(true, nounSeek.seekMatchesTraits(5, seed1, seekId));
+        // Correct Seed, matching Id
+        assertEq(true, nounSeek.seekMatchesTraits(20, seed1, seekId));
 
-    //     uint256[] memory seekIds = new uint256[](1);
-    //     seekIds[0] = seekId;
+        // Incorrect Seed,  matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed2, seekId));
+        // Incorrect Seed, non-matching Id
+        assertEq(false, nounSeek.seekMatchesTraits(20, seed2, seekId));
+    }
 
-    //     // Before find
-    //     assertEq(true, nounSeek.traitsMatch(seed, 5, seekId));
-    //     assertEq(true, nounSeek.find(seekIds)[0]);
-    //     // After find
-    //     assertEq(false, nounSeek.traitsMatch(seed, 5, seekId));
-    // }
+    function test_SEEKMATCHESTRAITS_alreadyFound() public {
+        vm.startPrank(user1);
+        _resetToRequestWindow();
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
 
-    // function test_FOUND_anyId_onlyAuctioned() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         true
-    //     );
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+        mockAuctionHouse.setNounId(6);
+        mockNouns.setSeed(seed, 6);
 
-    //     (, , , , , , , address finder) = nounSeek.seeks(seekId);
-    //     uint256[] memory seekIds = new uint256[](1);
-    //     seekIds[0] = seekId;
-    //     mockAuctionHouse.setNounId(11);
-    //     vm.stopPrank();
-    //     vm.startPrank(user2);
+        // Before match
+        assertEq(true, nounSeek.seekMatchesTraits(5, seed, seekId));
 
-    //     // Seed does not match, Id does not match
-    //     assertEq(false, nounSeek.find(seekIds)[0]);
-    //     (, , , , , , , finder) = nounSeek.seeks(seekId);
-    //     assertEq(address(0), finder);
-    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         10,
-    //         0,
-    //         0
-    //     );
-    //     mockNouns.setSeed(seed, 10);
+        // Match
+        _resetToMatchWindow();
+        uint256[] memory seekIds = new uint256[](1);
+        seekIds[0] = seekId;
+        assertEq(true, nounSeek.matchWithCurrent(seekIds)[0]);
 
-    //     // Seed matches, Id does not match
-    //     assertEq(false, nounSeek.find(seekIds)[0]);
-    //     (, , , , , , , finder) = nounSeek.seeks(seekId);
-    //     assertEq(address(0), finder);
-    //     seed.background = 1;
-    //     mockNouns.setSeed(seed, 9);
-    //     // Seed matches, Id matches
-    //     assertEq(true, nounSeek.find(seekIds)[0]);
-    //     (, , , , , , , finder) = nounSeek.seeks(seekId);
-    //     assertEq(address(user2), finder);
-    // }
+        // After match
+        assertEq(false, nounSeek.seekMatchesTraits(5, seed, seekId));
+    }
 
-    // function test_FOUND_anyId_nonAuctioned() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-    //         10,
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         false
-    //     );
+    function test_MATCHWITHCURRENT_anyId_onlyAuctioned() public {
+        _resetToRequestWindow();
 
-    //     (, , , , , , , address finder) = nounSeek.seeks(seekId);
-    //     mockAuctionHouse.setNounId(11);
+        vm.prank(user1);
+        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+            10,
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            true
+        );
 
-    //     uint256[] memory seekIds = new uint256[](1);
-    //     seekIds[0] = seekId;
+        uint256[] memory seekIds = new uint256[](1);
+        seekIds[0] = seekId;
+        mockAuctionHouse.setNounId(11);
 
-    //     vm.stopPrank();
-    //     vm.startPrank(user2);
+        _resetToMatchWindow();
 
-    //     // Seed does not match, Id does not match
-    //     assertEq(false, nounSeek.find(seekIds)[0]);
-    //     (, , , , , , , finder) = nounSeek.seeks(seekId);
-    //     assertEq(address(0), finder);
-    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         10,
-    //         0,
-    //         0
-    //     );
-    //     mockNouns.setSeed(seed, 10);
-    //     // Seed matches, Id matches
+        vm.startPrank(user2);
 
-    //     assertEq(true, nounSeek.find(seekIds)[0]);
-    //     (, , , , , , , finder) = nounSeek.seeks(seekId);
-    //     assertEq(address(user2), finder);
-    // }
+        // Seed does not match, Id does not match
+        assertEq(false, nounSeek.matchWithCurrent(seekIds)[0]);
 
-    // function test_FOUND_twoSeeks_oneFails() public {
-    //     vm.startPrank(user1);
-    //     (uint256 receiptId1, uint256 seekId1) = nounSeek.add{value: 1}(
-    //         10,
-    //         10,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         false
-    //     );
-    //     (uint256 receiptId2, uint256 seekId2) = nounSeek.add{value: 1}(
-    //         11,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         false
-    //     );
-    //     vm.stopPrank();
+        assertEq(address(0), nounSeek.seeks(seekId).finder);
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            10,
+            10,
+            0,
+            0
+        );
 
-    //     (, , , , , , , address finder1) = nounSeek.seeks(seekId1);
-    //     (, , , , , , , address finder2) = nounSeek.seeks(seekId2);
-    //     assertEq(address(0), finder1);
-    //     assertEq(address(0), finder2);
+        // Set matching seed for non-auctioned Noun
+        mockNouns.setSeed(seed, 10);
 
-    //     mockAuctionHouse.setNounId(11);
+        // Seed matches, Id does not match
+        assertEq(false, nounSeek.matchWithCurrent(seekIds)[0]);
+        assertEq(address(0), nounSeek.seeks(seekId).finder);
 
-    //     uint256[] memory seekIds = new uint256[](2);
-    //     seekIds[0] = seekId1;
-    //     seekIds[1] = seekId2;
+        // Set current auctioned noun to correct seed
+        seed.background = 1;
+        mockNouns.setSeed(seed, 11);
+        // Seed matches, Id matches
+        assertEq(true, nounSeek.matchWithCurrent(seekIds)[0]);
 
-    //     vm.startPrank(user2);
+        assertEq(address(user2), nounSeek.seeks(seekId).finder);
 
-    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-    //         0,
-    //         10,
-    //         10,
-    //         0,
-    //         0
-    //     );
-    //     mockNouns.setSeed(seed, 10);
+        vm.stopPrank();
 
-    //     bool[] memory matches = nounSeek.find(seekIds);
+        vm.prank(user3);
+        // Attempt to match again
+        assertEq(false, nounSeek.matchWithCurrent(seekIds)[0]);
+        assertEq(address(user2), nounSeek.seeks(seekId).finder);
+    }
 
-    //     assertEq(true, matches[0]);
-    //     assertEq(false, matches[1]);
-    //     (, , , , , , , finder1) = nounSeek.seeks(seekId1);
-    //     (, , , , , , , finder2) = nounSeek.seeks(seekId2);
-    //     assertEq(address(user2), finder1);
-    //     assertEq(address(0), finder2);
-    // }
+    function test_MATCHWITHCURRENT_anyId_nonAuctioned() public {
+        _resetToRequestWindow();
+
+        vm.prank(user1);
+        (, uint256 seekId1) = nounSeek.add{value: 1}(
+            10,
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+
+        uint256[] memory seekIds1 = new uint256[](1);
+        seekIds1[0] = seekId1;
+        mockAuctionHouse.setNounId(11);
+
+        // Seek2 with similar matching traits
+        (, uint256 seekId2) = nounSeek.add{value: 1}(
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+
+        uint256[] memory seekIds2 = new uint256[](1);
+        seekIds2[0] = seekId2;
+
+        mockAuctionHouse.setNounId(11);
+
+        _resetToMatchWindow();
+
+        vm.startPrank(user2);
+
+        // Seed does not match, Id does not match
+        assertEq(false, nounSeek.matchWithCurrent(seekIds1)[0]);
+
+        assertEq(address(0), nounSeek.seeks(seekId1).finder);
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            10,
+            10,
+            0,
+            0
+        );
+
+        // Set matching seed for non-auctioned Noun
+        mockNouns.setSeed(seed, 10);
+
+        // Seed matches, Id does not match
+        assertEq(true, nounSeek.matchWithCurrent(seekIds1)[0]);
+        assertEq(address(user2), nounSeek.seeks(seekId1).finder);
+
+        // Set current auctioned noun to auctioned noun seed
+        seed.background = 1;
+        mockNouns.setSeed(seed, 11);
+
+        // Seed matches, Id matches, already matched
+        assertEq(false, nounSeek.matchWithCurrent(seekIds1)[0]);
+        assertEq(address(user2), nounSeek.seeks(seekId1).finder);
+
+        // Seed matches, Id matches, seek2 has not been matched
+        assertEq(true, nounSeek.matchWithCurrent(seekIds2)[0]);
+        assertEq(address(user2), nounSeek.seeks(seekId2).finder);
+
+        vm.stopPrank();
+    }
+
+    function test_MATCHWITHCURRENT_twoSeeksOneFails() public {
+        _resetToRequestWindow();
+        vm.startPrank(user1);
+        (, uint256 seekId1) = nounSeek.add{value: 1}(
+            10,
+            10,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+        (, uint256 seekId2) = nounSeek.add{value: 1}(
+            11,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+        vm.stopPrank();
+
+        assertEq(address(0), nounSeek.seeks(seekId1).finder);
+        assertEq(address(0), nounSeek.seeks(seekId2).finder);
+
+        mockAuctionHouse.setNounId(11);
+
+        uint256[] memory seekIds = new uint256[](2);
+        seekIds[0] = seekId1;
+        seekIds[1] = seekId2;
+
+        vm.startPrank(user2);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            10,
+            10,
+            0,
+            0
+        );
+        mockNouns.setSeed(seed, 10);
+
+        _resetToMatchWindow();
+
+        bool[] memory matches = nounSeek.matchWithCurrent(seekIds);
+
+        assertEq(true, matches[0]);
+        assertEq(false, matches[1]);
+        assertEq(address(user2), nounSeek.seeks(seekId1).finder);
+        assertEq(address(0), nounSeek.seeks(seekId2).finder);
+    }
 
     // function test_finderWITHDRAW() public {
     //     /// Start a new auction for Noun 9
@@ -806,9 +899,9 @@ contract NounSeekTest is EnhancedTest {
     //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1 ether}(
     //         seed.body,
     //         seed.accessory,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
     //         true
     //     );
 
@@ -824,7 +917,7 @@ contract NounSeekTest is EnhancedTest {
     //     vm.warp(mockAuctionHouse.auction().startTime);
 
     //     vm.prank(user2);
-    //     assertEq(true, nounSeek.find(seekIds)[0]);
+    //     assertEq(true, nounSeek.matchWithCurrent(seekIds)[0]);
 
     //     vm.prank(user3);
     //     vm.expectRevert(bytes("Not finder"));
@@ -848,9 +941,9 @@ contract NounSeekTest is EnhancedTest {
     //     (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1 ether}(
     //         10,
     //         0,
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
-    //         uint48(NO_PREFERENCE),
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
     //         false
     //     );
     //     INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
