@@ -441,8 +441,13 @@ contract NounSeek {
      */
     function withdraw(uint256 seekId) public returns (bool) {
         Seek memory seek = _seeks[seekId];
+
         require(seek.finder == msg.sender, "Not finder");
+
         _seeks[seekId].amount = 0;
+
+        emit FinderWithdrew(seekId, msg.sender, seek.amount);
+
         (bool success, ) = msg.sender.call{value: seek.amount, gas: 10_000}("");
         return success;
     }
@@ -474,7 +479,8 @@ contract NounSeek {
             // Two Nouns can be minted during settlement, so both must be checked for a match
             // A Seek can only be matched once
             for (uint256 n = 0; n < 2; n++) {
-                // Seek has already been matched or there is no Noun to check, continue
+                // Seek has already been matched or there is no Noun to check,
+
                 if (matched[i] || nounIds[n] == NO_NOUN_ID) continue;
 
                 matched[i] = seekMatchesTraits(
@@ -487,7 +493,11 @@ contract NounSeek {
                     _seeks[seekIds[i]].finder = msg.sender;
                     emit SeekMatched(seekIds[i], nounIds[n], msg.sender);
                 } else {
-                    require(!shouldRevert, "No match");
+                    // In order to revert, must not be on the last Noun id to be checked and the last must not be `NO_NOUN_ID`
+                    require(
+                        (n != 2 && nounIds[1] != NO_NOUN_ID) || !shouldRevert,
+                        "No match"
+                    );
                 }
             }
         }
