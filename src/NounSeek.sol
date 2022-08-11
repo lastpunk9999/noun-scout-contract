@@ -236,7 +236,7 @@ contract NounSeek is ReentrancyGuard {
     }
 
     /**
-     * @notice Removes a reward. Must be called within a specific time window. Cannot be called if the requeste traits have been matched.
+     * @notice Removes a reward. Must be called within a specific time window. Cannot be called if the requested traits have been matched.
      @param requestId The unique id of the request
      @return bool The success status of the returned funds
      */
