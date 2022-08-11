@@ -81,6 +81,15 @@ contract NounSeek {
     event SeekMatched(uint256 seekId, uint256 nounId, address finder);
     event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
 
+    error TooSoon();
+    error TooLate();
+    error NoAmountSent();
+    error NoPreferences();
+    error OnlySeeker();
+    error OnlyFinder();
+    error AlreadyFound();
+    error NoMatch(uint256 seekId);
+
     /**
     -----------------------------
     --------- MODIFIERS ---------
@@ -92,16 +101,14 @@ contract NounSeek {
         INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
 
         // Cannot executed within a time from an auction's start
-        require(
-            block.timestamp - auction.startTime > AUCTION_START_LIMIT,
-            "Too soon"
-        );
+        if (block.timestamp - auction.startTime <= AUCTION_START_LIMIT) {
+            revert TooSoon();
+        }
 
         // Cannot executed within a time period from an auction's end
-        require(
-            auction.endTime - block.timestamp > AUCTION_END_LIMIT,
-            "Too late"
-        );
+        if (auction.endTime - block.timestamp <= AUCTION_END_LIMIT) {
+            revert TooLate();
+        }
         _;
     }
 
@@ -109,10 +116,9 @@ contract NounSeek {
     modifier withinMatchCurrentWindow() {
         INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
 
-        require(
-            block.timestamp - auction.startTime < AUCTION_START_LIMIT,
-            "Too  late"
-        );
+        if (block.timestamp - auction.startTime > AUCTION_START_LIMIT) {
+            revert TooLate();
+        }
         _;
     }
 
@@ -269,12 +275,13 @@ contract NounSeek {
         uint256 nounId,
         bool onlyAuctionedNoun
     ) public payable withinRequestWindow returns (uint256, uint256) {
-        require(
-            body + accessory + head + glasses < NO_PREFERENCE * 4,
-            "No preferences"
-        );
+        if (body + accessory + head + glasses == NO_PREFERENCE * 4) {
+            revert NoPreferences();
+        }
 
-        require(msg.value > 0, "No value sent");
+        if (msg.value == 0) {
+            revert NoAmountSent();
+        }
 
         // if `nounId` is specified, set correct value for `onlyAuctionedNoun`;
         if (nounId % 10 == 0) {
@@ -345,11 +352,15 @@ contract NounSeek {
         returns (bool)
     {
         Request memory request = _requests[requestId];
-        require(request.seeker == msg.sender, "Not authorized");
+        if (request.seeker != msg.sender) {
+            revert OnlySeeker();
+        }
 
         Seek memory seek = _seeks[request.seekId];
 
-        require(seek.finder == address(0), "Already found");
+        if (seek.finder != address(0)) {
+            revert AlreadyFound();
+        }
 
         seek.amount -= request.amount;
 
@@ -442,7 +453,9 @@ contract NounSeek {
     function withdraw(uint256 seekId) public returns (bool) {
         Seek memory seek = _seeks[seekId];
 
-        require(seek.finder == msg.sender, "Not finder");
+        if (seek.finder != msg.sender) {
+            revert OnlyFinder();
+        }
 
         _seeks[seekId].amount = 0;
 
@@ -495,7 +508,9 @@ contract NounSeek {
                 }
             }
 
-            require(matched[i] || !shouldRevert, "No match");
+            if (!matched[i] && shouldRevert) {
+                revert NoMatch(seekIds[i]);
+            }
         }
 
         return matched;
