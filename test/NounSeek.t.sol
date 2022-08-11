@@ -72,17 +72,6 @@ contract NounSeekTest is EnhancedTest {
         NO_PREFERENCE = nounSeek.NO_PREFERENCE();
     }
 
-    function captureSnapshot() internal {
-        cleanSnapshot = vm.snapshot();
-    }
-
-    function testConstructor() public {
-        assertEq(address(mockNouns), address(nounSeek.nouns()));
-        assertEq(address(mockSeeder), address(nounSeek.seeder()));
-        assertEq(address(mockAuctionHouse), address(nounSeek.auctionHouse()));
-        captureSnapshot();
-    }
-
     function _resetToRequestWindow() internal {
         vm.revertTo(cleanSnapshot);
         vm.warp(AUCTION_START_LIMIT * 3);
@@ -113,11 +102,22 @@ contract NounSeekTest is EnhancedTest {
             );
     }
 
+    function captureSnapshot() internal {
+        cleanSnapshot = vm.snapshot();
+    }
+
+    function testConstructor() public {
+        assertEq(address(mockNouns), address(nounSeek.nouns()));
+        assertEq(address(mockSeeder), address(nounSeek.seeder()));
+        assertEq(address(mockAuctionHouse), address(nounSeek.auctionHouse()));
+        captureSnapshot();
+    }
+
     function test_ADD_happyCaseNewSeek() public {
         vm.revertTo(cleanSnapshot);
         _resetToRequestWindow();
 
-        (uint256 receiptId, uint256 seekId) = _addSeek(user1, 1);
+        (uint256 requestId, uint256 seekId) = _addSeek(user1, 1);
 
         assertEq(nounSeek.seekCount(), 1);
         assertEq(nounSeek.requestCount(), 1);
@@ -145,7 +145,7 @@ contract NounSeekTest is EnhancedTest {
         );
         assertEq(nounSeek.traitsHashToSeekId(traitsHash), seekId);
 
-        NounSeek.Request memory request = nounSeek.requests(receiptId);
+        NounSeek.Request memory request = nounSeek.requests(requestId);
 
         assertEq(request.seeker, address(user1));
         assertEq(request.amount, 1);
@@ -161,7 +161,7 @@ contract NounSeekTest is EnhancedTest {
 
         _addSeek(user1, 1);
 
-        (uint256 receiptId, uint256 seekId) = _addSeek(user2, 1);
+        (uint256 requestId, uint256 seekId) = _addSeek(user2, 1);
 
         assertEq(nounSeek.seekCount(), 1);
         assertEq(nounSeek.requestCount(), 2);
@@ -189,7 +189,7 @@ contract NounSeekTest is EnhancedTest {
         );
         assertEq(nounSeek.traitsHashToSeekId(traitsHash), seekId);
 
-        NounSeek.Request memory request = nounSeek.requests(receiptId);
+        NounSeek.Request memory request = nounSeek.requests(requestId);
 
         assertEq(request.seeker, address(user2));
         assertEq(request.amount, 1);
@@ -330,7 +330,7 @@ contract NounSeekTest is EnhancedTest {
     {
         _resetToRequestWindow();
         vm.prank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             5,
             5,
             5,
@@ -341,14 +341,7 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Seek memory seek = nounSeek.seeks(seekId);
         assertEq(seek.onlyAuctionedNoun, true);
 
-        (receiptId, seekId) = nounSeek.add{value: 1}(
-            5,
-            5,
-            5,
-            5,
-            NO_PREFERENCE,
-            false
-        );
+        (, seekId) = nounSeek.add{value: 1}(5, 5, 5, 5, NO_PREFERENCE, false);
         seek = nounSeek.seeks(seekId);
         assertEq(seek.onlyAuctionedNoun, false);
     }
@@ -356,14 +349,7 @@ contract NounSeekTest is EnhancedTest {
     function test_ADD_NounIdOnlyAuctionedNounCorrectly() public {
         _resetToRequestWindow();
         vm.prank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
-            5,
-            5,
-            5,
-            5,
-            11,
-            false
-        );
+        (, uint256 seekId) = nounSeek.add{value: 1}(5, 5, 5, 5, 11, false);
 
         NounSeek.Seek memory seek = nounSeek.seeks(seekId);
         assertEq(seek.onlyAuctionedNoun, true);
@@ -484,7 +470,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_body_anyId_anyNounType() public {
         vm.startPrank(user1);
         _resetToRequestWindow();
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             NO_PREFERENCE,
             NO_PREFERENCE,
@@ -521,7 +507,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_body_specificId_nonAuctioned() public {
         _resetToRequestWindow();
         vm.startPrank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             NO_PREFERENCE,
             NO_PREFERENCE,
@@ -558,7 +544,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_body_specificId_Auctioned() public {
         _resetToRequestWindow();
         vm.startPrank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             NO_PREFERENCE,
             NO_PREFERENCE,
@@ -595,7 +581,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_body_head_anyId_Auctioned() public {
         vm.startPrank(user1);
         _resetToRequestWindow();
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             10,
             NO_PREFERENCE,
@@ -632,7 +618,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_body_head_anyId_nonAuctioned() public {
         vm.startPrank(user1);
         _resetToRequestWindow();
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             10,
             NO_PREFERENCE,
@@ -669,7 +655,7 @@ contract NounSeekTest is EnhancedTest {
     function test_SEEKMATCHESTRAITS_alreadyFound() public {
         vm.startPrank(user1);
         _resetToRequestWindow();
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             NO_PREFERENCE,
             NO_PREFERENCE,
@@ -705,7 +691,7 @@ contract NounSeekTest is EnhancedTest {
         _resetToRequestWindow();
 
         vm.prank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1}(
+        (, uint256 seekId) = nounSeek.add{value: 1}(
             10,
             10,
             NO_PREFERENCE,
@@ -745,6 +731,10 @@ contract NounSeekTest is EnhancedTest {
         seed.background = 1;
         mockNouns.setSeed(seed, 11);
         // Seed matches, Id matches
+        vm.expectCall(
+            address(mockNouns),
+            abi.encodeCall(mockNouns.seeds, (11))
+        );
         assertEq(true, nounSeek.matchWithCurrent(seekIds)[0]);
 
         assertEq(address(user2), nounSeek.seeks(seekId).finder);
@@ -869,7 +859,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 10);
 
         _resetToMatchWindow();
-
+        vm.expectCall(
+            address(mockNouns),
+            abi.encodeCall(mockNouns.seeds, (10))
+        );
+        vm.expectCall(
+            address(mockNouns),
+            abi.encodeCall(mockNouns.seeds, (11))
+        );
         bool[] memory matches = nounSeek.matchWithCurrent(seekIds);
 
         assertEq(true, matches[0]);
@@ -888,7 +885,7 @@ contract NounSeekTest is EnhancedTest {
         );
         _resetToRequestWindow();
         vm.prank(user1);
-        (uint256 receiptId, uint256 seekId) = nounSeek.add{value: 1 ether}(
+        (, uint256 seekId) = nounSeek.add{value: 1 ether}(
             seed.body,
             seed.accessory,
             NO_PREFERENCE,
@@ -929,7 +926,7 @@ contract NounSeekTest is EnhancedTest {
         assertEq(true, nounSeek.withdraw(seekId));
     }
 
-    function test_MATCHWITHNEXTANDSETTLE_happyCase() public {
+    function test_MATCHWITHNEXTANDSETTLE_happyCase2Nouns1Match() public {
         _resetToRequestWindow();
         INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
             0,
@@ -964,6 +961,21 @@ contract NounSeekTest is EnhancedTest {
         seekIds[0] = seekId;
 
         vm.startPrank(user2);
+        vm.expectCall(
+            address(mockSeeder),
+            abi.encodeCall(mockSeeder.generateSeed, (10, mockDescriptor))
+        );
+        vm.expectCall(
+            address(mockSeeder),
+            abi.encodeCall(mockSeeder.generateSeed, (11, mockDescriptor))
+        );
+        vm.expectCall(
+            address(mockAuctionHouse),
+            abi.encodeCall(
+                mockAuctionHouse.settleCurrentAndCreateNewAuction,
+                ()
+            )
+        );
         nounSeek.matchWithNextAndSettle(seekIds);
         assertEq(address(user2), nounSeek.seeks(seekId).finder);
 
@@ -1011,5 +1023,106 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.matchWithNextAndSettle(seekIds);
         assertEq(address(0), nounSeek.seeks(seekId1).finder);
         assertEq(address(0), nounSeek.seeks(seekId2).finder);
+    }
+
+    function test_MATCHWITHNEXTANDSETTLE_happyCaseTwoSeekIdsMatchDifferentNouns()
+        public
+    {
+        _resetToRequestWindow();
+        INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
+            0,
+            0,
+            10,
+            0,
+            0
+        );
+        INounsSeederLike.Seed memory seed11 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+
+        vm.prank(user1);
+        (, uint256 seekId10) = nounSeek.add{value: 1 ether}(
+            seed10.body,
+            seed10.accessory,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+        (, uint256 seekId11) = nounSeek.add{value: 1 ether}(
+            seed11.body,
+            seed11.accessory,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+        (, uint256 seekId12) = nounSeek.add{value: 1 ether}(
+            111,
+            111,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+
+        mockSeeder.setSeed(seed10, 10);
+        mockSeeder.setSeed(seed11, 11);
+        mockAuctionHouse.setNounId(9);
+
+        uint256[] memory seekIds = new uint256[](2);
+        seekIds[0] = seekId11;
+        seekIds[1] = seekId10;
+
+        vm.startPrank(user2);
+        nounSeek.matchWithNextAndSettle(seekIds);
+        assertEq(address(user2), nounSeek.seeks(seekId10).finder);
+        assertEq(address(user2), nounSeek.seeks(seekId11).finder);
+    }
+
+    function test_MATCHWITHNEXTANDSETTLE_happyCase1Noun1Seek() public {
+        _resetToRequestWindow();
+        INounsSeederLike.Seed memory seed12 = INounsSeederLike.Seed(
+            0,
+            10,
+            0,
+            0,
+            0
+        );
+
+        vm.prank(user1);
+        (, uint256 seekId12) = nounSeek.add{value: 1 ether}(
+            seed12.body,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            NO_PREFERENCE,
+            false
+        );
+
+        mockSeeder.setSeed(seed12, 12);
+        mockAuctionHouse.setNounId(11);
+
+        uint256[] memory seekIds = new uint256[](1);
+        seekIds[0] = seekId12;
+
+        vm.startPrank(user2);
+        vm.expectCall(
+            address(mockSeeder),
+            abi.encodeCall(mockSeeder.generateSeed, (12, mockDescriptor))
+        );
+        vm.expectCall(
+            address(mockAuctionHouse),
+            abi.encodeCall(
+                mockAuctionHouse.settleCurrentAndCreateNewAuction,
+                ()
+            )
+        );
+        nounSeek.matchWithNextAndSettle(seekIds);
+        assertEq(address(user2), nounSeek.seeks(seekId12).finder);
     }
 }
