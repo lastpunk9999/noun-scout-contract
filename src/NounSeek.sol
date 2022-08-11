@@ -492,14 +492,10 @@ contract NounSeek {
                 if (matched[i]) {
                     _seeks[seekIds[i]].finder = msg.sender;
                     emit SeekMatched(seekIds[i], nounIds[n], msg.sender);
-                } else {
-                    // In order to revert, must not be on the last Noun id to be checked and the last must not be `NO_NOUN_ID`
-                    require(
-                        (n != 2 && nounIds[1] != NO_NOUN_ID) || !shouldRevert,
-                        "No match"
-                    );
                 }
             }
+
+            require(matched[i] || !shouldRevert, "No match");
         }
 
         return matched;
