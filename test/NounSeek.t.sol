@@ -897,195 +897,195 @@ contract NounSeekTest is EnhancedTest {
         assertEq(true, nounSeek.withdraw(seekId));
     }
 
-    function test_MATCHWITHNEXTANDSETTLE_happyCase2Nouns1Match() public {
-        _resetToRequestWindow();
-        INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-        INounsSeederLike.Seed memory seed11 = INounsSeederLike.Seed(
-            0,
-            10,
-            0,
-            0,
-            0
-        );
+    // function test_MATCHWITHNEXTANDSETTLE_happyCase2Nouns1Match() public {
+    //     _resetToRequestWindow();
+    //     INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
+    //         0,
+    //         0,
+    //         0,
+    //         0,
+    //         0
+    //     );
+    //     INounsSeederLike.Seed memory seed11 = INounsSeederLike.Seed(
+    //         0,
+    //         10,
+    //         0,
+    //         0,
+    //         0
+    //     );
 
-        vm.prank(user1);
-        (, uint256 seekId) = nounSeek.add{value: 1 ether}(
-            seed11.body,
-            seed11.accessory,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
+    //     vm.prank(user1);
+    //     (, uint256 seekId) = nounSeek.add{value: 1 ether}(
+    //         seed11.body,
+    //         seed11.accessory,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
 
-        mockSeeder.setSeed(seed10, 10);
-        mockSeeder.setSeed(seed11, 11);
-        mockAuctionHouse.setNounId(9);
+    //     mockSeeder.setSeed(seed10, 10);
+    //     mockSeeder.setSeed(seed11, 11);
+    //     mockAuctionHouse.setNounId(9);
 
-        uint256[] memory seekIds = new uint256[](1);
-        seekIds[0] = seekId;
+    //     uint256[] memory seekIds = new uint256[](1);
+    //     seekIds[0] = seekId;
 
-        vm.startPrank(user2);
-        vm.expectCall(
-            address(mockSeeder),
-            abi.encodeCall(mockSeeder.generateSeed, (10, mockDescriptor))
-        );
-        vm.expectCall(
-            address(mockSeeder),
-            abi.encodeCall(mockSeeder.generateSeed, (11, mockDescriptor))
-        );
-        vm.expectCall(
-            address(mockAuctionHouse),
-            abi.encodeCall(
-                mockAuctionHouse.settleCurrentAndCreateNewAuction,
-                ()
-            )
-        );
-        nounSeek.matchWithNextAndSettle(seekIds);
-        assertEq(address(user2), nounSeek.seeks(seekId).finder);
+    //     vm.startPrank(user2);
+    //     vm.expectCall(
+    //         address(mockSeeder),
+    //         abi.encodeCall(mockSeeder.generateSeed, (10, mockDescriptor))
+    //     );
+    //     vm.expectCall(
+    //         address(mockSeeder),
+    //         abi.encodeCall(mockSeeder.generateSeed, (11, mockDescriptor))
+    //     );
+    //     vm.expectCall(
+    //         address(mockAuctionHouse),
+    //         abi.encodeCall(
+    //             mockAuctionHouse.settleCurrentAndCreateNewAuction,
+    //             ()
+    //         )
+    //     );
+    //     nounSeek.matchWithNextAndSettle(seekIds);
+    //     assertEq(address(user2), nounSeek.seeks(seekId).finder);
 
-        vm.expectRevert(abi.encodeWithSelector(NounSeek.NoMatch.selector, 1));
-        nounSeek.matchWithNextAndSettle(seekIds);
-    }
+    //     vm.expectRevert(abi.encodeWithSelector(NounSeek.NoMatch.selector, 1));
+    //     nounSeek.matchWithNextAndSettle(seekIds);
+    // }
 
-    function test_MATCHWITHNEXTANDSETTLE_failsIfAnySeekIdDoesNotMatch() public {
-        _resetToRequestWindow();
-        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-            0,
-            10,
-            0,
-            0,
-            0
-        );
+    // function test_MATCHWITHNEXTANDSETTLE_failsIfAnySeekIdDoesNotMatch() public {
+    //     _resetToRequestWindow();
+    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+    //         0,
+    //         10,
+    //         0,
+    //         0,
+    //         0
+    //     );
 
-        vm.prank(user1);
-        (, uint256 seekId1) = nounSeek.add{value: 1 ether}(
-            seed.body,
-            seed.accessory,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
-        (, uint256 seekId2) = nounSeek.add{value: 1 ether}(
-            99,
-            99,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
+    //     vm.prank(user1);
+    //     (, uint256 seekId1) = nounSeek.add{value: 1 ether}(
+    //         seed.body,
+    //         seed.accessory,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
+    //     (, uint256 seekId2) = nounSeek.add{value: 1 ether}(
+    //         99,
+    //         99,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
 
-        mockSeeder.setSeed(seed, 12);
-        mockAuctionHouse.setNounId(11);
+    //     mockSeeder.setSeed(seed, 12);
+    //     mockAuctionHouse.setNounId(11);
 
-        uint256[] memory seekIds = new uint256[](2);
-        seekIds[0] = seekId1;
-        seekIds[1] = seekId2;
+    //     uint256[] memory seekIds = new uint256[](2);
+    //     seekIds[0] = seekId1;
+    //     seekIds[1] = seekId2;
 
-        vm.startPrank(user2);
-        vm.expectRevert(abi.encodeWithSelector(NounSeek.NoMatch.selector, 2));
-        nounSeek.matchWithNextAndSettle(seekIds);
-        assertEq(address(0), nounSeek.seeks(seekId1).finder);
-        assertEq(address(0), nounSeek.seeks(seekId2).finder);
-    }
+    //     vm.startPrank(user2);
+    //     vm.expectRevert(abi.encodeWithSelector(NounSeek.NoMatch.selector, 2));
+    //     nounSeek.matchWithNextAndSettle(seekIds);
+    //     assertEq(address(0), nounSeek.seeks(seekId1).finder);
+    //     assertEq(address(0), nounSeek.seeks(seekId2).finder);
+    // }
 
-    function test_MATCHWITHNEXTANDSETTLE_happyCaseTwoSeekIdsMatchDifferentNouns()
-        public
-    {
-        _resetToRequestWindow();
-        INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
-            0,
-            0,
-            10,
-            0,
-            0
-        );
-        INounsSeederLike.Seed memory seed11 = INounsSeederLike.Seed(
-            0,
-            10,
-            0,
-            0,
-            0
-        );
+    // function test_MATCHWITHNEXTANDSETTLE_happyCaseTwoSeekIdsMatchDifferentNouns()
+    //     public
+    // {
+    //     _resetToRequestWindow();
+    //     INounsSeederLike.Seed memory seed10 = INounsSeederLike.Seed(
+    //         0,
+    //         0,
+    //         10,
+    //         0,
+    //         0
+    //     );
+    //     INounsSeederLike.Seed memory seed11 = INounsSeederLike.Seed(
+    //         0,
+    //         10,
+    //         0,
+    //         0,
+    //         0
+    //     );
 
-        vm.prank(user1);
-        (, uint256 seekId10) = nounSeek.add{value: 1 ether}(
-            seed10.body,
-            seed10.accessory,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
-        (, uint256 seekId11) = nounSeek.add{value: 1 ether}(
-            seed11.body,
-            seed11.accessory,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
+    //     vm.prank(user1);
+    //     (, uint256 seekId10) = nounSeek.add{value: 1 ether}(
+    //         seed10.body,
+    //         seed10.accessory,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
+    //     (, uint256 seekId11) = nounSeek.add{value: 1 ether}(
+    //         seed11.body,
+    //         seed11.accessory,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
 
-        mockSeeder.setSeed(seed10, 10);
-        mockSeeder.setSeed(seed11, 11);
-        mockAuctionHouse.setNounId(9);
+    //     mockSeeder.setSeed(seed10, 10);
+    //     mockSeeder.setSeed(seed11, 11);
+    //     mockAuctionHouse.setNounId(9);
 
-        uint256[] memory seekIds = new uint256[](2);
-        seekIds[0] = seekId11;
-        seekIds[1] = seekId10;
+    //     uint256[] memory seekIds = new uint256[](2);
+    //     seekIds[0] = seekId11;
+    //     seekIds[1] = seekId10;
 
-        vm.startPrank(user2);
-        nounSeek.matchWithNextAndSettle(seekIds);
-        assertEq(address(user2), nounSeek.seeks(seekId10).finder);
-        assertEq(address(user2), nounSeek.seeks(seekId11).finder);
-    }
+    //     vm.startPrank(user2);
+    //     nounSeek.matchWithNextAndSettle(seekIds);
+    //     assertEq(address(user2), nounSeek.seeks(seekId10).finder);
+    //     assertEq(address(user2), nounSeek.seeks(seekId11).finder);
+    // }
 
-    function test_MATCHWITHNEXTANDSETTLE_happyCase1Noun1Seek() public {
-        _resetToRequestWindow();
-        INounsSeederLike.Seed memory seed12 = INounsSeederLike.Seed(
-            0,
-            10,
-            0,
-            0,
-            0
-        );
+    // function test_MATCHWITHNEXTANDSETTLE_happyCase1Noun1Seek() public {
+    //     _resetToRequestWindow();
+    //     INounsSeederLike.Seed memory seed12 = INounsSeederLike.Seed(
+    //         0,
+    //         10,
+    //         0,
+    //         0,
+    //         0
+    //     );
 
-        vm.prank(user1);
-        (, uint256 seekId12) = nounSeek.add{value: 1 ether}(
-            seed12.body,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            NO_PREFERENCE,
-            false
-        );
+    //     vm.prank(user1);
+    //     (, uint256 seekId12) = nounSeek.add{value: 1 ether}(
+    //         seed12.body,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         NO_PREFERENCE,
+    //         false
+    //     );
 
-        mockSeeder.setSeed(seed12, 12);
-        mockAuctionHouse.setNounId(11);
+    //     mockSeeder.setSeed(seed12, 12);
+    //     mockAuctionHouse.setNounId(11);
 
-        uint256[] memory seekIds = new uint256[](1);
-        seekIds[0] = seekId12;
+    //     uint256[] memory seekIds = new uint256[](1);
+    //     seekIds[0] = seekId12;
 
-        vm.startPrank(user2);
-        vm.expectCall(
-            address(mockSeeder),
-            abi.encodeCall(mockSeeder.generateSeed, (12, mockDescriptor))
-        );
-        vm.expectCall(
-            address(mockAuctionHouse),
-            abi.encodeCall(
-                mockAuctionHouse.settleCurrentAndCreateNewAuction,
-                ()
-            )
-        );
-        nounSeek.matchWithNextAndSettle(seekIds);
-        assertEq(address(user2), nounSeek.seeks(seekId12).finder);
-    }
+    //     vm.startPrank(user2);
+    //     vm.expectCall(
+    //         address(mockSeeder),
+    //         abi.encodeCall(mockSeeder.generateSeed, (12, mockDescriptor))
+    //     );
+    //     vm.expectCall(
+    //         address(mockAuctionHouse),
+    //         abi.encodeCall(
+    //             mockAuctionHouse.settleCurrentAndCreateNewAuction,
+    //             ()
+    //         )
+    //     );
+    //     nounSeek.matchWithNextAndSettle(seekIds);
+    //     assertEq(address(user2), nounSeek.seeks(seekId12).finder);
+    // }
 }

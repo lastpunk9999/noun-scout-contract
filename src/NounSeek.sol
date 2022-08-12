@@ -79,6 +79,7 @@ contract NounSeek {
     );
     event RequestRemoved(uint256 requestId);
     event SeekMatched(uint256 seekId, uint256 nounId, address finder);
+    event SeekNotMatched(uint256 seekId);
     event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
 
     error TooSoon();
@@ -89,6 +90,7 @@ contract NounSeek {
     error OnlyFinder();
     error AlreadyFound();
     error NoMatch(uint256 seekId);
+    error BlockHashMismatch();
 
     /**
     -----------------------------
@@ -421,28 +423,17 @@ contract NounSeek {
      * @dev Will revert if there is no match on any seekId.
      * @param seekIds An array of seekIds that might match the current Noun and/or the previous Noun if it was not auctioned
      */
-    function matchWithNextAndSettle(uint256[] memory seekIds) public {
-        INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
-
-        // The set of 2 Noun ids to be checked and used to retreive seeds
-        // The first is from the next minted Noun
-        // The value `NO_NOUN_ID` is used because Noun Ids are 0-indexed and so the solidity default of 0 can be confused with a valid Noun id
-        uint256[2] memory nounIds = [auction.nounId + 1, NO_NOUN_ID];
-
-        INounsSeederLike.Seed[2] memory nounSeeds;
-        nounSeeds[0] = seeder.generateSeed(nounIds[0], descriptor);
-
-        // If the next minted Noun will not be auctioned, add the closest auctioned Noun id and seed
-        if (nounIds[0] % 10 == 0) {
-            nounIds[1] = nounIds[0] + 1;
-            nounSeeds[1] = seeder.generateSeed(nounIds[1], descriptor);
+    function settleAndMatch(bytes32 targetBlockHash, uint256[] memory seekIds)
+        public
+        returns (bool[] memory)
+    {
+        if (targetBlockHash != blockhash(block.number - 1)) {
+            revert BlockHashMismatch();
         }
 
-        // throw if any Seeks to not match
-        _matchAndSetFinder(nounIds, nounSeeds, seekIds, true);
-
-        // settle does not provide enough gas to re-enter
         auctionHouse.settleCurrentAndCreateNewAuction();
+
+        return matchWithCurrent(seekIds);
     }
 
     /**
@@ -508,8 +499,8 @@ contract NounSeek {
                 }
             }
 
-            if (!matched[i] && shouldRevert) {
-                revert NoMatch(seekIds[i]);
+            if (!matched[i]) {
+                emit SeekNotMatched(seekIds[i]);
             }
         }
 
