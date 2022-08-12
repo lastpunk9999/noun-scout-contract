@@ -4,7 +4,8 @@ Allows anyone to put up a reward for minting any combination Noun trait and dist
 ### Flow
 **Creating a Seek**
 -  `1 hour` after the start of a Noun auction or up to `5 minutes` before the ending of a Noun auction, a user creates a `Seek` by sending in funds and a list of traits that will unlock the reward. The traits are any combination of `head`, `accessory`, `glasses`, `body`.
-- A user can add funds to an existing `Seek` by specifying the same combination of `head`, `accessory`, `glasses`, `body`, `nounId`, and `auction flag.`
+- A `Seek` can be scoped to a specific `nounId` or explicitly prevented from matching a non-auctioned Noun by specifying a `onlyAuctionedNoun` flag.
+- Another user can add funds to an existing `Seek` by specifying the same combination of `head`, `accessory`, `glasses`, `body`, `nounId`, and `onlyAuctionedNoun` flag.
 
 **Matching a Seek to the Noun currently on auction**
 -  If a Noun with traits that match the `Seek` are minted outside of this contract, anyone has `1 hour` after mint to match the `Seek` to the current Noun and be set as the `Seek`'s `finder`.
