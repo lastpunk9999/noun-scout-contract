@@ -20,9 +20,7 @@ contract EnhancedTest is Test {
 contract NounSeekTest is EnhancedTest {
     NounSeek nounSeek;
     MockNouns mockNouns;
-    MockSeeder mockSeeder;
     MockAuctionHouse mockAuctionHouse;
-    MockDescriptor mockDescriptor;
 
     struct Log {
         bytes32[] topics;
@@ -62,10 +60,8 @@ contract NounSeekTest is EnhancedTest {
     uint48 NO_PREFERENCE;
 
     function setUp() public {
-        mockSeeder = new MockSeeder();
-        mockDescriptor = new MockDescriptor();
         mockAuctionHouse = new MockAuctionHouse();
-        mockNouns = new MockNouns(mockSeeder, mockDescriptor);
+        mockNouns = new MockNouns();
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse);
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
@@ -108,7 +104,6 @@ contract NounSeekTest is EnhancedTest {
 
     function testConstructor() public {
         assertEq(address(mockNouns), address(nounSeek.nouns()));
-        assertEq(address(mockSeeder), address(nounSeek.seeder()));
         assertEq(address(mockAuctionHouse), address(nounSeek.auctionHouse()));
         captureSnapshot();
     }

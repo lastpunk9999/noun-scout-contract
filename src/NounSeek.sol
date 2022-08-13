@@ -8,14 +8,8 @@ contract NounSeek {
     /// @notice Retreives historical mapping of nounId -> seed
     INounsTokenLike public immutable nouns;
 
-    /// @notice Generates a seed from blockhash, Noun Id, and descriptor's trait counts
-    INounsSeederLike public seeder;
-
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
-
-    /// @notice Descriptor holds trait count information used to generate a seed
-    INounsDescriptorLike public descriptor;
 
     /// @notice A unique id based on the total number of Seeks generated
     uint256 public seekCount;
@@ -79,7 +73,6 @@ contract NounSeek {
     );
     event RequestRemoved(uint256 requestId);
     event SeekMatched(uint256 seekId, uint256 nounId, address finder);
-    event SeekNotMatched(uint256 seekId);
     event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
 
     error TooSoon();
@@ -126,15 +119,7 @@ contract NounSeek {
 
     constructor(INounsTokenLike _nouns, INounsAuctionHouseLike _auctionHouse) {
         nouns = _nouns;
-        seeder = _nouns.seeder();
         auctionHouse = _auctionHouse;
-        descriptor = _nouns.descriptor();
-    }
-
-    /// @notice Re-initializes the `seeder` and `descriptor` from the Nouns token contract
-    function updateSeederAndDescriptor() public {
-        seeder = nouns.seeder();
-        descriptor = nouns.descriptor();
     }
 
     /**

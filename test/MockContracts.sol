@@ -5,13 +5,6 @@ import "../src/NounsInterfaces.sol";
 
 contract MockNouns is INounsTokenLike {
     mapping(uint256 => INounsSeederLike.Seed) private _seeds;
-    INounsSeederLike public immutable seeder;
-    INounsDescriptorLike public immutable descriptor;
-
-    constructor(INounsSeederLike _seeder, INounsDescriptorLike _descriptor) {
-        seeder = _seeder;
-        descriptor = _descriptor;
-    }
 
     function setSeed(INounsSeederLike.Seed memory seed, uint256 nounId) public {
         _seeds[nounId] = seed;
@@ -21,22 +14,6 @@ contract MockNouns is INounsTokenLike {
         external
         view
         returns (INounsSeederLike.Seed memory)
-    {
-        return _seeds[nounId];
-    }
-}
-
-contract MockSeeder is INounsSeederLike {
-    mapping(uint256 => INounsSeederLike.Seed) private _seeds;
-
-    function setSeed(INounsSeederLike.Seed memory seed, uint256 nounId) public {
-        _seeds[nounId] = seed;
-    }
-
-    function generateSeed(uint256 nounId, INounsDescriptorLike descriptor)
-        external
-        view
-        returns (Seed memory)
     {
         return _seeds[nounId];
     }
@@ -83,5 +60,3 @@ contract MockAuctionHouse is INounsAuctionHouseLike {
         );
     }
 }
-
-contract MockDescriptor is INounsDescriptorLike {}

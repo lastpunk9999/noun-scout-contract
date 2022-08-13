@@ -16,8 +16,6 @@ interface INounsAuctionHouseLike {
     function settleCurrentAndCreateNewAuction() external;
 }
 
-interface INounsDescriptorLike {}
-
 interface INounsSeederLike {
     struct Seed {
         uint48 background;
@@ -26,18 +24,9 @@ interface INounsSeederLike {
         uint48 head;
         uint48 glasses;
     }
-
-    function generateSeed(uint256 nounId, INounsDescriptorLike descriptor)
-        external
-        view
-        returns (Seed memory);
 }
 
 interface INounsTokenLike {
-    function seeder() external view returns (INounsSeederLike);
-
-    function descriptor() external view returns (INounsDescriptorLike);
-
     function seeds(uint256 nounId)
         external
         view
