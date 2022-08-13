@@ -54,7 +54,7 @@ contract MockAuctionHouse is INounsAuctionHouseLike {
 
     function settleCurrentAndCreateNewAuction() public {
         startAuction(
-            _auction.nounId % 10 == 0
+            _auction.nounId % 10 == 9
                 ? _auction.nounId + 2
                 : _auction.nounId + 1
         );
