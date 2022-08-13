@@ -400,13 +400,14 @@ contract NounSeek {
             nounSeeds[1] = nouns.seeds(nounIds[1]);
         }
 
-        return _matchAndSetFinder(nounIds, nounSeeds, seekIds, false);
+        return _matchAndSetFinder(nounIds, nounSeeds, seekIds);
     }
 
     /**
-     * @notice Matches the next minted Noun (and/or the the following Noun the next mint will not be auctioned) with a set of Seeks and settles the current auction.
-     * @dev Will revert if there is no match on any seekId.
-     * @param seekIds An array of seekIds that might match the current Noun and/or the previous Noun if it was not auctioned
+     * @notice Settles the Noun auction and matches the next minted Nouns (and/or the the following Noun the next mint will not be auctioned) with a set of Seeks.
+     * @dev Will revert if the previous blockhash does not match the target. This allows certainty that the Seek(s) will match the next minted Noun(s)
+     * @param targetBlockHash The blockhash that will produce Noun(s) which match the Seek(s)
+     * @param seekIds An array of seekIds that match the next Noun(s)
      */
     function settleAndMatch(bytes32 targetBlockHash, uint256[] memory seekIds)
         public
@@ -453,13 +454,11 @@ contract NounSeek {
      * @param nounIds 1 or 2 Noun ids to match
      * @param nounSeeds 1 or 2 Noun seeds to match
      * @param seekIds any number of Seeks to match against Noun ids and seeds
-     * @param shouldRevert If a match is not found for any seed, passing `true` will cause a revert
      */
     function _matchAndSetFinder(
         uint256[2] memory nounIds,
         INounsSeederLike.Seed[2] memory nounSeeds,
-        uint256[] memory seekIds,
-        bool shouldRevert
+        uint256[] memory seekIds
     ) internal returns (bool[] memory) {
         uint256 _length = seekIds.length;
         bool[] memory matched = new bool[](_length);
@@ -482,10 +481,6 @@ contract NounSeek {
                     _seeks[seekIds[i]].finder = msg.sender;
                     emit SeekMatched(seekIds[i], nounIds[n], msg.sender);
                 }
-            }
-
-            if (!matched[i]) {
-                emit SeekNotMatched(seekIds[i]);
             }
         }
 
