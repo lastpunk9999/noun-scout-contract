@@ -11,12 +11,6 @@ contract NounSeek {
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
 
-    /// @notice A unique id based on the total number of Seeks generated
-    uint256 public seekCount;
-
-    /// @notice  A unique id based on the total number of Requests generated
-    uint256 public requestCount;
-
     /// @notice Time limit after an auction starts
     uint256 public constant AUCTION_START_LIMIT = 1 hours;
 
@@ -29,6 +23,11 @@ contract NounSeek {
 
     /// @notice Stored to save gas
     uint256 private constant NO_NOUN_ID = type(uint256).max;
+
+    struct Counter {
+        uint128 seekCount;
+        uint128 requestCount;
+    }
 
     /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a matching Noun
     struct Seek {
@@ -51,7 +50,8 @@ contract NounSeek {
 
     mapping(uint256 => Seek) internal _seeks;
     mapping(uint256 => Request) internal _requests;
-    mapping(bytes32 => uint256) public traitsHashToSeekId;
+    mapping(bytes32 => uint128) public traitsHashToSeekId;
+    Counter internal _counter = Counter(0, 0);
 
     event SeekAdded(
         uint256 seekId,
@@ -136,6 +136,14 @@ contract NounSeek {
         return _requests[requestId];
     }
 
+    function seekCount() public view returns (uint128) {
+        return _counter.seekCount;
+    }
+
+    function requestCount() public view returns (uint128) {
+        return _counter.requestCount;
+    }
+
     function traitsHashToSeek(bytes32 traitsHash)
         public
         view
@@ -151,7 +159,7 @@ contract NounSeek {
         uint48 glasses,
         uint256 nounId,
         bool onlyAuctionedNoun
-    ) public view returns (uint256, bytes32) {
+    ) public view returns (uint128, bytes32) {
         // A unique identifier for Seek parameters
         bytes32 traitsHash = keccak256(
             abi.encodePacked(
@@ -170,7 +178,7 @@ contract NounSeek {
     function traitsToSeekIdAndHash(Seek memory seek)
         public
         view
-        returns (uint256, bytes32)
+        returns (uint128, bytes32)
     {
         // A unique identifier for Seek parameters
         bytes32 traitsHash = keccak256(
@@ -277,7 +285,7 @@ contract NounSeek {
             onlyAuctionedNoun = true;
         }
         // Look up seek Id by its paramater hash
-        (uint256 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
+        (uint128 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
             body,
             accessory,
             head,
@@ -285,12 +293,14 @@ contract NounSeek {
             nounId,
             onlyAuctionedNoun
         );
+
+        Counter memory counter = _counter;
         Seek memory seek = _seeks[seekId];
         uint256 amount = seek.amount;
 
         // If lookup doesn't find a Seek or the Seek has been found, reset paramaters and create a new Seek
         if (seekId == 0 || seek.finder != address(0)) {
-            seekId = ++seekCount;
+            seekId = ++counter.seekCount;
             seek.onlyAuctionedNoun = onlyAuctionedNoun;
             seek.nounId = nounId;
             seek.body = body;
@@ -314,18 +324,18 @@ contract NounSeek {
         amount += msg.value;
         seek.amount = amount;
         _seeks[seekId] = seek;
-        uint256 requestId = ++requestCount;
-        _requests[requestId] = Request({
+        _requests[++counter.requestCount] = Request({
             seeker: msg.sender,
             seekId: seekId,
             amount: msg.value
         });
 
+        _counter = counter;
         emit SeekAmountUpdated(seekId, amount);
 
-        emit RequestAdded(requestId, seekId, msg.sender, msg.value);
+        emit RequestAdded(counter.requestCount, seekId, msg.sender, msg.value);
 
-        return (requestId, seekId);
+        return (counter.requestCount, seekId);
     }
 
     /**
