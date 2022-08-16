@@ -18,17 +18,17 @@ contract NounSeek {
     uint256 public requestCount;
 
     /// @notice Time limit after an auction starts
-    uint256 public immutable AUCTION_START_LIMIT = 1 hours;
+    uint256 public constant AUCTION_START_LIMIT = 1 hours;
 
     /// @notice Time limit before an auction ends
-    uint256 public immutable AUCTION_END_LIMIT = 5 minutes;
+    uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
     /// @notice Number used to signify "any value" or "no preference"
     /// @dev Noun traits are 0-indexed so the Solidity default of 0 cannot be used
-    uint48 public immutable NO_PREFERENCE = 256256;
+    uint48 public constant NO_PREFERENCE = 256256;
 
     /// @notice Stored to save gas
-    uint256 private immutable NO_NOUN_ID = type(uint256).max;
+    uint256 private constant NO_NOUN_ID = type(uint256).max;
 
     /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a matching Noun
     struct Seek {
