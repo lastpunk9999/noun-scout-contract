@@ -25,8 +25,8 @@ contract NounSeek {
     uint256 private constant NO_NOUN_ID = type(uint256).max;
 
     struct Counter {
-        uint128 seekCount;
-        uint128 requestCount;
+        uint96 seekCount;
+        uint96 requestCount;
     }
 
     /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a matching Noun
@@ -43,18 +43,18 @@ contract NounSeek {
 
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
+        uint96 seekId;
         address seeker;
         uint256 amount;
-        uint256 seekId;
     }
 
-    mapping(uint256 => Seek) internal _seeks;
-    mapping(uint256 => Request) internal _requests;
-    mapping(bytes32 => uint128) public traitsHashToSeekId;
+    mapping(uint96 => Seek) internal _seeks;
+    mapping(uint96 => Request) internal _requests;
+    mapping(bytes32 => uint96) public traitsHashToSeekId;
     Counter internal _counter = Counter(0, 0);
 
     event SeekAdded(
-        uint256 seekId,
+        uint96 seekId,
         uint48 body,
         uint48 accessory,
         uint48 head,
@@ -63,17 +63,17 @@ contract NounSeek {
         bool onlyAuctionedNoun
     );
 
-    event SeekAmountUpdated(uint256 seekId, uint256 amount);
-    event SeekRemoved(uint256 seekId);
+    event SeekAmountUpdated(uint96 seekId, uint256 amount);
+    event SeekRemoved(uint96 seekId);
     event RequestAdded(
-        uint256 requestId,
-        uint256 seekId,
+        uint96 requestId,
+        uint96 seekId,
         address seeker,
         uint256 amount
     );
-    event RequestRemoved(uint256 requestId);
-    event SeekMatched(uint256 seekId, uint256 nounId, address finder);
-    event FinderWithdrew(uint256 seekId, address finder, uint256 amount);
+    event RequestRemoved(uint96 requestId);
+    event SeekMatched(uint96 seekId, uint256 nounId, address finder);
+    event FinderWithdrew(uint96 seekId, address finder, uint256 amount);
 
     error TooSoon();
     error TooLate();
@@ -82,7 +82,7 @@ contract NounSeek {
     error OnlySeeker();
     error OnlyFinder();
     error AlreadyFound();
-    error NoMatch(uint256 seekId);
+    error NoMatch(uint96 seekId);
     error BlockHashMismatch();
 
     /**
@@ -128,19 +128,19 @@ contract NounSeek {
     ----------------------------------
      */
 
-    function seeks(uint256 seekId) public view returns (Seek memory) {
+    function seeks(uint96 seekId) public view returns (Seek memory) {
         return _seeks[seekId];
     }
 
-    function requests(uint256 requestId) public view returns (Request memory) {
+    function requests(uint96 requestId) public view returns (Request memory) {
         return _requests[requestId];
     }
 
-    function seekCount() public view returns (uint128) {
+    function seekCount() public view returns (uint96) {
         return _counter.seekCount;
     }
 
-    function requestCount() public view returns (uint128) {
+    function requestCount() public view returns (uint96) {
         return _counter.requestCount;
     }
 
@@ -159,7 +159,7 @@ contract NounSeek {
         uint48 glasses,
         uint256 nounId,
         bool onlyAuctionedNoun
-    ) public view returns (uint128, bytes32) {
+    ) public view returns (uint96, bytes32) {
         // A unique identifier for Seek parameters
         bytes32 traitsHash = keccak256(
             abi.encodePacked(
@@ -178,7 +178,7 @@ contract NounSeek {
     function traitsToSeekIdAndHash(Seek memory seek)
         public
         view
-        returns (uint128, bytes32)
+        returns (uint96, bytes32)
     {
         // A unique identifier for Seek parameters
         bytes32 traitsHash = keccak256(
@@ -204,7 +204,7 @@ contract NounSeek {
     function seekMatchesTraits(
         uint256 nounId,
         INounsSeederLike.Seed memory seed,
-        uint256 seekId
+        uint96 seekId
     ) public view returns (bool) {
         Seek memory seek = _seeks[seekId];
 
@@ -269,7 +269,7 @@ contract NounSeek {
         uint48 glasses,
         uint256 nounId,
         bool onlyAuctionedNoun
-    ) public payable withinRequestWindow returns (uint256, uint256) {
+    ) public payable withinRequestWindow returns (uint96, uint96) {
         if (body + accessory + head + glasses == NO_PREFERENCE * 4) {
             revert NoPreferences();
         }
@@ -285,7 +285,7 @@ contract NounSeek {
             onlyAuctionedNoun = true;
         }
         // Look up seek Id by its paramater hash
-        (uint128 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
+        (uint96 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
             body,
             accessory,
             head,
@@ -343,7 +343,7 @@ contract NounSeek {
      @param requestId The unique id of the request
      @return bool The success status of the returned funds
      */
-    function remove(uint256 requestId)
+    function remove(uint96 requestId)
         public
         withinRequestWindow
         returns (bool)
@@ -388,7 +388,7 @@ contract NounSeek {
      * @param seekIds An array of seekIds that might match the current Noun and/or the previous Noun if it was not auctioned
      * @return bool[] The match status of each seekId
      */
-    function matchWithCurrent(uint256[] memory seekIds)
+    function matchWithCurrent(uint96[] memory seekIds)
         public
         withinMatchCurrentWindow
         returns (bool[] memory)
@@ -419,7 +419,7 @@ contract NounSeek {
      * @param targetBlockHash The blockhash that will produce Noun(s) which match the Seek(s)
      * @param seekIds An array of seekIds that match the next Noun(s)
      */
-    function settleAndMatch(bytes32 targetBlockHash, uint256[] memory seekIds)
+    function settleAndMatch(bytes32 targetBlockHash, uint96[] memory seekIds)
         public
         returns (bool[] memory)
     {
@@ -437,7 +437,7 @@ contract NounSeek {
      * @param seekId The id of the Seek msg.sender matched
      * @return bool Success
      */
-    function withdraw(uint256 seekId) public returns (bool) {
+    function withdraw(uint96 seekId) public returns (bool) {
         Seek memory seek = _seeks[seekId];
 
         if (seek.finder != msg.sender) {
@@ -468,7 +468,7 @@ contract NounSeek {
     function _matchAndSetFinder(
         uint256[2] memory nounIds,
         INounsSeederLike.Seed[2] memory nounSeeds,
-        uint256[] memory seekIds
+        uint96[] memory seekIds
     ) internal returns (bool[] memory) {
         uint256 _length = seekIds.length;
         bool[] memory matched = new bool[](_length);
