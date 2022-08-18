@@ -19,10 +19,10 @@ contract NounSeek {
 
     /// @notice Number used to signify "any value" or "no preference"
     /// @dev Noun traits are 0-indexed so the Solidity default of 0 cannot be used
-    uint48 public constant NO_PREFERENCE = 256256;
+    uint16 public constant NO_PREFERENCE = type(uint16).max;
 
     /// @notice Stored to save gas
-    uint256 private constant NO_NOUN_ID = type(uint256).max;
+    uint16 private constant NO_NOUN_ID = type(uint16).max;
 
     struct Counter {
         uint96 seekCount;
@@ -31,14 +31,14 @@ contract NounSeek {
 
     /// @notice Stores the traits that a Noun must have along with an accumulated reward for finding a matching Noun
     struct Seek {
-        uint48 body;
-        uint48 accessory;
-        uint48 head;
-        uint48 glasses;
-        uint256 nounId;
+        uint16 body;
+        uint16 accessory;
+        uint16 head;
+        uint16 glasses;
+        uint16 nounId;
         bool onlyAuctionedNoun;
-        uint256 amount;
         address finder;
+        uint256 amount;
     }
 
     /// @notice Stores deposited value with the addresses that sent it
@@ -55,11 +55,11 @@ contract NounSeek {
 
     event SeekAdded(
         uint96 seekId,
-        uint48 body,
-        uint48 accessory,
-        uint48 head,
-        uint48 glasses,
-        uint256 nounId,
+        uint16 body,
+        uint16 accessory,
+        uint16 head,
+        uint16 glasses,
+        uint16 nounId,
         bool onlyAuctionedNoun
     );
 
@@ -72,7 +72,7 @@ contract NounSeek {
         uint256 amount
     );
     event RequestRemoved(uint96 requestId);
-    event SeekMatched(uint96 seekId, uint256 nounId, address finder);
+    event SeekMatched(uint96 seekId, uint16 nounId, address finder);
     event FinderWithdrew(uint96 seekId, address finder, uint256 amount);
 
     error TooSoon();
@@ -153,11 +153,11 @@ contract NounSeek {
     }
 
     function traitsToSeekIdAndHash(
-        uint48 body,
-        uint48 accessory,
-        uint48 head,
-        uint48 glasses,
-        uint256 nounId,
+        uint16 body,
+        uint16 accessory,
+        uint16 head,
+        uint16 glasses,
+        uint16 nounId,
         bool onlyAuctionedNoun
     ) public view returns (uint96, bytes32) {
         // A unique identifier for Seek parameters
@@ -202,7 +202,7 @@ contract NounSeek {
      * @param seekId The seek Id to match against the Noun parameters
      */
     function seekMatchesTraits(
-        uint256 nounId,
+        uint16 nounId,
         INounsSeederLike.Seed memory seed,
         uint96 seekId
     ) public view returns (bool) {
@@ -263,14 +263,20 @@ contract NounSeek {
      * @return uint256 The seek id that this request generated or contributed to
      */
     function add(
-        uint48 body,
-        uint48 accessory,
-        uint48 head,
-        uint48 glasses,
-        uint256 nounId,
+        uint16 body,
+        uint16 accessory,
+        uint16 head,
+        uint16 glasses,
+        uint16 nounId,
         bool onlyAuctionedNoun
     ) public payable withinRequestWindow returns (uint96, uint96) {
-        if (body + accessory + head + glasses == NO_PREFERENCE * 4) {
+        if (
+            uint256(body) +
+                uint256(accessory) +
+                uint256(head) +
+                uint256(glasses) ==
+            uint256(NO_PREFERENCE) * 4
+        ) {
             revert NoPreferences();
         }
 
@@ -398,7 +404,7 @@ contract NounSeek {
         // The set of 2 Noun ids to be checked and used to retreive seeds
         // The first is from the Noun currently on auction
         // The value `NO_NOUN_ID` is used because Noun Ids are 0-indexed and so the solidity default of 0 can be confused with a valid Noun id
-        uint256[2] memory nounIds = [auction.nounId, NO_NOUN_ID];
+        uint16[2] memory nounIds = [uint16(auction.nounId), NO_NOUN_ID];
 
         // The set of 2 Noun seeds to be checked
         INounsSeederLike.Seed[2] memory nounSeeds;
@@ -466,7 +472,7 @@ contract NounSeek {
      * @param seekIds any number of Seeks to match against Noun ids and seeds
      */
     function _matchAndSetFinder(
-        uint256[2] memory nounIds,
+        uint16[2] memory nounIds,
         INounsSeederLike.Seed[2] memory nounSeeds,
         uint96[] memory seekIds
     ) internal returns (bool[] memory) {

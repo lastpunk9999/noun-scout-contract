@@ -57,7 +57,7 @@ contract NounSeekTest is EnhancedTest {
 
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
-    uint48 NO_PREFERENCE;
+    uint16 NO_PREFERENCE;
 
     function setUp() public {
         mockAuctionHouse = new MockAuctionHouse();
@@ -84,7 +84,7 @@ contract NounSeekTest is EnhancedTest {
 
     function _addSeek(address user, uint256 value)
         internal
-        returns (uint256, uint256)
+        returns (uint96, uint96)
     {
         vm.prank(user);
         return
@@ -114,7 +114,7 @@ contract NounSeekTest is EnhancedTest {
         vm.revertTo(cleanSnapshot);
         _resetToRequestWindow();
 
-        (uint256 requestId, uint256 seekId) = _addSeek(user1, 1);
+        (uint96 requestId, uint96 seekId) = _addSeek(user1, 1);
 
         assertEq(nounSeek.seekCount(), 1);
         assertEq(nounSeek.requestCount(), 1);
@@ -132,11 +132,11 @@ contract NounSeekTest is EnhancedTest {
 
         bytes32 traitsHash = keccak256(
             abi.encodePacked(
-                uint48(5),
-                uint48(5),
+                uint16(5),
+                uint16(5),
                 NO_PREFERENCE,
                 NO_PREFERENCE,
-                uint256(11),
+                uint16(11),
                 true
             )
         );
