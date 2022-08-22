@@ -26,7 +26,13 @@ interface INounsSeederLike {
     }
 }
 
+interface INounsDescriptorLike {
+    function headCount() external view returns (uint256);
+}
+
 interface INounsTokenLike {
+    function descriptor() external view returns (address);
+
     function seeds(uint256 nounId)
         external
         view
