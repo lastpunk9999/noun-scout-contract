@@ -60,7 +60,6 @@ contract NounSeekTest is EnhancedTest {
 
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
-    uint16 NO_PREFERENCE;
 
     function setUp() public {
         mockAuctionHouse = new MockAuctionHouse();
@@ -70,7 +69,6 @@ contract NounSeekTest is EnhancedTest {
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
-        NO_PREFERENCE = nounSeek.NO_PREFERENCE();
 
         nounSeek.addDonee(donee1);
         nounSeek.addDonee(donee2);
@@ -226,15 +224,12 @@ contract NounSeekTest is EnhancedTest {
 
         NounSeek.Request[] memory headToRequests = nounSeek.headToRequests(9);
 
-        // assertEq(headToRequests.length, totalRequests / 2);
+        assertEq(headToRequests.length, totalRequests / 2);
 
-        // for (uint256 i = 0; i < headToRequests.length; i++) {
-        //     console2.log("i", i);
-        //     NounSeek.Request memory request = headToRequests[i];
-        //     console2.log("request.id", request.id);
-        //     console2.log(" 2 * i + 1", 2 * i + 1);
-        //     assertEq(request.id, 2 * i + 1);
-        // }
+        for (uint256 i = 0; i < headToRequests.length; i++) {
+            NounSeek.Request memory request = headToRequests[i];
+            assertEq(request.id, 2 * i + 1);
+        }
     }
     // function test_ADD_happyCaseNewSeek() public {
     //     vm.revertTo(cleanSnapshot);

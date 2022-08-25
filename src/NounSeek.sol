@@ -20,13 +20,6 @@ contract NounSeek {
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
-    /// @notice Number used to signify "any value" or "no preference"
-    /// @dev Noun traits are 0-indexed so the Solidity default of 0 cannot be used
-    uint16 public constant NO_PREFERENCE = 54321;
-
-    /// @notice Stored to save gas
-    uint16 private constant NULL_VALUE = type(uint16).max;
-
     uint256 public constant REIMBURSMENT_BPS = 250;
 
     /// @notice Stores deposited value with the addresses that sent it
@@ -117,32 +110,12 @@ contract NounSeek {
         return _headRequests[headId];
     }
 
-    /*     function headToRequests(uint16 headId)
-        public
-        view
-        returns (Request[] memory)
-    {
-        Request[] memory requests = new Request[](_headRequests[headId].length);
-        for (uint256 i = 0; i < _headRequests[headId].length; i++) {
-            requests[i] = (_requests[_headRequests[headId][i]]);
-        }
-        return requests;
-    }
-
-    function headRequestsForNoun(uint16 headId, uint16 nounId)
-        public
-        view
-        returns (Request[] memory)
-    {
-        return headToRequests(headId);
-    }
- */
     function headToRequests(uint16 headId)
         public
         view
         returns (Request[] memory)
     {
-        return headRequestsForNoun(headId, NO_PREFERENCE);
+        return headRequestsForNounWithMax(headId, 65535, 65535);
     }
 
     function headRequestsForNoun(uint16 headId, uint16 nounId)
@@ -150,6 +123,14 @@ contract NounSeek {
         view
         returns (Request[] memory)
     {
+        return headRequestsForNounWithMax(headId, nounId, 65535);
+    }
+
+    function headRequestsForNounWithMax(
+        uint16 headId,
+        uint16 nounId,
+        uint256 max
+    ) public view returns (Request[] memory) {
         uint256 headRequestLength = _headRequests[headId].length;
 
         uint16[] memory requestIds = new uint16[](headRequestLength);
@@ -159,6 +140,10 @@ contract NounSeek {
         requestIds = _headRequests[headId];
 
         for (uint16 i = 0; i < headRequestLength; i++) {
+            if (filteredRequestCount >= max) {
+                continue;
+            }
+
             uint16 requestId = requestIds[i];
             Request memory request = _requests[requestId];
 
@@ -166,13 +151,11 @@ contract NounSeek {
             if (
                 nounId % 10 == 0 && nounId <= 1820 && request.onlyAuctionedNoun
             ) {
-                filteredRequestIds[i] = NULL_VALUE;
                 continue;
             }
 
             // Cannot match with previously auctioned Noun
             if (nounId <= request.stampedNounId) {
-                filteredRequestIds[i] = NULL_VALUE;
                 continue;
             }
 
@@ -182,8 +165,12 @@ contract NounSeek {
 
         Request[] memory matchedRequests = new Request[](filteredRequestCount);
         filteredRequestCount = 0;
-        for (uint256 i = 0; i < headRequestLength; i++) {
-            if (filteredRequestIds[i] == NULL_VALUE) continue;
+        for (
+            uint256 i = 0;
+            i < headRequestLength && filteredRequestCount <= max;
+            i++
+        ) {
+            if (filteredRequestIds[i] == 0) continue;
             matchedRequests[filteredRequestCount] = _requests[requestIds[i]];
             filteredRequestCount++;
         }
@@ -263,10 +250,18 @@ contract NounSeek {
         _headRequests[request.headId].pop();
     }
 
-    function matchAndSend(uint16 nounId) public {
+    function matchAndSendAll(uint16 nounId) public {
+        return matchAndSendWithMax(nounId, 10**18);
+    }
+
+    function matchAndSendWithMax(uint16 nounId, uint256 max) public {
         uint16 headId = uint16(nouns.seeds(nounId).head);
 
-        Request[] memory matchedRequests = headRequestsForNoun(headId, nounId);
+        Request[] memory matchedRequests = headRequestsForNounWithMax(
+            headId,
+            nounId,
+            max
+        );
         uint256 matchedRequestsLength = matchedRequests.length;
 
         if (matchedRequestsLength == 0) revert();
@@ -295,8 +290,6 @@ contract NounSeek {
                 unmatchedRequestsLength
             );
 
-            uint16[] memory allHeadRequests = _headRequests[headId];
-
             uint256 insertedCount;
 
             for (uint256 i = 0; i < headRequestsLength; i++) {
@@ -309,7 +302,7 @@ contract NounSeek {
                     j < matchedRequestsLength && !prevMatch;
                     j++
                 ) {
-                    if (matchedRequests[j].id != allHeadRequests[i]) continue;
+                    if (matchedRequests[j].headRequestIndex != i) continue;
 
                     prevMatch = true;
 
@@ -321,7 +314,7 @@ contract NounSeek {
                 }
 
                 if (!prevMatch) {
-                    unmatchedRequests[insertedCount] = allHeadRequests[i];
+                    unmatchedRequests[insertedCount] = _headRequests[headId][i];
                     insertedCount++;
                 }
             }
@@ -338,257 +331,4 @@ contract NounSeek {
             ""
         );
     }
-
-    // /**
-    //  * @notice Adds a reward for finding a Noun with specific attributes. Must be called within a specific time window.
-    //  * @dev If a Seek already exists to target those attributes, msg.value is added to it, otherwise a new Seek is created
-    //  * @param body Trait id of sought after body
-    //  * @param accessory Trait id of sought after accessory
-    //  * @param head Trait id of sought after head
-    //  * @param glasses Trait id of sought after glasses
-    //  * @param nounId The previous traits can only be found in this Noun id
-    //  * @param onlyAuctionedNoun If `true` traits can match against a non-auctioned Noun. If a `nounId` parameter is specified, this parameter is overriden appropriately.
-    //  * @return uint256 This request's unique id
-    //  * @return uint256 The seek id that this request generated or contributed to
-    //  */
-    // function add(
-    //     uint16 body,
-    //     uint16 accessory,
-    //     uint16 head,
-    //     uint16 glasses,
-    //     uint16 nounId,
-    //     bool onlyAuctionedNoun
-    // ) public payable withinRequestWindow returns (uint96, uint96) {
-    //     if (
-    //         uint256(body) +
-    //             uint256(accessory) +
-    //             uint256(head) +
-    //             uint256(glasses) ==
-    //         uint256(NO_PREFERENCE) * 4
-    //     ) {
-    //         revert NoPreferences();
-    //     }
-
-    //     if (msg.value == 0) {
-    //         revert NoAmountSent();
-    //     }
-
-    //     // if `nounId` is specified, set correct value for `onlyAuctionedNoun`;
-    //     if (nounId % 10 == 0) {
-    //         onlyAuctionedNoun = false;
-    //     } else if (nounId < NO_PREFERENCE) {
-    //         onlyAuctionedNoun = true;
-    //     }
-    //     // Look up seek Id by its paramater hash
-    //     (uint96 seekId, bytes32 traitsHash) = traitsToSeekIdAndHash(
-    //         body,
-    //         accessory,
-    //         head,
-    //         glasses,
-    //         nounId,
-    //         onlyAuctionedNoun
-    //     );
-
-    //     insertedCount memory insertedCount = _insertedCount;
-    //     Seek memory seek = _seeks[seekId];
-    //     uint256 amount = seek.amount;
-
-    //     // If lookup doesn't find a Seek or the Seek has been found, reset paramaters and create a new Seek
-    //     if (seekId == 0 || seek.finder != address(0)) {
-    //         seekId = ++insertedCount.seekCount;
-    //         seek.onlyAuctionedNoun = onlyAuctionedNoun;
-    //         seek.nounId = nounId;
-    //         seek.body = body;
-    //         seek.accessory = accessory;
-    //         seek.head = head;
-    //         seek.glasses = glasses;
-    //         seek.finder = address(0);
-    //         amount = 0;
-    //         traitsHashToSeekId[traitsHash] = seekId;
-
-    //         emit SeekAdded(
-    //             seekId,
-    //             body,
-    //             accessory,
-    //             head,
-    //             glasses,
-    //             nounId,
-    //             onlyAuctionedNoun
-    //         );
-    //     }
-    //     amount += msg.value;
-    //     seek.amount = amount;
-    //     _seeks[seekId] = seek;
-    //     _requests[++insertedCount.requestCount] = Request({
-    //         seeker: msg.sender,
-    //         seekId: seekId,
-    //         amount: msg.value
-    //     });
-
-    //     _insertedCount = insertedCount;
-    //     emit SeekAmountUpdated(seekId, amount);
-
-    //     emit RequestAdded(insertedCount.requestCount, seekId, msg.sender, msg.value);
-
-    //     return (insertedCount.requestCount, seekId);
-    // }
-
-    // /**
-    //  * @notice Removes a reward. Must be called within a specific time window. Cannot be called if the requeste traits have been matched.
-    //  @param requestId The unique id of the request
-    //  @return bool The success status of the returned funds
-    //  */
-    // function remove(uint96 requestId)
-    //     public
-    //     withinRequestWindow
-    //     returns (bool)
-    // {
-    //     Request memory request = _requests[requestId];
-    //     if (request.seeker != msg.sender) {
-    //         revert OnlySeeker();
-    //     }
-
-    //     Seek memory seek = _seeks[request.seekId];
-
-    //     if (seek.finder != address(0)) {
-    //         revert AlreadyFound();
-    //     }
-
-    //     seek.amount -= request.amount;
-
-    //     delete _requests[requestId];
-
-    //     if (seek.amount > 0) {
-    //         _seeks[request.seekId] = seek;
-    //         emit SeekAmountUpdated(request.seekId, seek.amount);
-    //     } else {
-    //         (, bytes32 traitsHash) = traitsToSeekIdAndHash(seek);
-    //         delete _seeks[request.seekId];
-    //         delete traitsHashToSeekId[traitsHash];
-    //         emit SeekRemoved(request.seekId);
-    //     }
-
-    //     emit RequestRemoved(requestId);
-
-    //     (bool success, ) = msg.sender.call{value: request.amount, gas: 10_000}(
-    //         ""
-    //     );
-
-    //     return success;
-    // }
-
-    // /**
-    //  * @notice Matches the currently auctioned Noun (and/or the previous Noun if it is a non-auctioned Noun) with a set of Seeks in order to claim their reward. This must be called within a specified window of time after the aution has started.
-    //  * @dev Will not revert if there is no match on any seekId
-    //  * @param seekIds An array of seekIds that might match the current Noun and/or the previous Noun if it was not auctioned
-    //  * @return bool[] The match status of each seekId
-    //  */
-    // function matchWithCurrent(uint96[] memory seekIds)
-    //     public
-    //     withinMatchCurrentWindow
-    //     returns (bool[] memory)
-    // {
-    //     INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
-
-    //     // The set of 2 Noun ids to be checked and used to retreive seeds
-    //     // The first is from the Noun currently on auction
-    //     // The value `NULL_VALUE` is used because Noun Ids are 0-indexed and so the solidity default of 0 can be confused with a valid Noun id
-    //     uint16[2] memory nounIds = [uint16(auction.nounId), NULL_VALUE];
-
-    //     // The set of 2 Noun seeds to be checked
-    //     INounsSeederLike.Seed[2] memory nounSeeds;
-    //     nounSeeds[0] = nouns.seeds(nounIds[0]);
-
-    //     // If the previous Noun was not auctioned, add its id and seed to test if it matches
-    //     if ((nounIds[0] - 1) % 10 == 0) {
-    //         nounIds[1] = nounIds[0] - 1;
-    //         nounSeeds[1] = nouns.seeds(nounIds[1]);
-    //     }
-
-    //     return _matchAndSetFinder(nounIds, nounSeeds, seekIds);
-    // }
-
-    // /**
-    //  * @notice Settles the Noun auction and matches the next minted Nouns (and/or the the following Noun the next mint will not be auctioned) with a set of Seeks.
-    //  * @dev Will revert if the previous blockhash does not match the target. This allows certainty that the Seek(s) will match the next minted Noun(s)
-    //  * @param targetBlockHash The blockhash that will produce Noun(s) which match the Seek(s)
-    //  * @param seekIds An array of seekIds that match the next Noun(s)
-    //  */
-    // function settleAndMatch(bytes32 targetBlockHash, uint96[] memory seekIds)
-    //     public
-    //     returns (bool[] memory)
-    // {
-    //     if (targetBlockHash != blockhash(block.number - 1)) {
-    //         revert BlockHashMismatch();
-    //     }
-
-    //     auctionHouse.settleCurrentAndCreateNewAuction();
-
-    //     return matchWithCurrent(seekIds);
-    // }
-
-    // /**
-    //  * @notice Allows a Seek finder to withdraw their reward
-    //  * @param seekId The id of the Seek msg.sender matched
-    //  * @return bool Success
-    //  */
-    // function withdraw(uint96 seekId) public returns (bool) {
-    //     Seek memory seek = _seeks[seekId];
-
-    //     if (seek.finder != msg.sender) {
-    //         revert OnlyFinder();
-    //     }
-
-    //     _seeks[seekId].amount = 0;
-
-    //     emit FinderWithdrew(seekId, msg.sender, seek.amount);
-
-    //     (bool success, ) = msg.sender.call{value: seek.amount, gas: 10_000}("");
-    //     return success;
-    // }
-
-    // /**
-    // --------------------------------------
-    // --------- INTERNAL FUNCTIONS ---------
-    // --------------------------------------
-    //  */
-
-    // /**
-    //  * @notice Runs matching algorithm for each seekId against Noun ids and seeds.
-    //  * @dev If a match is found, Seek.finder parameter is set to msg.sender to allow that address to withdraw reward funds
-    //  * @param nounIds 1 or 2 Noun ids to match
-    //  * @param nounSeeds 1 or 2 Noun seeds to match
-    //  * @param seekIds any number of Seeks to match against Noun ids and seeds
-    //  */
-    // function _matchAndSetFinder(
-    //     uint16[2] memory nounIds,
-    //     INounsSeederLike.Seed[2] memory nounSeeds,
-    //     uint96[] memory seekIds
-    // ) internal returns (bool[] memory) {
-    //     uint256 _length = seekIds.length;
-    //     bool[] memory matched = new bool[](_length);
-
-    //     for (uint256 i = 0; i < _length; i++) {
-    //         // Two Nouns can be minted during settlement, so both must be checked for a match
-    //         // A Seek can only be matched once
-    //         for (uint256 n = 0; n < 2; n++) {
-    //             // Seek has already been matched or there is no Noun to check,
-
-    //             if (matched[i] || nounIds[n] == NULL_VALUE) continue;
-
-    //             matched[i] = seekMatchesTraits(
-    //                 nounIds[n],
-    //                 nounSeeds[n],
-    //                 seekIds[i]
-    //             );
-
-    //             if (matched[i]) {
-    //                 _seeks[seekIds[i]].finder = msg.sender;
-    //                 emit SeekMatched(seekIds[i], nounIds[n], msg.sender);
-    //             }
-    //         }
-    //     }
-
-    //     return matched;
-    // }
 }
