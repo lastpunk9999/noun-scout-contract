@@ -110,7 +110,7 @@ contract NounSeek {
         return _headRequests[headId];
     }
 
-    function headToRequests(uint16 headId)
+    function headRequests(uint16 headId)
         public
         view
         returns (Request[] memory)
