@@ -55,6 +55,9 @@ contract NounSeekTest is EnhancedTest {
     address user3 = mkaddr("user3");
     address donee1 = mkaddr("donee1");
     address donee2 = mkaddr("donee2");
+    address donee3 = mkaddr("donee3");
+    address donee4 = mkaddr("donee4");
+    address donee5 = mkaddr("donee5");
 
     uint256 cleanSnapshot;
 
@@ -72,6 +75,9 @@ contract NounSeekTest is EnhancedTest {
 
         nounSeek.addDonee(donee1);
         nounSeek.addDonee(donee2);
+        nounSeek.addDonee(donee3);
+        nounSeek.addDonee(donee4);
+        nounSeek.addDonee(donee5);
 
         mockDescriptor.setHeadCount(99);
         nounSeek.updateHeadCount();
@@ -203,9 +209,9 @@ contract NounSeekTest is EnhancedTest {
 
     function test_MATCHANDSEND_happyCase() public {
         vm.startPrank(user1);
-        uint256 totalRequests = 10;
+        uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(9, uint16(i % 2), i % 2 == 0);
+            nounSeek.add{value: 1000 wei}(9, uint16(i % 5), i % 2 == 0);
         }
         vm.stopPrank();
 
@@ -220,7 +226,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 100);
 
         vm.prank(user2);
-        nounSeek.matchAndSend(100);
+        nounSeek.matchAndSendAll(100);
 
         NounSeek.Request[] memory headToRequests = nounSeek.headToRequests(9);
 
