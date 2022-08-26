@@ -75,11 +75,11 @@ contract NounSeekTest is EnhancedTest {
         AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
         NO_PREFERENCE = nounSeek.NO_PREFERENCE();
 
-        nounSeek.addDonee(donee1);
-        nounSeek.addDonee(donee2);
-        nounSeek.addDonee(donee3);
-        nounSeek.addDonee(donee4);
-        nounSeek.addDonee(donee5);
+        nounSeek.addDonee("donee1", donee1);
+        nounSeek.addDonee("donee2", donee2);
+        nounSeek.addDonee("donee3", donee3);
+        nounSeek.addDonee("donee4", donee4);
+        nounSeek.addDonee("donee5", donee5);
 
         mockDescriptor.setHeadCount(99);
         nounSeek.updateHeadCount();

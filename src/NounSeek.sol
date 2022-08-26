@@ -36,11 +36,18 @@ contract NounSeek {
         uint256 amount;
     }
 
+    struct Donee {
+        string name;
+        address to;
+        bool active;
+    }
+
     uint16 public requestCount;
 
     uint16 public headCount;
 
-    address[] public donees;
+    Donee[] public _donees;
+
     mapping(uint16 => uint16[]) internal _headRequests;
 
     mapping(uint16 => Request) internal _requests;
@@ -102,6 +109,10 @@ contract NounSeek {
 
     function requests(uint16 requestId) public view returns (Request memory) {
         return _requests[requestId];
+    }
+
+    function donees(uint256 id) public view returns (Donee memory) {
+        return _donees[id];
     }
 
     function headRequestIds(uint16 headId)
@@ -203,8 +214,15 @@ contract NounSeek {
         descriptor = INounsDescriptorLike(nouns.descriptor());
     }
 
-    function addDonee(address donee) public {
-        donees.push(donee);
+    function addDonee(string calldata name, address to) public {
+        _donees.push(Donee({name: name, to: to, active: true}));
+    }
+
+    function toggleDoneeActive(uint256 id) public {
+        Donee memory donee = _donees[id];
+        if (donee.to == address(0)) revert();
+        donee.active = !donee.active;
+        _donees[id] = donee;
     }
 
     function add(uint16 headId, uint16 doneeId)
@@ -223,7 +241,7 @@ contract NounSeek {
         if (headId >= headCount) {
             revert();
         }
-        if (donees[doneeId] == address(0)) {
+        if (!_donees[doneeId].active) {
             revert();
         }
 
@@ -286,7 +304,7 @@ contract NounSeek {
         uint256 matchedRequestsLength = matchedRequests.length;
 
         if (matchedRequestsLength == 0) revert();
-        uint256 doneesLength = donees.length;
+        uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
         uint256 reimbursement;
 
@@ -344,9 +362,10 @@ contract NounSeek {
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
-            (bool success, ) = donees[i].call{value: donations[i], gas: 10_000}(
-                ""
-            );
+            (bool success, ) = _donees[i].to.call{
+                value: donations[i],
+                gas: 10_000
+            }("");
         }
         (bool success, ) = msg.sender.call{value: reimbursement, gas: 10_000}(
             ""
