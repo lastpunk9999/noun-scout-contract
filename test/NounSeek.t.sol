@@ -63,6 +63,7 @@ contract NounSeekTest is EnhancedTest {
 
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
+    uint16 NO_PREFERENCE;
 
     function setUp() public {
         mockAuctionHouse = new MockAuctionHouse();
@@ -72,6 +73,7 @@ contract NounSeekTest is EnhancedTest {
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
+        NO_PREFERENCE = nounSeek.NO_PREFERENCE();
 
         nounSeek.addDonee(donee1);
         nounSeek.addDonee(donee2);
@@ -144,21 +146,22 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request.headId, 9);
         assertEq(request.doneeId, 1);
 
-        assertEq(request.stampedNounId, 99);
+        assertEq(request.minNounId, 100);
+        assertEq(request.nounId, NO_PREFERENCE);
         assertEq(request.requester, address(user1));
         assertEq(request.amount, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(9, 0);
+        uint16 requestId2 = nounSeek.addWithNounId{value: 1}(9, 0, 100);
 
         NounSeek.Request memory request2 = nounSeek.requests(requestId2);
         uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
 
-        assertEq(headRequestIds2.length, 2);
+        assertEq(headRequestIds2.length, 2, "headRequestIds2.length");
         assertEq(headRequestIds2[1], requestId2);
 
         NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
-        assertEq(headRequests2.length, 2);
+        assertEq(headRequests2.length, 2, "headRequests2.length");
         assertEq(headRequests2[0].requester, request.requester);
         assertEq(headRequests2[1].requester, request2.requester);
 
@@ -166,7 +169,7 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request2.headId, 9);
         assertEq(request2.doneeId, 0);
 
-        assertEq(request2.stampedNounId, 99);
+        assertEq(request2.minNounId, 100);
         assertEq(request2.requester, address(user2));
         assertEq(request2.amount, 1);
     }
@@ -211,7 +214,12 @@ contract NounSeekTest is EnhancedTest {
         vm.startPrank(user1);
         uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(9, uint16(i % 5), i % 2 == 0);
+            nounSeek.addWithNounId{value: 1000 wei}(
+                9,
+                uint16(i % 5),
+                // alternate between no preference and id 100
+                i % 2 == 0 ? NO_PREFERENCE : 100
+            );
         }
         vm.stopPrank();
 
@@ -224,8 +232,12 @@ contract NounSeekTest is EnhancedTest {
         );
 
         mockNouns.setSeed(seed, 100);
+        mockAuctionHouse.setNounId(101);
 
         vm.prank(user2);
+
+        // match to 100 will only match those that have specific id of 100 because it is non-auctioned
+
         nounSeek.matchAndSendAll(100);
 
         NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);

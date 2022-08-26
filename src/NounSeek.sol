@@ -22,14 +22,16 @@ contract NounSeek {
 
     uint256 public constant REIMBURSMENT_BPS = 250;
 
+    uint16 public constant NO_PREFERENCE = type(uint16).max;
+
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
         uint16 id;
         uint16 headRequestIndex;
         uint16 headId;
         uint16 doneeId;
-        uint16 stampedNounId;
-        bool onlyAuctionedNoun;
+        uint16 nounId;
+        uint16 minNounId;
         address requester;
         uint256 amount;
     }
@@ -115,7 +117,7 @@ contract NounSeek {
         view
         returns (Request[] memory)
     {
-        return headRequestsForNounWithMax(headId, 65535, 65535);
+        return headRequestsForNounWithMax(headId, NO_PREFERENCE, NO_PREFERENCE);
     }
 
     function headRequestsForNoun(uint16 headId, uint16 nounId)
@@ -123,7 +125,7 @@ contract NounSeek {
         view
         returns (Request[] memory)
     {
-        return headRequestsForNounWithMax(headId, nounId, 65535);
+        return headRequestsForNounWithMax(headId, nounId, NO_PREFERENCE);
     }
 
     function headRequestsForNounWithMax(
@@ -147,18 +149,28 @@ contract NounSeek {
             uint16 requestId = requestIds[i];
             Request memory request = _requests[requestId];
 
-            /// Non-auctioned Noun check
+            // Specific nounId does not match
             if (
-                nounId % 10 == 0 && nounId <= 1820 && request.onlyAuctionedNoun
+                request.nounId != NO_PREFERENCE &&
+                nounId != NO_PREFERENCE &&
+                nounId != request.nounId
+            ) {
+                continue;
+            }
+
+            // No preference, but Noun is non-auctioned
+            if (
+                request.nounId == NO_PREFERENCE &&
+                nounId % 10 == 0 &&
+                nounId <= 1820
             ) {
                 continue;
             }
 
             // Cannot match with previously auctioned Noun
-            if (nounId <= request.stampedNounId) {
+            if (nounId < request.minNounId) {
                 continue;
             }
-
             filteredRequestIds[i] = requestId;
             filteredRequestCount++;
         }
@@ -200,22 +212,25 @@ contract NounSeek {
         payable
         returns (uint16)
     {
-        return add(headId, doneeId, true);
+        return addWithNounId(headId, doneeId, NO_PREFERENCE);
     }
 
-    function add(
+    function addWithNounId(
         uint16 headId,
         uint16 doneeId,
-        bool onlyAuctionedNoun
+        uint16 nounId
     ) public payable returns (uint16) {
         if (headId >= headCount) {
-            revert("1");
+            revert();
         }
         if (donees[doneeId] == address(0)) {
             revert();
         }
 
-        uint16 stampedNounId = uint16(auctionHouse.auction().nounId);
+        uint16 minNounId = uint16(auctionHouse.auction().nounId) + 1;
+        if (nounId < minNounId) {
+            revert();
+        }
 
         // length of all requests for specific head
         uint16 headRequestIndex = uint16(_headRequests[headId].length);
@@ -227,8 +242,8 @@ contract NounSeek {
             headRequestIndex: headRequestIndex,
             doneeId: doneeId,
             headId: headId,
-            stampedNounId: stampedNounId,
-            onlyAuctionedNoun: onlyAuctionedNoun,
+            nounId: nounId,
+            minNounId: minNounId,
             requester: msg.sender,
             amount: msg.value
         });
@@ -255,6 +270,12 @@ contract NounSeek {
     }
 
     function matchAndSendWithMax(uint16 nounId, uint256 max) public {
+        // Must specify a Noun Id
+        if (nounId >= NO_PREFERENCE) revert();
+
+        // Cannot match a future Noun
+        if (nounId > uint16(auctionHouse.auction().nounId)) revert();
+
         uint16 headId = uint16(nouns.seeds(nounId).head);
 
         Request[] memory matchedRequests = headRequestsForNounWithMax(
