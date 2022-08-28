@@ -141,6 +141,7 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].requester, request.requester);
+        assertEq(headRequests[0].headRequestIndex, 0);
 
         assertEq(request.headRequestIndex, 0);
         assertEq(request.headId, 9);
@@ -164,6 +165,8 @@ contract NounSeekTest is EnhancedTest {
         assertEq(headRequests2.length, 2, "headRequests2.length");
         assertEq(headRequests2[0].requester, request.requester);
         assertEq(headRequests2[1].requester, request2.requester);
+        assertEq(headRequests2[0].headRequestIndex, 0);
+        assertEq(headRequests2[1].headRequestIndex, 1);
 
         assertEq(request2.headRequestIndex, 1, "headRequestIndex");
         assertEq(request2.headId, 9);
@@ -174,7 +177,7 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request2.amount, 1);
     }
 
-    function test_REMOVE_happyCase() public {
+    function test_REMOVE_happyCaseFIFO() public {
         vm.prank(user1);
         uint16 requestId = nounSeek.add{value: 1}(9, 1);
 
@@ -185,34 +188,62 @@ contract NounSeekTest is EnhancedTest {
         vm.expectRevert();
         nounSeek.remove(requestId2);
 
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
+
+        assertEq(headRequestIds.length, 1);
+        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+        assertEq(headRequests.length, 1);
+        assertEq(headRequests[0].id, requestId2);
+        assertEq(headRequests[0].headRequestIndex, 0);
+        assertEq(headRequests[0].requester, address(user2));
+
         vm.prank(user2);
         nounSeek.remove(requestId2);
 
         uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
 
-        assertEq(headRequestIds2.length, 1);
-        assertEq(headRequestIds2[0], requestId);
-
+        assertEq(headRequestIds2.length, 0);
         NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
-        assertEq(headRequests2.length, 1);
-        assertEq(headRequests2[0].requester, address(user1));
+        assertEq(headRequests2.length, 0);
 
         vm.prank(user2);
         vm.expectRevert();
         nounSeek.remove(requestId2);
+    }
+
+    function test_REMOVE_happyCaseLIFO() public {
+        vm.prank(user1);
+        uint16 requestId = nounSeek.add{value: 1}(9, 1);
+
+        vm.prank(user2);
+        uint16 requestId2 = nounSeek.add{value: 1}(9, 0);
+
+        vm.prank(user2);
+        nounSeek.remove(requestId2);
+        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
+
+        assertEq(headRequestIds.length, 1);
+        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+        assertEq(headRequests.length, 1);
+        assertEq(headRequests[0].id, requestId);
+        assertEq(headRequests[0].headRequestIndex, 0);
+        assertEq(headRequests[0].requester, address(user1));
 
         vm.prank(user1);
         nounSeek.remove(requestId);
-        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
 
-        assertEq(headRequestIds.length, 0);
-        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
-        assertEq(headRequests.length, 0);
+        uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
+
+        assertEq(headRequestIds2.length, 0);
+        NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
+        assertEq(headRequests2.length, 0);
     }
 
     function test_MATCHANDSEND_happyCase() public {
         vm.startPrank(user1);
-        uint256 totalRequests = 100;
+        uint256 totalRequests = 10;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.addWithNounId{value: 1000 wei}(
                 9,
@@ -236,9 +267,7 @@ contract NounSeekTest is EnhancedTest {
 
         vm.prank(user2);
 
-        // match to 100 will only match those that have specific id of 100 because it is non-auctioned
-
-        nounSeek.matchAndSendAll(100);
+        nounSeek.matchAndSendAll(101);
 
         NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
 
@@ -247,6 +276,7 @@ contract NounSeekTest is EnhancedTest {
         for (uint256 i = 0; i < headRequests.length; i++) {
             NounSeek.Request memory request = headRequests[i];
             assertEq(request.id, 2 * i + 1);
+            assertEq(request.headRequestIndex, i);
         }
     }
     // function test_ADD_happyCaseNewSeek() public {

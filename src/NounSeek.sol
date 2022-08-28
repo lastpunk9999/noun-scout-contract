@@ -161,6 +161,12 @@ contract NounSeek {
             Request memory request = _requests[requestId];
 
             // Specific nounId does not match
+            console2.log(
+                " request.nounId != NO_PREFERENCE && nounId != NO_PREFERENCE && nounId != request.nounId",
+                request.nounId != NO_PREFERENCE &&
+                    nounId != NO_PREFERENCE &&
+                    nounId != request.nounId
+            );
             if (
                 request.nounId != NO_PREFERENCE &&
                 nounId != NO_PREFERENCE &&
@@ -272,15 +278,24 @@ contract NounSeek {
     }
 
     function remove(uint16 requestId) public {
-        Request memory request = _requests[requestId];
-        if (request.requester != msg.sender) {
+        address requester = _requests[requestId].requester;
+        uint16 headRequestIndex = _requests[requestId].headRequestIndex;
+        uint16 headId = _requests[requestId].headId;
+
+        if (requester != msg.sender) {
             revert();
         }
+
+        uint256 lastIndex = _headRequests[headId].length - 1;
+
+        if (headRequestIndex < lastIndex) {
+            uint16 lastId = _headRequests[headId][lastIndex];
+            _requests[lastId].headRequestIndex = headRequestIndex;
+            _headRequests[headId][headRequestIndex] = lastId;
+        }
+
+        _headRequests[headId].pop();
         delete _requests[requestId];
-        _headRequests[request.headId][request.headRequestIndex] = _headRequests[
-            request.headId
-        ][_headRequests[request.headId].length - 1];
-        _headRequests[request.headId].pop();
     }
 
     function matchAndSendAll(uint16 nounId) public {
@@ -289,10 +304,10 @@ contract NounSeek {
 
     function matchAndSendWithMax(uint16 nounId, uint256 max) public {
         // Must specify a Noun Id
-        if (nounId >= NO_PREFERENCE) revert();
+        if (nounId >= NO_PREFERENCE) revert("1");
 
         // Cannot match a future Noun
-        if (nounId > uint16(auctionHouse.auction().nounId)) revert();
+        if (nounId > uint16(auctionHouse.auction().nounId)) revert("2");
 
         uint16 headId = uint16(nouns.seeds(nounId).head);
 
@@ -303,7 +318,7 @@ contract NounSeek {
         );
         uint256 matchedRequestsLength = matchedRequests.length;
 
-        if (matchedRequestsLength == 0) revert();
+        if (matchedRequestsLength == 0) revert("3");
         uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
         uint256 reimbursement;
@@ -322,14 +337,15 @@ contract NounSeek {
         if (headRequestsLength - matchedRequestsLength == 0) {
             _headRequests[headId] = new uint16[](0);
         } else {
-            uint256 unmatchedRequestsLength = headRequestsLength -
-                matchedRequestsLength;
+            uint16 unmatchedRequestsLength = uint16(
+                headRequestsLength - matchedRequestsLength
+            );
 
             uint16[] memory unmatchedRequests = new uint16[](
                 unmatchedRequestsLength
             );
 
-            uint256 insertedCount;
+            uint16 insertedCount;
 
             for (uint256 i = 0; i < headRequestsLength; i++) {
                 if (insertedCount == unmatchedRequestsLength) continue;
@@ -353,7 +369,9 @@ contract NounSeek {
                 }
 
                 if (!prevMatch) {
-                    unmatchedRequests[insertedCount] = _headRequests[headId][i];
+                    uint16 id = _headRequests[headId][i];
+                    unmatchedRequests[insertedCount] = id;
+                    _requests[id].headRequestIndex = insertedCount;
                     insertedCount++;
                 }
             }
