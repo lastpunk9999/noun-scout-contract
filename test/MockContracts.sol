@@ -72,7 +72,35 @@ contract MockAuctionHouse is INounsAuctionHouseLike {
 }
 
 contract MockDescriptor is INounsDescriptorLike {
+    uint256 internal _backgroundCount = 1;
+    uint256 internal _bodyCount = 1;
+    uint256 internal _accessoryCount = 1;
     uint256 internal _headCount = 1;
+    uint256 internal _glassesCount = 1;
+
+    function setBackgroundCount(uint256 n) public {
+        _backgroundCount = n;
+    }
+
+    function backgroundCount() public view returns (uint256) {
+        return _backgroundCount;
+    }
+
+    function setBodyCount(uint256 n) public {
+        _bodyCount = n;
+    }
+
+    function bodyCount() public view returns (uint256) {
+        return _bodyCount;
+    }
+
+    function setAccessoryCount(uint256 n) public {
+        _accessoryCount = n;
+    }
+
+    function accessoryCount() public view returns (uint256) {
+        return _accessoryCount;
+    }
 
     function setHeadCount(uint256 n) public {
         _headCount = n;
@@ -80,5 +108,13 @@ contract MockDescriptor is INounsDescriptorLike {
 
     function headCount() public view returns (uint256) {
         return _headCount;
+    }
+
+    function setGlassesCount(uint256 n) public {
+        _glassesCount = n;
+    }
+
+    function glassesCount() public view returns (uint256) {
+        return _glassesCount;
     }
 }

@@ -27,7 +27,15 @@ interface INounsSeederLike {
 }
 
 interface INounsDescriptorLike {
+    function backgroundCount() external view returns (uint256);
+
+    function bodyCount() external view returns (uint256);
+
+    function accessoryCount() external view returns (uint256);
+
     function headCount() external view returns (uint256);
+
+    function glassesCount() external view returns (uint256);
 }
 
 interface INounsTokenLike {

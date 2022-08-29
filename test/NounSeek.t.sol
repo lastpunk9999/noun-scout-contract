@@ -64,6 +64,9 @@ contract NounSeekTest is EnhancedTest {
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
     uint16 NO_PREFERENCE;
+    NounSeek.Traits HEAD = NounSeek.Traits.HEAD;
+    NounSeek.Traits GLASSES = NounSeek.Traits.GLASSES;
+    NounSeek.Traits ACCESSORY = NounSeek.Traits.ACCESSORY;
 
     function setUp() public {
         mockAuctionHouse = new MockAuctionHouse();
@@ -82,7 +85,8 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.addDonee("donee5", donee5);
 
         mockDescriptor.setHeadCount(99);
-        nounSeek.updateHeadCount();
+        mockDescriptor.setGlassesCount(99);
+        nounSeek.updateTraitCounts();
         mockAuctionHouse.setNounId(99);
     }
 
@@ -120,31 +124,42 @@ contract NounSeekTest is EnhancedTest {
     //     cleanSnapshot = vm.snapshot();
     // }
 
-    // function testConstructor() public {
-    //     assertEq(address(mockNouns), address(nounSeek.nouns()));
-    //     assertEq(address(mockAuctionHouse), address(nounSeek.auctionHouse()));
-    //     uint256[] memory seekIds = new uint256[](1);
-    //     seekIds[0] = 1;
-    //     captureSnapshot();
-    // }
+    function testConstructor() public {
+        assertEq(address(mockNouns), address(nounSeek.nouns()));
+        assertEq(nounSeek.headCount(), 99);
+        assertEq(nounSeek.glassesCount(), 99);
+        assertEq(nounSeek.bodyCount(), 1);
+        assertEq(nounSeek.accessoryCount(), 1);
+        assertEq(nounSeek.backgroundCount(), 1);
+    }
 
     function test_ADD_happyCase() public {
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(9, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
 
         NounSeek.Request memory request = nounSeek.requests(requestId);
 
-        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
         assertEq(headRequestIds.length, 1);
         assertEq(headRequestIds[0], requestId);
 
-        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].requester, request.requester);
-        assertEq(headRequests[0].headRequestIndex, 0);
+        assertEq(headRequests[0].seekIndex, 0);
 
-        assertEq(request.headRequestIndex, 0);
-        assertEq(request.headId, 9);
+        assertEq(request.seekIndex, 0);
+        assertEq(uint8(request.trait), uint8(HEAD));
+        assertEq(request.traitId, 9);
         assertEq(request.doneeId, 1);
 
         assertEq(request.minNounId, 100);
@@ -153,36 +168,79 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request.amount, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.addWithNounId{value: 1}(9, 0, 100);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
 
         NounSeek.Request memory request2 = nounSeek.requests(requestId2);
-        uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
 
         assertEq(headRequestIds2.length, 2, "headRequestIds2.length");
         assertEq(headRequestIds2[1], requestId2);
 
-        NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests2.length, 2, "headRequests2.length");
         assertEq(headRequests2[0].requester, request.requester);
         assertEq(headRequests2[1].requester, request2.requester);
-        assertEq(headRequests2[0].headRequestIndex, 0);
-        assertEq(headRequests2[1].headRequestIndex, 1);
+        assertEq(headRequests2[0].seekIndex, 0);
+        assertEq(headRequests2[1].seekIndex, 1);
 
-        assertEq(request2.headRequestIndex, 1, "headRequestIndex");
-        assertEq(request2.headId, 9);
+        assertEq(request2.seekIndex, 1, "seekIndex");
+        assertEq(request2.traitId, 9);
         assertEq(request2.doneeId, 0);
 
         assertEq(request2.minNounId, 100);
         assertEq(request2.requester, address(user2));
         assertEq(request2.amount, 1);
+
+        // Same head, but with Noun Id
+        vm.prank(user3);
+        uint16 requestId3 = nounSeek.add{value: 2}(HEAD, 9, 100, 2);
+
+        NounSeek.Request memory request3 = nounSeek.requests(requestId3);
+
+        uint16[] memory headRequestIds3 = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            100
+        );
+        assertEq(headRequestIds3.length, 1);
+        assertEq(headRequestIds3[0], requestId3);
+
+        NounSeek.Request[] memory headRequests3 = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            100,
+            NO_PREFERENCE
+        );
+        assertEq(headRequests3.length, 1);
+        assertEq(headRequests3[0].requester, request3.requester);
+        assertEq(headRequests3[0].seekIndex, 0);
+
+        assertEq(request3.seekIndex, 0);
+        assertEq(uint8(request3.trait), uint8(HEAD));
+        assertEq(request3.traitId, 9);
+        assertEq(request3.doneeId, 2);
+
+        assertEq(request3.minNounId, 100);
+        assertEq(request3.nounId, 100);
+        assertEq(request3.requester, address(user3));
+        assertEq(request3.amount, 2);
     }
 
     function test_REMOVE_happyCaseFIFO() public {
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(9, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(9, 0);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
 
         vm.prank(user1);
         vm.expectRevert();
@@ -190,22 +248,40 @@ contract NounSeekTest is EnhancedTest {
 
         vm.prank(user1);
         nounSeek.remove(requestId);
-        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
 
         assertEq(headRequestIds.length, 1);
-        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].id, requestId2);
-        assertEq(headRequests[0].headRequestIndex, 0);
+        assertEq(headRequests[0].seekIndex, 0);
         assertEq(headRequests[0].requester, address(user2));
 
         vm.prank(user2);
         nounSeek.remove(requestId2);
 
-        uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
 
         assertEq(headRequestIds2.length, 0);
-        NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests2.length, 0);
 
         vm.prank(user2);
@@ -215,70 +291,89 @@ contract NounSeekTest is EnhancedTest {
 
     function test_REMOVE_happyCaseLIFO() public {
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(9, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(9, 0);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
 
         vm.prank(user2);
         nounSeek.remove(requestId2);
-        uint16[] memory headRequestIds = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
 
         assertEq(headRequestIds.length, 1);
-        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].id, requestId);
-        assertEq(headRequests[0].headRequestIndex, 0);
+        assertEq(headRequests[0].seekIndex, 0);
         assertEq(headRequests[0].requester, address(user1));
 
         vm.prank(user1);
         nounSeek.remove(requestId);
 
-        uint16[] memory headRequestIds2 = nounSeek.headRequestIds(9);
+        uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE
+        );
 
         assertEq(headRequestIds2.length, 0);
-        NounSeek.Request[] memory headRequests2 = nounSeek.headRequests(9);
+        NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            NO_PREFERENCE
+        );
         assertEq(headRequests2.length, 0);
     }
 
-    function test_MATCHANDSEND_happyCase() public {
-        vm.startPrank(user1);
-        uint256 totalRequests = 10;
-        for (uint256 i; i < totalRequests; i++) {
-            nounSeek.addWithNounId{value: 1000 wei}(
-                9,
-                uint16(i % 5),
-                // alternate between no preference and id 100
-                i % 2 == 0 ? NO_PREFERENCE : 100
-            );
-        }
-        vm.stopPrank();
+    // function test_MATCHANDSEND_happyCase() public {
+    //     vm.startPrank(user1);
+    //     uint256 totalRequests = 10;
+    //     for (uint256 i; i < totalRequests; i++) {
+    //         nounSeek.addWithNounId{value: 1000 wei}(
+    //             9,
+    //             uint16(i % 5),
+    //             // alternate between no preference and id 100
+    //             i % 2 == 0 ? NO_PREFERENCE : 100
+    //         );
+    //     }
+    //     vm.stopPrank();
 
-        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-            0,
-            0,
-            0,
-            9,
-            0
-        );
+    //     INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+    //         0,
+    //         0,
+    //         0,
+    //         9,
+    //         0
+    //     );
 
-        mockNouns.setSeed(seed, 100);
-        mockAuctionHouse.setNounId(101);
+    //     mockNouns.setSeed(seed, 100);
+    //     mockAuctionHouse.setNounId(101);
 
-        vm.prank(user2);
+    //     vm.prank(user2);
 
-        nounSeek.matchAndSendAll(101);
+    //     nounSeek.matchAndSendAll(101);
 
-        NounSeek.Request[] memory headRequests = nounSeek.headRequests(9);
+    //     NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(HEAD,9,NO_PREFERENCE,NO_PREFERENCE);
 
-        assertEq(headRequests.length, totalRequests / 2);
+    //     assertEq(headRequests.length, totalRequests / 2);
 
-        for (uint256 i = 0; i < headRequests.length; i++) {
-            NounSeek.Request memory request = headRequests[i];
-            assertEq(request.id, 2 * i + 1);
-            assertEq(request.headRequestIndex, i);
-        }
-    }
+    //     for (uint256 i = 0; i < headRequests.length; i++) {
+    //         NounSeek.Request memory request = headRequests[i];
+    //         assertEq(request.id, 2 * i + 1);
+    //         assertEq(request.seekIndex, i);
+    //     }
+    // }
+
     // function test_ADD_happyCaseNewSeek() public {
     //     vm.revertTo(cleanSnapshot);
     //     _resetToRequestWindow();

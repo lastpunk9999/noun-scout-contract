@@ -11,9 +11,6 @@ contract NounSeek {
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
 
-    /// @notice Retreives historical mapping of nounId -> seed
-    INounsDescriptorLike public descriptor;
-
     /// @notice Time limit after an auction starts
     uint256 public constant AUCTION_START_LIMIT = 1 hours;
 
@@ -27,9 +24,10 @@ contract NounSeek {
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
         uint16 id;
-        uint16 headRequestIndex;
-        uint16 headId;
-        uint16 doneeId;
+        uint16 seekIndex;
+        Traits trait;
+        uint16 traitId;
+        uint8 doneeId;
         uint16 nounId;
         uint16 minNounId;
         address requester;
@@ -42,13 +40,24 @@ contract NounSeek {
         bool active;
     }
 
-    uint16 public requestCount;
+    enum Traits {
+        BACKGROUND,
+        BODY,
+        ACCESSORY,
+        HEAD,
+        GLASSES
+    }
 
+    uint16 public requestCount;
+    uint16 public backgroundCount;
+    uint16 public bodyCount;
+    uint16 public accessoryCount;
     uint16 public headCount;
+    uint16 public glassesCount;
 
     Donee[] public _donees;
 
-    mapping(uint16 => uint16[]) internal _headRequests;
+    mapping(bytes32 => uint16[]) internal _seeks;
 
     mapping(uint16 => Request) internal _requests;
 
@@ -97,8 +106,7 @@ contract NounSeek {
     constructor(INounsTokenLike _nouns, INounsAuctionHouseLike _auctionHouse) {
         nouns = _nouns;
         auctionHouse = _auctionHouse;
-        updateDescriptor();
-        updateHeadCount();
+        updateTraitCounts();
     }
 
     /**
@@ -107,103 +115,47 @@ contract NounSeek {
     ----------------------------------
      */
 
+    function seekHash(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(trait, traitId, nounId));
+    }
+
     function requests(uint16 requestId) public view returns (Request memory) {
         return _requests[requestId];
     }
 
-    function donees(uint256 id) public view returns (Donee memory) {
+    function donees(uint8 id) public view returns (Donee memory) {
         return _donees[id];
     }
 
-    function headRequestIds(uint16 headId)
-        public
-        view
-        returns (uint16[] memory)
-    {
-        return _headRequests[headId];
+    function requestIdsForTrait(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public view returns (uint16[] memory) {
+        return _seeks[seekHash(trait, traitId, nounId)];
     }
 
-    function headRequests(uint16 headId)
-        public
-        view
-        returns (Request[] memory)
-    {
-        return headRequestsForNounWithMax(headId, NO_PREFERENCE, NO_PREFERENCE);
-    }
-
-    function headRequestsForNoun(uint16 headId, uint16 nounId)
-        public
-        view
-        returns (Request[] memory)
-    {
-        return headRequestsForNounWithMax(headId, nounId, NO_PREFERENCE);
-    }
-
-    function headRequestsForNounWithMax(
-        uint16 headId,
+    function requestsForTrait(
+        Traits trait,
+        uint16 traitId,
         uint16 nounId,
         uint256 max
     ) public view returns (Request[] memory) {
-        uint256 headRequestLength = _headRequests[headId].length;
+        bytes32 hash = seekHash(trait, traitId, nounId);
+        uint256 seeksLength = _seeks[hash].length;
 
-        uint16[] memory requestIds = new uint16[](headRequestLength);
-        uint16[] memory filteredRequestIds = new uint16[](headRequestLength);
-        uint16 filteredRequestCount;
+        if (max > seeksLength) max = seeksLength;
 
-        requestIds = _headRequests[headId];
+        Request[] memory traitRequests = new Request[](max);
 
-        for (uint16 i = 0; i < headRequestLength; i++) {
-            if (filteredRequestCount >= max) {
-                continue;
-            }
-
-            uint16 requestId = requestIds[i];
-            Request memory request = _requests[requestId];
-
-            // Specific nounId does not match
-            console2.log(
-                " request.nounId != NO_PREFERENCE && nounId != NO_PREFERENCE && nounId != request.nounId",
-                request.nounId != NO_PREFERENCE &&
-                    nounId != NO_PREFERENCE &&
-                    nounId != request.nounId
-            );
-            if (
-                request.nounId != NO_PREFERENCE &&
-                nounId != NO_PREFERENCE &&
-                nounId != request.nounId
-            ) {
-                continue;
-            }
-
-            // No preference, but Noun is non-auctioned
-            if (
-                request.nounId == NO_PREFERENCE &&
-                nounId % 10 == 0 &&
-                nounId <= 1820
-            ) {
-                continue;
-            }
-
-            // Cannot match with previously auctioned Noun
-            if (nounId < request.minNounId) {
-                continue;
-            }
-            filteredRequestIds[i] = requestId;
-            filteredRequestCount++;
+        for (uint256 i = 0; i < max; i++) {
+            traitRequests[i] = (_requests[_seeks[hash][i]]);
         }
-
-        Request[] memory matchedRequests = new Request[](filteredRequestCount);
-        filteredRequestCount = 0;
-        for (
-            uint256 i = 0;
-            i < headRequestLength && filteredRequestCount <= max;
-            i++
-        ) {
-            if (filteredRequestIds[i] == 0) continue;
-            matchedRequests[filteredRequestCount] = _requests[requestIds[i]];
-            filteredRequestCount++;
-        }
-        return matchedRequests;
+        return traitRequests;
     }
 
     // /**
@@ -212,12 +164,16 @@ contract NounSeek {
     // -----------------------------------
     //  */
 
-    function updateHeadCount() public {
-        headCount = uint16(descriptor.headCount());
-    }
+    function updateTraitCounts() public {
+        INounsDescriptorLike descriptor = INounsDescriptorLike(
+            nouns.descriptor()
+        );
 
-    function updateDescriptor() public {
-        descriptor = INounsDescriptorLike(nouns.descriptor());
+        backgroundCount = uint16(descriptor.backgroundCount());
+        bodyCount = uint16(descriptor.bodyCount());
+        accessoryCount = uint16(descriptor.accessoryCount());
+        headCount = uint16(descriptor.headCount());
+        glassesCount = uint16(descriptor.glassesCount());
     }
 
     function addDonee(string calldata name, address to) public {
@@ -231,21 +187,14 @@ contract NounSeek {
         _donees[id] = donee;
     }
 
-    function add(uint16 headId, uint16 doneeId)
-        public
-        payable
-        returns (uint16)
-    {
-        return addWithNounId(headId, doneeId, NO_PREFERENCE);
-    }
-
-    function addWithNounId(
-        uint16 headId,
-        uint16 doneeId,
-        uint16 nounId
+    function add(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint8 doneeId
     ) public payable returns (uint16) {
-        if (headId >= headCount) {
-            revert();
+        if (trait == Traits.HEAD && traitId >= headCount) {
+            revert("1");
         }
         if (!_donees[doneeId].active) {
             revert();
@@ -256,49 +205,54 @@ contract NounSeek {
             revert();
         }
 
+        bytes32 hash = seekHash(trait, traitId, nounId);
+
         // length of all requests for specific head
-        uint16 headRequestIndex = uint16(_headRequests[headId].length);
+        uint16 seekIndex = uint16(_seeks[hash].length);
 
         uint16 requestId = ++requestCount;
 
         _requests[requestId] = Request({
             id: requestId,
-            headRequestIndex: headRequestIndex,
+            seekIndex: seekIndex,
             doneeId: doneeId,
-            headId: headId,
+            trait: trait,
+            traitId: traitId,
             nounId: nounId,
             minNounId: minNounId,
             requester: msg.sender,
             amount: msg.value
         });
 
-        _headRequests[headId].push(requestId);
+        _seeks[hash].push(requestId);
 
         return requestId;
     }
 
     function remove(uint16 requestId) public {
         address requester = _requests[requestId].requester;
-        uint16 headRequestIndex = _requests[requestId].headRequestIndex;
-        uint16 headId = _requests[requestId].headId;
-
         if (requester != msg.sender) {
             revert();
         }
+        uint16 seekIndex = _requests[requestId].seekIndex;
+        Traits trait = _requests[requestId].trait;
+        uint16 traitId = _requests[requestId].traitId;
+        uint16 nounId = _requests[requestId].nounId;
 
-        uint256 lastIndex = _headRequests[headId].length - 1;
+        bytes32 hash = seekHash(trait, traitId, nounId);
+        uint256 lastIndex = _seeks[hash].length - 1;
 
-        if (headRequestIndex < lastIndex) {
-            uint16 lastId = _headRequests[headId][lastIndex];
-            _requests[lastId].headRequestIndex = headRequestIndex;
-            _headRequests[headId][headRequestIndex] = lastId;
+        if (seekIndex < lastIndex) {
+            uint16 lastId = _seeks[hash][lastIndex];
+            _requests[lastId].seekIndex = seekIndex;
+            _seeks[hash][seekIndex] = lastId;
         }
 
-        _headRequests[headId].pop();
+        _seeks[hash].pop();
         delete _requests[requestId];
     }
 
-    function matchAndSendAll(uint16 nounId) public {
+    /*     function matchAndSendAll(uint16 nounId) public {
         return matchAndSendWithMax(nounId, 10**18);
     }
 
@@ -332,10 +286,10 @@ contract NounSeek {
             delete _requests[matchedRequests[i].id];
         }
 
-        uint256 headRequestsLength = _headRequests[headId].length;
+        uint256 headRequestsLength = _seeks[headId].length;
 
         if (headRequestsLength - matchedRequestsLength == 0) {
-            _headRequests[headId] = new uint16[](0);
+            _seeks[headId] = new uint16[](0);
         } else {
             uint16 unmatchedRequestsLength = uint16(
                 headRequestsLength - matchedRequestsLength
@@ -357,7 +311,7 @@ contract NounSeek {
                     j < matchedRequestsLength && !prevMatch;
                     j++
                 ) {
-                    if (matchedRequests[j].headRequestIndex != i) continue;
+                    if (matchedRequests[j].seekIndex != i) continue;
 
                     prevMatch = true;
 
@@ -369,13 +323,13 @@ contract NounSeek {
                 }
 
                 if (!prevMatch) {
-                    uint16 id = _headRequests[headId][i];
+                    uint16 id = _seeks[headId][i];
                     unmatchedRequests[insertedCount] = id;
-                    _requests[id].headRequestIndex = insertedCount;
+                    _requests[id].seekIndex = insertedCount;
                     insertedCount++;
                 }
             }
-            _headRequests[headId] = unmatchedRequests;
+            _seeks[headId] = unmatchedRequests;
         }
 
         for (uint256 i; i < doneesLength; i++) {
@@ -388,5 +342,5 @@ contract NounSeek {
         (bool success, ) = msg.sender.call{value: reimbursement, gas: 10_000}(
             ""
         );
-    }
+    } */
 }
