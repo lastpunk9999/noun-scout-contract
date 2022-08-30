@@ -147,9 +147,7 @@ contract NounSeek {
     ) public view returns (Request[] memory) {
         bytes32 hash = seekHash(trait, traitId, nounId);
         uint256 seeksLength = _seeks[hash].length;
-
         if (max > seeksLength) max = seeksLength;
-
         Request[] memory traitRequests = new Request[](max);
 
         for (uint256 i = 0; i < max; i++) {
@@ -158,11 +156,11 @@ contract NounSeek {
         return traitRequests;
     }
 
-    // /**
-    // -----------------------------------
-    // --------- WRITE FUNCTIONS ---------
-    // -----------------------------------
-    //  */
+    /**
+    -----------------------------------
+    --------- WRITE FUNCTIONS ---------
+    -----------------------------------
+     */
 
     function updateTraitCounts() public {
         INounsDescriptorLike descriptor = INounsDescriptorLike(
@@ -194,15 +192,15 @@ contract NounSeek {
         uint8 doneeId
     ) public payable returns (uint16) {
         if (trait == Traits.HEAD && traitId >= headCount) {
-            revert("1");
+            revert("a1");
         }
         if (!_donees[doneeId].active) {
-            revert();
+            revert("a2");
         }
 
         uint16 minNounId = uint16(auctionHouse.auction().nounId) + 1;
         if (nounId < minNounId) {
-            revert();
+            revert("a3");
         }
 
         bytes32 hash = seekHash(trait, traitId, nounId);
@@ -252,84 +250,83 @@ contract NounSeek {
         delete _requests[requestId];
     }
 
-    /*     function matchAndSendAll(uint16 nounId) public {
-        return matchAndSendWithMax(nounId, 10**18);
-    }
-
-    function matchAndSendWithMax(uint16 nounId, uint256 max) public {
-        // Must specify a Noun Id
-        if (nounId >= NO_PREFERENCE) revert("1");
-
-        // Cannot match a future Noun
-        if (nounId > uint16(auctionHouse.auction().nounId)) revert("2");
-
-        uint16 headId = uint16(nouns.seeds(nounId).head);
-
-        Request[] memory matchedRequests = headRequestsForNounWithMax(
-            headId,
-            nounId,
-            max
-        );
-        uint256 matchedRequestsLength = matchedRequests.length;
-
-        if (matchedRequestsLength == 0) revert("3");
-        uint256 doneesLength = _donees.length;
-        uint256[] memory donations = new uint256[](doneesLength);
+    function matchCurrentNounAndDonate(
+        Traits trait,
+        uint16 nounId,
+        uint256 max
+    ) public {
+        Request[] memory nounIdRequests;
+        Request[] memory noPrefRequests;
+        uint16 traitId;
         uint256 reimbursement;
 
-        for (uint256 i; i < matchedRequestsLength; i++) {
-            Request memory request = matchedRequests[i];
+        uint16 currentNounId = uint16(auctionHouse.auction().nounId);
+        uint16 prevNounId = currentNounId - 1;
+
+        // Noun can only be the current Noun on auction or the previous Noun if it was not on auction
+        if (
+            nounId != currentNounId &&
+            (nounId != prevNounId || _isAuctionedNoun(prevNounId))
+        ) {
+            revert("m1");
+        }
+
+        if (trait == Traits.BACKGROUND) {
+            traitId = uint16(nouns.seeds(nounId).background);
+        } else if (trait == Traits.BODY) {
+            traitId = uint16(nouns.seeds(nounId).body);
+        } else if (trait == Traits.ACCESSORY) {
+            traitId = uint16(nouns.seeds(nounId).accessory);
+        } else if (trait == Traits.HEAD) {
+            traitId = uint16(nouns.seeds(nounId).head);
+        } else if (trait == Traits.GLASSES) {
+            traitId = uint16(nouns.seeds(nounId).glasses);
+        } else {
+            revert();
+        }
+
+        nounIdRequests = requestsForTrait(trait, traitId, nounId, max);
+        uint256 nounIdRequestsLength = nounIdRequests.length;
+
+        // Only auctioned Nouns can match "NO_PREFERENCE"
+        if (max - nounIdRequestsLength > 0 && _isAuctionedNoun(nounId)) {
+            noPrefRequests = requestsForTrait(
+                trait,
+                traitId,
+                NO_PREFERENCE,
+                max - nounIdRequestsLength
+            );
+        }
+
+        uint256 noPrefRequestsLength = noPrefRequests.length;
+
+        uint256 doneesLength = _donees.length;
+        uint256[] memory donations = new uint256[](doneesLength);
+
+        for (uint256 i; i < nounIdRequestsLength + noPrefRequestsLength; i++) {
+            Request memory request;
+
+            if (i < nounIdRequestsLength) {
+                request = nounIdRequests[i];
+            } else {
+                request = noPrefRequests[i - nounIdRequestsLength];
+            }
+
             uint256 donation = (request.amount * (10000 - REIMBURSMENT_BPS)) /
                 10000;
             reimbursement += request.amount - donation;
             donations[request.doneeId] += donation;
-            delete _requests[matchedRequests[i].id];
+            delete _requests[request.id];
         }
 
-        uint256 headRequestsLength = _seeks[headId].length;
+        if (nounIdRequestsLength > 0) {
+            bytes32 hash = seekHash(trait, traitId, nounId);
+            delete _seeks[hash];
+        }
 
-        if (headRequestsLength - matchedRequestsLength == 0) {
-            _seeks[headId] = new uint16[](0);
-        } else {
-            uint16 unmatchedRequestsLength = uint16(
-                headRequestsLength - matchedRequestsLength
-            );
-
-            uint16[] memory unmatchedRequests = new uint16[](
-                unmatchedRequestsLength
-            );
-
-            uint16 insertedCount;
-
-            for (uint256 i = 0; i < headRequestsLength; i++) {
-                if (insertedCount == unmatchedRequestsLength) continue;
-
-                bool prevMatch = false;
-
-                for (
-                    uint256 j = 0;
-                    j < matchedRequestsLength && !prevMatch;
-                    j++
-                ) {
-                    if (matchedRequests[j].seekIndex != i) continue;
-
-                    prevMatch = true;
-
-                    matchedRequests[j] = matchedRequests[
-                        matchedRequestsLength - 1
-                    ];
-
-                    matchedRequestsLength -= 1;
-                }
-
-                if (!prevMatch) {
-                    uint16 id = _seeks[headId][i];
-                    unmatchedRequests[insertedCount] = id;
-                    _requests[id].seekIndex = insertedCount;
-                    insertedCount++;
-                }
-            }
-            _seeks[headId] = unmatchedRequests;
+        if (noPrefRequestsLength > 0) {
+            bytes32 hash = seekHash(trait, traitId, NO_PREFERENCE);
+            delete _seeks[hash];
         }
 
         for (uint256 i; i < doneesLength; i++) {
@@ -342,5 +339,15 @@ contract NounSeek {
         (bool success, ) = msg.sender.call{value: reimbursement, gas: 10_000}(
             ""
         );
-    } */
+    }
+
+    /**
+    -----------------------------------
+    ------- INTERNAL FUNCTIONS --------
+    -----------------------------------
+     */
+
+    function _isAuctionedNoun(uint16 nounId) internal returns (bool) {
+        return nounId % 10 != 0 || nounId > 1820;
+    }
 }
