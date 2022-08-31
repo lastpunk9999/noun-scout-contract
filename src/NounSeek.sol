@@ -147,10 +147,10 @@ contract NounSeek {
     ) public view returns (Request[] memory) {
         bytes32 hash = seekHash(trait, traitId, nounId);
         uint256 seeksLength = _seeks[hash].length;
-        if (max > seeksLength) max = seeksLength;
-        Request[] memory traitRequests = new Request[](max);
+        if (seeksLength > max) seeksLength = max;
+        Request[] memory traitRequests = new Request[](seeksLength);
 
-        for (uint256 i = 0; i < max; i++) {
+        for (uint256 i = 0; i < seeksLength; i++) {
             traitRequests[i] = (_requests[_seeks[hash][i]]);
         }
         return traitRequests;
@@ -250,85 +250,56 @@ contract NounSeek {
         delete _requests[requestId];
     }
 
-    function matchCurrentNounAndDonate(
-        Traits trait,
-        uint16 nounId,
-        uint256 max
-    ) public {
-        Request[] memory nounIdRequests;
-        Request[] memory noPrefRequests;
+    function matchCurrentNounAndDonate(Traits trait, uint256 max) public {
+        uint16 nounId = uint16(auctionHouse.auction().nounId);
+        uint16 prevNounId = nounId - 1;
+
         uint16 traitId;
+
         uint256 reimbursement;
-
-        uint16 currentNounId = uint16(auctionHouse.auction().nounId);
-        uint16 prevNounId = currentNounId - 1;
-
-        // Noun can only be the current Noun on auction or the previous Noun if it was not on auction
-        if (
-            nounId != currentNounId &&
-            (nounId != prevNounId || _isAuctionedNoun(prevNounId))
-        ) {
-            revert("m1");
-        }
-
-        if (trait == Traits.BACKGROUND) {
-            traitId = uint16(nouns.seeds(nounId).background);
-        } else if (trait == Traits.BODY) {
-            traitId = uint16(nouns.seeds(nounId).body);
-        } else if (trait == Traits.ACCESSORY) {
-            traitId = uint16(nouns.seeds(nounId).accessory);
-        } else if (trait == Traits.HEAD) {
-            traitId = uint16(nouns.seeds(nounId).head);
-        } else if (trait == Traits.GLASSES) {
-            traitId = uint16(nouns.seeds(nounId).glasses);
-        } else {
-            revert();
-        }
-
-        nounIdRequests = requestsForTrait(trait, traitId, nounId, max);
-        uint256 nounIdRequestsLength = nounIdRequests.length;
-
-        // Only auctioned Nouns can match "NO_PREFERENCE"
-        if (max - nounIdRequestsLength > 0 && _isAuctionedNoun(nounId)) {
-            noPrefRequests = requestsForTrait(
-                trait,
-                traitId,
-                NO_PREFERENCE,
-                max - nounIdRequestsLength
-            );
-        }
-
-        uint256 noPrefRequestsLength = noPrefRequests.length;
-
         uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
 
-        for (uint256 i; i < nounIdRequestsLength + noPrefRequestsLength; i++) {
-            Request memory request;
+        console2.log("nounId", nounId);
+        console2.log("prevNounId", prevNounId);
+        console2.log("max1", max);
+        (donations, reimbursement, max) = _calcFundsAndDelete(
+            trait,
+            nounId,
+            nounId,
+            max,
+            donations,
+            reimbursement
+        );
 
-            if (i < nounIdRequestsLength) {
-                request = nounIdRequests[i];
-            } else {
-                request = noPrefRequests[i - nounIdRequestsLength];
-            }
-
-            uint256 donation = (request.amount * (10000 - REIMBURSMENT_BPS)) /
-                10000;
-            reimbursement += request.amount - donation;
-            donations[request.doneeId] += donation;
-            delete _requests[request.id];
+        console2.log(
+            "_isNonAuctionedNoun(prevNounId)",
+            _isNonAuctionedNoun(prevNounId)
+        );
+        if (max > 0 && _isNonAuctionedNoun(prevNounId)) {
+            (donations, reimbursement, max) = _calcFundsAndDelete(
+                trait,
+                prevNounId,
+                prevNounId,
+                max,
+                donations,
+                reimbursement
+            );
         }
-
-        if (nounIdRequestsLength > 0) {
-            bytes32 hash = seekHash(trait, traitId, nounId);
-            delete _seeks[hash];
+        console2.log("max2", max);
+        console2.log("_isAuctionedNoun(nounId)", _isAuctionedNoun(nounId));
+        // Only auctioned Nouns can match "NO_PREFERENCE"
+        if (max > 0 && _isAuctionedNoun(nounId)) {
+            (donations, reimbursement, max) = _calcFundsAndDelete(
+                trait,
+                nounId,
+                NO_PREFERENCE,
+                max,
+                donations,
+                reimbursement
+            );
         }
-
-        if (noPrefRequestsLength > 0) {
-            bytes32 hash = seekHash(trait, traitId, NO_PREFERENCE);
-            delete _seeks[hash];
-        }
-
+        console2.log("max3", max);
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
             (bool success, ) = _donees[i].to.call{
@@ -346,8 +317,85 @@ contract NounSeek {
     ------- INTERNAL FUNCTIONS --------
     -----------------------------------
      */
+    function _isNonAuctionedNoun(uint256 nounId) internal returns (bool) {
+        return nounId % 10 == 0 && nounId <= 1820;
+    }
 
     function _isAuctionedNoun(uint16 nounId) internal returns (bool) {
         return nounId % 10 != 0 || nounId > 1820;
+    }
+
+    function _calcFundsAndDelete(
+        Traits trait,
+        uint16 currentNounId,
+        uint16 seekNounId,
+        uint256 max,
+        uint256[] memory donations,
+        uint256 reimbursement
+    )
+        internal
+        returns (
+            uint256[] memory,
+            uint256,
+            uint256
+        )
+    {
+        if (max == 0) {
+            return (donations, reimbursement, max);
+        }
+        console2.log("");
+        uint16 traitId;
+        if (trait == Traits.BACKGROUND) {
+            traitId = uint16(nouns.seeds(currentNounId).background);
+        } else if (trait == Traits.BODY) {
+            traitId = uint16(nouns.seeds(currentNounId).body);
+        } else if (trait == Traits.ACCESSORY) {
+            traitId = uint16(nouns.seeds(currentNounId).accessory);
+        } else if (trait == Traits.HEAD) {
+            traitId = uint16(nouns.seeds(currentNounId).head);
+        } else if (trait == Traits.GLASSES) {
+            traitId = uint16(nouns.seeds(currentNounId).glasses);
+        } else {
+            revert();
+        }
+        Request[] memory nounIdRequests = requestsForTrait(
+            trait,
+            traitId,
+            seekNounId,
+            max
+        );
+        uint256 nounIdRequestsLength = nounIdRequests.length;
+
+        console2.log("Trait", uint16(trait));
+        console2.log("traitId", traitId);
+        console2.log("seekNounId", seekNounId);
+        console2.log("currentNounId", currentNounId);
+        console2.log("nounIdRequestsLength", nounIdRequestsLength);
+
+        if (nounIdRequestsLength == 0) {
+            return (donations, reimbursement, max);
+        }
+
+        if (nounIdRequestsLength > max) {
+            nounIdRequestsLength = max;
+        }
+
+        for (uint256 i; i < nounIdRequestsLength; i++) {
+            Request memory request;
+            request = nounIdRequests[i];
+
+            uint256 donation = (request.amount * (10000 - REIMBURSMENT_BPS)) /
+                10000;
+            reimbursement += request.amount - donation;
+            donations[request.doneeId] += donation;
+            delete _requests[request.id];
+        }
+
+        if (nounIdRequestsLength > 0) {
+            bytes32 hash = seekHash(trait, traitId, seekNounId);
+            delete _seeks[hash];
+        }
+
+        return (donations, reimbursement, max - nounIdRequestsLength);
     }
 }
