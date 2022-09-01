@@ -114,7 +114,7 @@ contract NounSeek {
 
     modifier beforeAuctionEndWindow() {
         uint256 endTime = auctionHouse.auction().endTime;
-        if (endTime < block.timestamp) {
+        if (endTime <= block.timestamp) {
             revert TooLate();
         }
 

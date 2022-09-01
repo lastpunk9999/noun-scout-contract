@@ -572,6 +572,34 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.remove(requestId);
     }
 
+    function test_REMOVE_failsWhenNotWithinAuctionEndWindow() public {
+        vm.startPrank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 200, 1);
+
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + AUCTION_END_LIMIT);
+        vm.warp(timestamp);
+
+        vm.expectRevert(NounSeek.TooLate.selector);
+        nounSeek.remove(requestId);
+        vm.warp(timestamp - 1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenAuctionIsOver() public {
+        vm.startPrank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 200, 1);
+
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp);
+        vm.warp(timestamp);
+
+        vm.expectRevert(NounSeek.TooLate.selector);
+        nounSeek.remove(requestId);
+    }
+
     function test_matchPreviousNounAndDonate_NonAuctionedNounHappyCase()
         public
     {
