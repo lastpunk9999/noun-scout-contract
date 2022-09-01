@@ -363,7 +363,15 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 109);
         mockAuctionHouse.setNounId(109);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                109
+            )
+        );
+
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -388,7 +396,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 108);
         mockAuctionHouse.setNounId(109);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                108
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -412,10 +427,17 @@ contract NounSeekTest is EnhancedTest {
         );
 
         // Current auctioned Noun has seed
-        mockNouns.setSeed(seed, 99);
-        mockAuctionHouse.setNounId(101);
+        mockNouns.setSeed(seed, 199);
+        mockAuctionHouse.setNounId(201);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                199
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -440,7 +462,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 109);
         mockAuctionHouse.setNounId(109);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                109
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -465,7 +494,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 108);
         mockAuctionHouse.setNounId(109);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                108
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -492,7 +528,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 199);
         mockAuctionHouse.setNounId(201);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                199
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }
@@ -517,7 +560,14 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 200);
         mockAuctionHouse.setNounId(201);
 
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NounSeek.MatchFound.selector,
+                NounSeek.Traits.HEAD,
+                9,
+                200
+            )
+        );
         vm.prank(user1);
         nounSeek.remove(requestId);
     }

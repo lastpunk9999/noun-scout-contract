@@ -62,13 +62,14 @@ contract NounSeek {
 
     error TooSoon();
     error TooLate();
-    error NoAmountSent();
-    error NoPreferences();
-    error OnlySeeker();
-    error OnlyFinder();
-    error AlreadyFound();
-    error NoMatch(uint96 seekId);
-    error BlockHashMismatch();
+    error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
+    // error NoAmountSent();
+    // error NoPreferences();
+    // error OnlySeeker();
+    // error OnlyFinder();
+    // error AlreadyFound();
+    // error NoMatch(uint96 seekId);
+    // error BlockHashMismatch();
 
     /**
     -----------------------------
@@ -330,14 +331,14 @@ contract NounSeek {
         // 3) A Non-Auctioned Noun which matches the request.nounId is the previous Noun
 
         uint16 targetNounId = uint16(auctionHouse.auction().nounId);
-        _revertIfRequestParamsMatchNounParams(
+        _revertRemoveIfRequestParamsMatchNounParams(
             trait,
             traitId,
             nounId,
             targetNounId
         );
 
-        _revertIfRequestParamsMatchNounParams(
+        _revertRemoveIfRequestParamsMatchNounParams(
             trait,
             traitId,
             nounId,
@@ -345,7 +346,7 @@ contract NounSeek {
         );
         // If two auctioned Nouns aren't consecutive
         if (_isNonAuctionedNoun(targetNounId - 1)) {
-            _revertIfRequestParamsMatchNounParams(
+            _revertRemoveIfRequestParamsMatchNounParams(
                 trait,
                 traitId,
                 nounId,
@@ -518,7 +519,7 @@ contract NounSeek {
         return (donations, reimbursement, max - nounIdRequestsLength);
     }
 
-    function _revertIfRequestParamsMatchNounParams(
+    function _revertRemoveIfRequestParamsMatchNounParams(
         Traits requestTrait,
         uint16 requestTraitId,
         uint16 requestNounId,
@@ -531,6 +532,6 @@ contract NounSeek {
                 requestNounId,
                 targetNounId
             )
-        ) revert();
+        ) revert MatchFound(requestTrait, requestTraitId, targetNounId);
     }
 }
