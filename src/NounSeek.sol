@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 import "./NounsInterfaces.sol";
 import "forge-std/console2.sol";
 
-contract NounSeek {
+contract NounSeek is Ownable2Step, Pausable {
     /// @notice Retreives historical mapping of nounId -> seed
     INounsTokenLike public immutable nouns;
 
@@ -236,6 +238,31 @@ contract NounSeek {
     }
 
     /**
+    -----------------------------------------------
+    --------- AUTHORIZED WRITE FUNCTIONS ----------
+    -----------------------------------------------
+     */
+
+    function addDonee(string calldata name, address to) external onlyOwner {
+        _donees.push(Donee({name: name, to: to, active: true}));
+    }
+
+    function toggleDoneeActive(uint256 id) external onlyOwner {
+        Donee memory donee = _donees[id];
+        if (donee.to == address(0)) revert();
+        donee.active = !donee.active;
+        _donees[id] = donee;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
     -----------------------------------
     --------- WRITE FUNCTIONS ---------
     -----------------------------------
@@ -253,23 +280,12 @@ contract NounSeek {
         glassesCount = uint16(descriptor.glassesCount());
     }
 
-    function addDonee(string calldata name, address to) public {
-        _donees.push(Donee({name: name, to: to, active: true}));
-    }
-
-    function toggleDoneeActive(uint256 id) public {
-        Donee memory donee = _donees[id];
-        if (donee.to == address(0)) revert();
-        donee.active = !donee.active;
-        _donees[id] = donee;
-    }
-
     function add(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 doneeId
-    ) public payable returns (uint16) {
+    ) public payable whenNotPaused returns (uint16) {
         if (trait == Traits.HEAD && traitId >= headCount) {
             revert("a1");
         }
