@@ -321,14 +321,11 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     function remove(uint16 requestId) public beforeAuctionEndWindow {
-        address requester = _requests[requestId].requester;
-        if (requester != msg.sender) {
+        Request memory request = _requests[requestId];
+
+        if (request.requester != msg.sender) {
             revert();
         }
-        uint16 seekIndex = _requests[requestId].seekIndex;
-        Traits trait = _requests[requestId].trait;
-        uint16 traitId = _requests[requestId].traitId;
-        uint16 nounId = _requests[requestId].nounId;
 
         // Cannot remove a request if
         // 1) The current Noun on auction has the requested traits
@@ -337,39 +334,46 @@ contract NounSeek is Ownable2Step, Pausable {
 
         uint16 targetNounId = uint16(auctionHouse.auction().nounId);
         _revertRemoveIfRequestParamsMatchNounParams(
-            trait,
-            traitId,
-            nounId,
+            request.trait,
+            request.traitId,
+            request.nounId,
             targetNounId
         );
 
         _revertRemoveIfRequestParamsMatchNounParams(
-            trait,
-            traitId,
-            nounId,
+            request.trait,
+            request.traitId,
+            request.nounId,
             targetNounId - 1
         );
+
         // If two auctioned Nouns aren't consecutive
+        // Check the previous, previous Noun
         if (_isNonAuctionedNoun(targetNounId - 1)) {
             _revertRemoveIfRequestParamsMatchNounParams(
-                trait,
-                traitId,
-                nounId,
+                request.trait,
+                request.traitId,
+                request.nounId,
                 targetNounId - 2
             );
         }
 
-        bytes32 hash = seekHash(trait, traitId, nounId);
+        bytes32 hash = seekHash(request.trait, request.traitId, request.nounId);
         uint256 lastIndex = _seeks[hash].length - 1;
 
-        if (seekIndex < lastIndex) {
+        if (request.seekIndex < lastIndex) {
             uint16 lastId = _seeks[hash][lastIndex];
-            _requests[lastId].seekIndex = seekIndex;
-            _seeks[hash][seekIndex] = lastId;
+            _requests[lastId].seekIndex = request.seekIndex;
+            _seeks[hash][request.seekIndex] = lastId;
         }
 
         _seeks[hash].pop();
         delete _requests[requestId];
+
+        (bool success, ) = request.requester.call{
+            value: request.amount,
+            gas: 10_000
+        }("");
     }
 
     function matchPreviousNounAndDonate(Traits trait, uint256 max)
