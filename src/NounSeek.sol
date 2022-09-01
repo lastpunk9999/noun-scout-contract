@@ -229,20 +229,9 @@ contract NounSeek {
             "requestTraitId == targetTraitId",
             requestTraitId == targetTraitId
         );
-        // An auctioned noun with no preference
 
         return requestTraitId == targetTraitId;
 
-        // if (
-        //     ((requestNounId == NO_PREFERENCE &&
-        //         _isAuctionedNoun(targetNounId)) ||
-        //         requestNounId == targetNounId) &&
-        //     requestTraitId == targetTraitId
-        // ) {
-        //     // console2.log("got true");
-        //     return true;
-        // }
-        // console2.log("got false");
         return false;
     }
 
