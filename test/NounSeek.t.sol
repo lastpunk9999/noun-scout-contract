@@ -164,7 +164,7 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request.traitId, 9);
         assertEq(request.doneeId, 1);
 
-        assertEq(request.minNounId, 100);
+        // assertEq(request.minNounId, 100);
         assertEq(request.nounId, NO_PREFERENCE);
         assertEq(request.requester, address(user1));
         assertEq(request.amount, 1);
@@ -198,7 +198,7 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request2.traitId, 9);
         assertEq(request2.doneeId, 0);
 
-        assertEq(request2.minNounId, 100);
+        // assertEq(request2.minNounId, 100);
         assertEq(request2.requester, address(user2));
         assertEq(request2.amount, 1);
 
@@ -231,13 +231,16 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request3.traitId, 9);
         assertEq(request3.doneeId, 2);
 
-        assertEq(request3.minNounId, 100);
+        // assertEq(request3.minNounId, 100);
         assertEq(request3.nounId, 100);
         assertEq(request3.requester, address(user3));
         assertEq(request3.amount, 2);
     }
 
     function test_REMOVE_happyCaseFIFO() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
         vm.prank(user1);
         uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
 
@@ -292,6 +295,9 @@ contract NounSeekTest is EnhancedTest {
     }
 
     function test_REMOVE_happyCaseLIFO() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
         vm.prank(user1);
         uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
 
@@ -337,9 +343,190 @@ contract NounSeekTest is EnhancedTest {
         assertEq(headRequests2.length, 0);
     }
 
-    function test_MATCHCURRENTNOUNANDDONATE_NonAuctionedNounHappyCase() public {
+    function test_REMOVE_failsWhenTraitMatchesCurrentNounNoPrefId() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 109);
+        mockAuctionHouse.setNounId(109);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesPreviousNounNoPrefId() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 108);
+        mockAuctionHouse.setNounId(109);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesPreviousNounWhenNonConsecutiveNoPrefId()
+        public
+    {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 99);
+        mockAuctionHouse.setNounId(101);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesCurrentNounWithPrefId() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 109, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 109);
+        mockAuctionHouse.setNounId(109);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesPreviousNounWithPrefId() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 108, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 108);
+        mockAuctionHouse.setNounId(109);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesPreviousNounWhenNonConsecutiveWithPrefId()
+        public
+    {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 199, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 199);
+        mockAuctionHouse.setNounId(201);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_REMOVE_failsWhenTraitMatchesNonAuctionedNoun() public {
+        uint256 timestamp = 9999999999;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.prank(user1);
+
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, 200, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Current auctioned Noun has seed
+        mockNouns.setSeed(seed, 200);
+        mockAuctionHouse.setNounId(201);
+
+        vm.expectRevert();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+    }
+
+    function test_matchPreviousNounAndDonate_NonAuctionedNounHappyCase()
+        public
+    {
         vm.startPrank(user1);
-        uint256 totalRequests = 10;
+        uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
@@ -357,9 +544,9 @@ contract NounSeekTest is EnhancedTest {
             0
         );
         mockNouns.setSeed(seed, 100);
-        mockAuctionHouse.setNounId(101);
+        mockAuctionHouse.setNounId(102);
         vm.prank(user2);
-        nounSeek.matchCurrentNounAndDonate(HEAD, MAX);
+        nounSeek.matchPreviousNounAndDonate(HEAD, MAX);
         NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
@@ -402,11 +589,11 @@ contract NounSeekTest is EnhancedTest {
         }
     }
 
-    function test_MATCHCURRENTNOUNANDDONATE_auctionedNounOnlyNoPreferenceMatchesHappyCase()
+    function test_matchPreviousNounAndDonate_auctionedNounOnlyNoPreferenceMatchesHappyCase()
         public
     {
         vm.startPrank(user1);
-        uint256 totalRequests = 10;
+        uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
@@ -424,9 +611,9 @@ contract NounSeekTest is EnhancedTest {
             0
         );
         mockNouns.setSeed(seed, 101);
-        mockAuctionHouse.setNounId(101);
+        mockAuctionHouse.setNounId(102);
         vm.prank(user2);
-        nounSeek.matchCurrentNounAndDonate(HEAD, MAX);
+        nounSeek.matchPreviousNounAndDonate(HEAD, MAX);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
@@ -469,11 +656,11 @@ contract NounSeekTest is EnhancedTest {
         }
     }
 
-    function test_MATCHCURRENTNOUNANDDONATE_auctionedNounNounIdAndNoPreferenceMatchesHappyCase()
+    function test_matchPreviousNounAndDonate_auctionedNounNounIdAndNoPreferenceMatchesHappyCase()
         public
     {
         vm.startPrank(user1);
-        uint256 totalRequests = 10;
+        uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
@@ -491,9 +678,9 @@ contract NounSeekTest is EnhancedTest {
             0
         );
         mockNouns.setSeed(seed, 101);
-        mockAuctionHouse.setNounId(101);
+        mockAuctionHouse.setNounId(102);
         vm.prank(user2);
-        nounSeek.matchCurrentNounAndDonate(HEAD, NO_PREFERENCE);
+        nounSeek.matchPreviousNounAndDonate(HEAD, NO_PREFERENCE);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
@@ -520,11 +707,11 @@ contract NounSeekTest is EnhancedTest {
         }
     }
 
-    /*     function test_MATCHCURRENTNOUNANDDONATE_auctionedNounAndNonAuctionedNounMatchesHappyCase()
+    /*     function test_matchPreviousNounAndDonate_auctionedNounAndNonAuctionedNounMatchesHappyCase()
         public
     {
         vm.startPrank(user1);
-        uint256 totalRequests = 10;
+        uint256 totalRequests = 100;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
@@ -545,7 +732,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(101);
         vm.prank(user2);
-        nounSeek.matchCurrentNounAndDonate(HEAD, MAX);
+        nounSeek.matchPreviousNounAndDonate(HEAD, MAX);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
             HEAD,
             9,

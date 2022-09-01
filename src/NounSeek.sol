@@ -17,7 +17,7 @@ contract NounSeek {
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
-    uint256 public constant REIMBURSMENT_BPS = 250;
+    uint256 public constant REIMBURSMENT_BPS = 100;
 
     uint16 public constant NO_PREFERENCE = type(uint16).max;
 
@@ -27,9 +27,8 @@ contract NounSeek {
         uint16 seekIndex;
         Traits trait;
         uint16 traitId;
-        uint8 doneeId;
+        uint16 doneeId;
         uint16 nounId;
-        uint16 minNounId;
         address requester;
         uint256 amount;
     }
@@ -86,6 +85,10 @@ contract NounSeek {
             revert TooSoon();
         }
 
+        if (auction.endTime < block.timestamp) {
+            revert TooLate();
+        }
+
         // Cannot executed within a time period from an auction's end
         if (auction.endTime - block.timestamp <= AUCTION_END_LIMIT) {
             revert TooLate();
@@ -94,10 +97,28 @@ contract NounSeek {
     }
 
     /// @notice Modified function must be called within {AUCTION_START_LIMIT} of the auction start time
-    modifier withinMatchCurrentWindow() {
+    modifier withinMatchWindow() {
         INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
-
+        // console2.log("block.timestamp", block.timestamp);
+        // console2.log("auction.startTime", auction.startTime);
+        // console2.log(
+        //     "block.timestamp - auction.startTime",
+        //     block.timestamp - auction.startTime
+        // );
         if (block.timestamp - auction.startTime > AUCTION_START_LIMIT) {
+            revert TooLate();
+        }
+        _;
+    }
+
+    modifier beforeAuctionEndWindow() {
+        uint256 endTime = auctionHouse.auction().endTime;
+        if (endTime < block.timestamp) {
+            revert TooLate();
+        }
+
+        // Cannot executed within a time period from an auction's end
+        if (endTime - block.timestamp <= AUCTION_END_LIMIT) {
             revert TooLate();
         }
         _;
@@ -127,7 +148,7 @@ contract NounSeek {
         return _requests[requestId];
     }
 
-    function donees(uint8 id) public view returns (Donee memory) {
+    function donees(uint16 id) public view returns (Donee memory) {
         return _donees[id];
     }
 
@@ -154,6 +175,74 @@ contract NounSeek {
             traitRequests[i] = (_requests[_seeks[hash][i]]);
         }
         return traitRequests;
+    }
+
+    function requestParamsMatchNounParams(
+        Traits requestTrait,
+        uint16 requestTraitId,
+        uint16 requestNounId,
+        uint16 targetNounId
+    ) public view returns (bool) {
+        console2.log("");
+        console2.log("REMOVE");
+        console2.log("requestTrait", uint8(requestTrait));
+        console2.log("requestTraitId", requestTraitId);
+        console2.log("requestNounId", requestNounId);
+        console2.log("targetNounId", targetNounId);
+
+        console2.log(
+            "requestNounId != NO_PREFERENCE && requestNounId != targetNounId",
+            requestNounId != NO_PREFERENCE && requestNounId != targetNounId
+        );
+        // If a specific Noun Id is part of the request, but is not the target Noun id, can exit
+        if (requestNounId != NO_PREFERENCE && requestNounId != targetNounId) {
+            return false;
+        }
+        console2.log(
+            "requestNounId == NO_PREFERENCE && _isAuctionedNoun(targetNounId)",
+            requestNounId == NO_PREFERENCE && _isNonAuctionedNoun(targetNounId)
+        );
+        // No Preference Noun Id can only apply to auctioned Nouns
+        if (
+            requestNounId == NO_PREFERENCE && _isNonAuctionedNoun(targetNounId)
+        ) {
+            return false;
+        }
+
+        uint16 targetTraitId;
+        if (requestTrait == Traits.BACKGROUND) {
+            targetTraitId = uint16(nouns.seeds(targetNounId).background);
+        } else if (requestTrait == Traits.BODY) {
+            targetTraitId = uint16(nouns.seeds(targetNounId).body);
+        } else if (requestTrait == Traits.ACCESSORY) {
+            targetTraitId = uint16(nouns.seeds(targetNounId).accessory);
+        } else if (requestTrait == Traits.HEAD) {
+            targetTraitId = uint16(nouns.seeds(targetNounId).head);
+        } else if (requestTrait == Traits.GLASSES) {
+            targetTraitId = uint16(nouns.seeds(targetNounId).glasses);
+        } else {
+            revert();
+        }
+        console2.log("targetTraitId", targetTraitId);
+        console2.log(
+            "requestTraitId == targetTraitId",
+            requestTraitId == targetTraitId
+        );
+        // An auctioned noun with no preference
+
+        return requestTraitId == targetTraitId;
+
+        // if (
+        //     ((requestNounId == NO_PREFERENCE &&
+        //         _isAuctionedNoun(targetNounId)) ||
+        //         requestNounId == targetNounId) &&
+        //     requestTraitId == targetTraitId
+        // ) {
+        //     // console2.log("got true");
+        //     return true;
+        // }
+        // console2.log("got false");
+        return false;
     }
 
     /**
@@ -189,7 +278,7 @@ contract NounSeek {
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint8 doneeId
+        uint16 doneeId
     ) public payable returns (uint16) {
         if (trait == Traits.HEAD && traitId >= headCount) {
             revert("a1");
@@ -198,8 +287,7 @@ contract NounSeek {
             revert("a2");
         }
 
-        uint16 minNounId = uint16(auctionHouse.auction().nounId) + 1;
-        if (nounId < minNounId) {
+        if (nounId < uint16(auctionHouse.auction().nounId) + 1) {
             revert("a3");
         }
 
@@ -217,7 +305,6 @@ contract NounSeek {
             trait: trait,
             traitId: traitId,
             nounId: nounId,
-            minNounId: minNounId,
             requester: msg.sender,
             amount: msg.value
         });
@@ -227,7 +314,7 @@ contract NounSeek {
         return requestId;
     }
 
-    function remove(uint16 requestId) public {
+    function remove(uint16 requestId) public beforeAuctionEndWindow {
         address requester = _requests[requestId].requester;
         if (requester != msg.sender) {
             revert();
@@ -236,6 +323,35 @@ contract NounSeek {
         Traits trait = _requests[requestId].trait;
         uint16 traitId = _requests[requestId].traitId;
         uint16 nounId = _requests[requestId].nounId;
+
+        // Cannot remove a request if
+        // 1) The current Noun on auction has the requested traits
+        // 2) The previous Noun to the one on auction has the requested traits
+        // 3) A Non-Auctioned Noun which matches the request.nounId is the previous Noun
+
+        uint16 targetNounId = uint16(auctionHouse.auction().nounId);
+        _revertIfRequestParamsMatchNounParams(
+            trait,
+            traitId,
+            nounId,
+            targetNounId
+        );
+
+        _revertIfRequestParamsMatchNounParams(
+            trait,
+            traitId,
+            nounId,
+            targetNounId - 1
+        );
+        // If two auctioned Nouns aren't consecutive
+        if (_isNonAuctionedNoun(targetNounId - 1)) {
+            _revertIfRequestParamsMatchNounParams(
+                trait,
+                traitId,
+                nounId,
+                targetNounId - 2
+            );
+        }
 
         bytes32 hash = seekHash(trait, traitId, nounId);
         uint256 lastIndex = _seeks[hash].length - 1;
@@ -250,8 +366,11 @@ contract NounSeek {
         delete _requests[requestId];
     }
 
-    function matchCurrentNounAndDonate(Traits trait, uint256 max) public {
-        uint16 nounId = uint16(auctionHouse.auction().nounId);
+    function matchPreviousNounAndDonate(Traits trait, uint256 max)
+        public
+        withinMatchWindow
+    {
+        uint16 nounId = uint16(auctionHouse.auction().nounId) - 1;
         uint16 prevNounId = nounId - 1;
 
         uint16 traitId;
@@ -260,9 +379,9 @@ contract NounSeek {
         uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
 
-        console2.log("nounId", nounId);
-        console2.log("prevNounId", prevNounId);
-        console2.log("max1", max);
+        // console2.log("nounId", nounId);
+        // console2.log("prevNounId", prevNounId);
+        // console2.log("max1", max);
         (donations, reimbursement, max) = _calcFundsAndDelete(
             trait,
             nounId,
@@ -272,10 +391,10 @@ contract NounSeek {
             reimbursement
         );
 
-        console2.log(
-            "_isNonAuctionedNoun(prevNounId)",
-            _isNonAuctionedNoun(prevNounId)
-        );
+        // console2.log(
+        //     "_isNonAuctionedNoun(prevNounId)",
+        //     _isNonAuctionedNoun(prevNounId)
+        // );
         if (max > 0 && _isNonAuctionedNoun(prevNounId)) {
             (donations, reimbursement, max) = _calcFundsAndDelete(
                 trait,
@@ -286,8 +405,8 @@ contract NounSeek {
                 reimbursement
             );
         }
-        console2.log("max2", max);
-        console2.log("_isAuctionedNoun(nounId)", _isAuctionedNoun(nounId));
+        // console2.log("max2", max);
+        // console2.log("_isAuctionedNoun(nounId)", _isAuctionedNoun(nounId));
         // Only auctioned Nouns can match "NO_PREFERENCE"
         if (max > 0 && _isAuctionedNoun(nounId)) {
             (donations, reimbursement, max) = _calcFundsAndDelete(
@@ -299,7 +418,7 @@ contract NounSeek {
                 reimbursement
             );
         }
-        console2.log("max3", max);
+        // console2.log("max3", max);
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
             (bool success, ) = _donees[i].to.call{
@@ -317,17 +436,17 @@ contract NounSeek {
     ------- INTERNAL FUNCTIONS --------
     -----------------------------------
      */
-    function _isNonAuctionedNoun(uint256 nounId) internal returns (bool) {
+    function _isNonAuctionedNoun(uint256 nounId) internal view returns (bool) {
         return nounId % 10 == 0 && nounId <= 1820;
     }
 
-    function _isAuctionedNoun(uint16 nounId) internal returns (bool) {
+    function _isAuctionedNoun(uint16 nounId) internal view returns (bool) {
         return nounId % 10 != 0 || nounId > 1820;
     }
 
     function _calcFundsAndDelete(
         Traits trait,
-        uint16 currentNounId,
+        uint16 targetNounId,
         uint16 seekNounId,
         uint256 max,
         uint256[] memory donations,
@@ -343,18 +462,18 @@ contract NounSeek {
         if (max == 0) {
             return (donations, reimbursement, max);
         }
-        console2.log("");
+        // console2.log("");
         uint16 traitId;
         if (trait == Traits.BACKGROUND) {
-            traitId = uint16(nouns.seeds(currentNounId).background);
+            traitId = uint16(nouns.seeds(targetNounId).background);
         } else if (trait == Traits.BODY) {
-            traitId = uint16(nouns.seeds(currentNounId).body);
+            traitId = uint16(nouns.seeds(targetNounId).body);
         } else if (trait == Traits.ACCESSORY) {
-            traitId = uint16(nouns.seeds(currentNounId).accessory);
+            traitId = uint16(nouns.seeds(targetNounId).accessory);
         } else if (trait == Traits.HEAD) {
-            traitId = uint16(nouns.seeds(currentNounId).head);
+            traitId = uint16(nouns.seeds(targetNounId).head);
         } else if (trait == Traits.GLASSES) {
-            traitId = uint16(nouns.seeds(currentNounId).glasses);
+            traitId = uint16(nouns.seeds(targetNounId).glasses);
         } else {
             revert();
         }
@@ -366,11 +485,11 @@ contract NounSeek {
         );
         uint256 nounIdRequestsLength = nounIdRequests.length;
 
-        console2.log("Trait", uint16(trait));
-        console2.log("traitId", traitId);
-        console2.log("seekNounId", seekNounId);
-        console2.log("currentNounId", currentNounId);
-        console2.log("nounIdRequestsLength", nounIdRequestsLength);
+        // console2.log("Trait", uint16(trait));
+        // console2.log("traitId", traitId);
+        // console2.log("seekNounId", seekNounId);
+        // console2.log("targetNounId", targetNounId);
+        // console2.log("nounIdRequestsLength", nounIdRequestsLength);
 
         if (nounIdRequestsLength == 0) {
             return (donations, reimbursement, max);
@@ -397,5 +516,21 @@ contract NounSeek {
         }
 
         return (donations, reimbursement, max - nounIdRequestsLength);
+    }
+
+    function _revertIfRequestParamsMatchNounParams(
+        Traits requestTrait,
+        uint16 requestTraitId,
+        uint16 requestNounId,
+        uint16 targetNounId
+    ) internal view {
+        if (
+            requestParamsMatchNounParams(
+                requestTrait,
+                requestTraitId,
+                requestNounId,
+                targetNounId
+            )
+        ) revert();
     }
 }
