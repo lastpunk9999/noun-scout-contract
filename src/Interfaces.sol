@@ -26,9 +26,31 @@ interface INounsSeederLike {
     }
 }
 
+interface INounsDescriptorLike {
+    function backgroundCount() external view returns (uint256);
+
+    function bodyCount() external view returns (uint256);
+
+    function accessoryCount() external view returns (uint256);
+
+    function headCount() external view returns (uint256);
+
+    function glassesCount() external view returns (uint256);
+}
+
 interface INounsTokenLike {
+    function descriptor() external view returns (address);
+
     function seeds(uint256 nounId)
         external
         view
         returns (INounsSeederLike.Seed memory);
+}
+
+interface IWETH {
+    function deposit() external payable;
+
+    function withdraw(uint256 wad) external;
+
+    function transfer(address to, uint256 value) external returns (bool);
 }
