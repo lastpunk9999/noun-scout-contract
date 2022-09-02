@@ -15,7 +15,7 @@ contract NounSeek is Ownable2Step, Pausable {
     error NotRequester();
     error IneligibleNounId();
 
-    /// @notice Stores deposited value with the addresses that sent it
+    /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
         uint16 id;
         uint16 seekIndex;
@@ -27,6 +27,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint256 amount;
     }
 
+    /// @notice Name, address, and active status where funds can be donated
     struct Donee {
         string name;
         address to;
@@ -41,13 +42,19 @@ contract NounSeek is Ownable2Step, Pausable {
         GLASSES
     }
 
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      STORAGE VARIABLES
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
     /// @notice Retreives historical mapping of nounId -> seed
     INounsTokenLike public immutable nouns;
 
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
 
-    // The address of the WETH contract
+    /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
     /// @notice Time limit before an auction ends
@@ -71,9 +78,9 @@ contract NounSeek is Ownable2Step, Pausable {
     mapping(uint16 => Request) internal _requests;
 
     /**
-    -----------------------------
-    --------- MODIFIERS ---------
-    -----------------------------
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      MODIFIERS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     modifier beforeAuctionEndWindow() {
@@ -101,9 +108,34 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ----------------------------------
-    --------- VIEW FUNCTIONS ---------
-    ----------------------------------
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      OWNER FUNCTIONS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
+    function addDonee(string calldata name, address to) external onlyOwner {
+        _donees.push(Donee({name: name, to: to, active: true}));
+    }
+
+    function toggleDoneeActive(uint256 id) external onlyOwner {
+        Donee memory donee = _donees[id];
+        if (donee.to == address(0)) revert DoneeNotFound();
+        donee.active = !donee.active;
+        _donees[id] = donee;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      VIEW FUNCTIONS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     function seekHash(
@@ -180,34 +212,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    -----------------------------------------------
-    --------- AUTHORIZED WRITE FUNCTIONS ---------
-    -----------------------------------
-     */
-
-    function addDonee(string calldata name, address to) external onlyOwner {
-        _donees.push(Donee({name: name, to: to, active: true}));
-    }
-
-    function toggleDoneeActive(uint256 id) external onlyOwner {
-        Donee memory donee = _donees[id];
-        if (donee.to == address(0)) revert DoneeNotFound();
-        donee.active = !donee.active;
-        _donees[id] = donee;
-    }
-
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function unpause() external onlyOwner {
-        _unpause();
-    }
-
-    /**
-    -----------------------------------
-    --------- WRITE FUNCTIONS ---------
-    -----------------------------------
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      WRITE FUNCTIONS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     function updateTraitCounts() public {
@@ -376,9 +383,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    -----------------------------------
-    ------- INTERNAL FUNCTIONS --------
-    -----------------------------------
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     INTERNAL FUNCTIONS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {
         return nounId % 10 == 0 && nounId <= 1820;
