@@ -138,14 +138,6 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    function seekHash(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(trait, traitId, nounId));
-    }
-
     function requests(uint16 requestId) public view returns (Request memory) {
         return _requests[requestId];
     }
@@ -159,7 +151,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 nounId
     ) public view returns (uint16[] memory) {
-        return _seeks[seekHash(trait, traitId, nounId)];
+        return _seeks[_seekHash(trait, traitId, nounId)];
     }
 
     function requestsForTrait(
@@ -168,7 +160,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint256 max
     ) public view returns (Request[] memory) {
-        bytes32 hash = seekHash(trait, traitId, nounId);
+        bytes32 hash = _seekHash(trait, traitId, nounId);
         uint256 seeksLength = _seeks[hash].length;
         if (seeksLength > max) seeksLength = max;
         Request[] memory traitRequests = new Request[](seeksLength);
@@ -251,7 +243,7 @@ contract NounSeek is Ownable2Step, Pausable {
             revert InactiveDonee();
         }
 
-        bytes32 hash = seekHash(trait, traitId, nounId);
+        bytes32 hash = _seekHash(trait, traitId, nounId);
 
         // length of all requests for specific head
         uint16 seekIndex = uint16(_seeks[hash].length);
@@ -312,7 +304,11 @@ contract NounSeek is Ownable2Step, Pausable {
             );
         }
 
-        bytes32 hash = seekHash(request.trait, request.traitId, request.nounId);
+        bytes32 hash = _seekHash(
+            request.trait,
+            request.traitId,
+            request.nounId
+        );
         uint256 lastIndex = _seeks[hash].length - 1;
 
         if (request.seekIndex < lastIndex) {
@@ -387,6 +383,19 @@ contract NounSeek is Ownable2Step, Pausable {
      INTERNAL FUNCTIONS
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
+
+    /**
+     @notice The canonical path for requests that target the same `trait`, `traitId`, and `nounId`
+     Used to store similar requests in the `_seeks` mapping
+    */
+    function _seekHash(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(trait, traitId, nounId));
+    }
+
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {
         return nounId % 10 == 0 && nounId <= 1820;
     }
@@ -456,7 +465,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         if (nounIdRequestsLength > 0) {
-            bytes32 hash = seekHash(trait, traitId, requestNounId);
+            bytes32 hash = _seekHash(trait, traitId, requestNounId);
             delete _seeks[hash];
         }
 
