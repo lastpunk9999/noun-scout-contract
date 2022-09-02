@@ -1,4 +1,4 @@
-# NounSeek
+# NounSeek v1
 ### Summary
 Allows anyone to put up a reward for minting any combination Noun trait and distributes the reward if the current or next Noun is minted with the desired traits.
 ### Flow
