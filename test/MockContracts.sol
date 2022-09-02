@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "../src/NounsInterfaces.sol";
+import "../src/Interfaces.sol";
 
 contract MockNouns is INounsTokenLike {
     address public _descriptor;

@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "../src/NounSeek.sol";
 import "./MockContracts.sol";
-import "../src/NounsInterfaces.sol";
+import "../src/Interfaces.sol";
 
 contract EnhancedTest is Test {
     function mkaddr(string memory name) public returns (address) {
