@@ -404,6 +404,10 @@ contract NounSeek is Ownable2Step, Pausable {
         return nounId % 10 != 0 || nounId > 1820;
     }
 
+    /**
+    @notice Gets the seed for `actualNounId` and uses it to look up requests that match.
+    @dev Donation amounts and reimbursement is calculated from the matching set of requests and the requests are cleared.
+     */
     function _calcFundsAndDelete(
         Traits trait,
         uint16 actualNounId,
