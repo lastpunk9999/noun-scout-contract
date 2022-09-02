@@ -7,13 +7,13 @@ Allows anyone to put up a reward for minting a Noun with a specific trait and do
 - A `Request` can be scoped to a specific `nounId` or set to `ANY_ID`.
 - `ANY_ID` will never match to an on-auctioned Noun.
  - *Example:*
-   - A 1 ETH request is made to mint a Noun with a `computer` head, for any Noun Id, with funds being donated to the Internet Archive
+   - A 1 ETH request is made to mint a `computer` head Noun, for any Noun Id, with funds being donated to the Internet Archive
 
 **Adding to a Request**
 - Another user can create the same `Request` for `trait` and `traitId` combination, and specify the same charity or another.
 - Adding can be done at any time before a Noun with specific traits is minted, or during the auction of a matched Noun which allows others to contribute to the donation during the auction time window.
  - *Example:*
-   - Alice makes 1 ETH request is made to mint a Noun with a `panda` head, with funds being donated to the World Wildlife Foundation
+   - Alice makes 1 ETH request is made to mint a `panda` head Noun, with funds being donated to the World Wildlife Foundation
    - Noun 34 is minted with a `panda` head
    - Bob adds a 1 ETH `panda` head request, with funds being donated to the World Wildlife Foundation
    - Charlie adds a 0.5 ETH `panda` head request, with funds being donated tothe Rainforest Foundation
