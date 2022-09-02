@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "../src/NounSeek.sol";
 import "./MockContracts.sol";
+import "../src/NounsInterfaces.sol";
 
 contract EnhancedTest is Test {
     function mkaddr(string memory name) public returns (address) {
@@ -64,6 +65,7 @@ contract NounSeekTest is EnhancedTest {
     uint256 AUCTION_END_LIMIT;
     uint16 ANY_ID;
     uint16 MAX = 9999 wei;
+    uint256 REIMBURSMENT_BPS;
     NounSeek.Traits BACKGROUND = NounSeek.Traits.BACKGROUND;
     NounSeek.Traits HEAD = NounSeek.Traits.HEAD;
     NounSeek.Traits GLASSES = NounSeek.Traits.GLASSES;
@@ -73,10 +75,12 @@ contract NounSeekTest is EnhancedTest {
         mockAuctionHouse = new MockAuctionHouse();
         mockDescriptor = new MockDescriptor();
         mockNouns = new MockNouns(address(mockDescriptor));
-        nounSeek = new NounSeek(mockNouns, mockAuctionHouse);
+        nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         ANY_ID = nounSeek.ANY_ID();
+        REIMBURSMENT_BPS = nounSeek.REIMBURSMENT_BPS();
+
         nounSeek.addDonee("donee1", donee1);
         nounSeek.addDonee("donee2", donee2);
         nounSeek.addDonee("donee3", donee3);
@@ -615,12 +619,13 @@ contract NounSeekTest is EnhancedTest {
     function test_MATCHANDDONATE_auctionedSpecificIdNounHappyCase() public {
         vm.startPrank(user1);
         uint256 totalRequests = 4;
+        uint256 value = 1000 wei;
         for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(
+            nounSeek.add{value: value}(
                 HEAD,
                 9,
                 i % 2 == 0 ? 100 : 101,
-                uint8(i % 2)
+                uint8(i % 4)
             );
         }
         vm.stopPrank();
@@ -633,7 +638,14 @@ contract NounSeekTest is EnhancedTest {
         );
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
+
         vm.prank(user2);
+
+        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
+        vm.expectCall(address(donee2), value - reimbursement_per_donation, "");
+        vm.expectCall(address(donee4), value - reimbursement_per_donation, "");
+
         nounSeek.matchAndDonate(101, HEAD, MAX);
         NounSeek.Request[] memory ineligibleReqs = nounSeek.requestsForTrait(
             HEAD,
@@ -678,12 +690,13 @@ contract NounSeekTest is EnhancedTest {
     {
         vm.startPrank(user1);
         uint256 totalRequests = 4;
+        uint256 value = 1000 wei;
         for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(
+            nounSeek.add{value: value}(
                 HEAD,
                 9,
                 i % 2 == 0 ? 101 : ANY_ID,
-                uint8(i % 2)
+                uint8(i % 4)
             );
         }
         vm.stopPrank();
@@ -696,6 +709,30 @@ contract NounSeekTest is EnhancedTest {
         );
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
+
+        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        vm.expectCall(address(user2), reimbursement_per_donation * 4, "");
+        vm.expectCall(
+            address(donee1),
+            (value - reimbursement_per_donation),
+            ""
+        );
+        vm.expectCall(
+            address(donee2),
+            (value - reimbursement_per_donation),
+            ""
+        );
+        vm.expectCall(
+            address(donee3),
+            (value - reimbursement_per_donation),
+            ""
+        );
+        vm.expectCall(
+            address(donee4),
+            (value - reimbursement_per_donation),
+            ""
+        );
+
         vm.prank(user2);
         nounSeek.matchAndDonate(101, HEAD, MAX);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
@@ -740,8 +777,9 @@ contract NounSeekTest is EnhancedTest {
         // (noun id 200 in between)
         vm.startPrank(user1);
         uint256 totalRequests = 4;
+        uint256 value = 1000 wei;
         for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(
+            nounSeek.add{value: value}(
                 HEAD,
                 9,
                 i % 2 == 0 ? 199 : ANY_ID,
@@ -758,6 +796,20 @@ contract NounSeekTest is EnhancedTest {
         );
         mockNouns.setSeed(seed, 199);
         mockAuctionHouse.setNounId(201);
+
+        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+
+        vm.expectCall(address(user2), reimbursement_per_donation * 4, "");
+        vm.expectCall(
+            address(donee1),
+            (value - reimbursement_per_donation) * 2,
+            ""
+        );
+        vm.expectCall(
+            address(donee2),
+            (value - reimbursement_per_donation) * 2,
+            ""
+        );
         vm.prank(user2);
         nounSeek.matchAndDonate(199, HEAD, MAX);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
@@ -799,23 +851,23 @@ contract NounSeekTest is EnhancedTest {
         // target noun = 200
         vm.startPrank(user1);
         uint256 totalRequests = 8;
-
+        uint256 value = 1000 wei;
         // target = 200
         for (uint256 i; i < (totalRequests / 4); i++) {
-            nounSeek.add{value: 1000 wei}(HEAD, 9, 200, uint8(i % 2));
+            nounSeek.add{value: value}(HEAD, 9, 200, uint8(i % 2));
         }
         // target = 201
         for (uint256 i; i < (totalRequests / 4); i++) {
-            nounSeek.add{value: 1000 wei}(HEAD, 9, 201, uint8(i % 2));
+            nounSeek.add{value: value}(HEAD, 9, 201, uint8(i % 2));
         }
         // target = ANY_ID
         for (uint256 i; i < (totalRequests / 4); i++) {
-            nounSeek.add{value: 1000 wei}(HEAD, 9, ANY_ID, uint8(i % 2));
+            nounSeek.add{value: value}(HEAD, 9, ANY_ID, uint8(i % 2));
         }
         // target = 200
         // head = 10
         for (uint256 i; i < (totalRequests / 4); i++) {
-            nounSeek.add{value: 1000 wei}(HEAD, 10, 200, uint8(i % 2));
+            nounSeek.add{value: value}(HEAD, 10, 200, uint8(i % 2));
         }
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -826,7 +878,23 @@ contract NounSeekTest is EnhancedTest {
             0
         );
         mockNouns.setSeed(seed, 200);
+        mockNouns.setSeed(seed, 201);
+        mockNouns.setSeed(seed, 199);
         mockAuctionHouse.setNounId(201);
+
+        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+
+        vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
+        vm.expectCall(
+            address(donee1),
+            (value - reimbursement_per_donation),
+            ""
+        );
+        vm.expectCall(
+            address(donee2),
+            (value - reimbursement_per_donation),
+            ""
+        );
         vm.prank(user2);
         nounSeek.matchAndDonate(200, HEAD, MAX);
         NounSeek.Request[] memory matchIdRequests = nounSeek.requestsForTrait(

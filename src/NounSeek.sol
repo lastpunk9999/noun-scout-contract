@@ -47,6 +47,9 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
 
+    // The address of the WETH contract
+    IWETH public immutable weth;
+
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
@@ -86,9 +89,14 @@ contract NounSeek is Ownable2Step, Pausable {
         _;
     }
 
-    constructor(INounsTokenLike _nouns, INounsAuctionHouseLike _auctionHouse) {
+    constructor(
+        INounsTokenLike _nouns,
+        INounsAuctionHouseLike _auctionHouse,
+        IWETH _weth
+    ) {
         nouns = _nouns;
         auctionHouse = _auctionHouse;
+        weth = _weth;
         updateTraitCounts();
     }
 
@@ -309,10 +317,7 @@ contract NounSeek is Ownable2Step, Pausable {
         _seeks[hash].pop();
         delete _requests[requestId];
 
-        (bool success, ) = request.requester.call{
-            value: request.amount,
-            gas: 10_000
-        }("");
+        _safeTransferETH(request.requester, request.amount);
     }
 
     function matchAndDonate(
@@ -365,14 +370,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
-            (bool success1, ) = _donees[i].to.call{
-                value: donations[i],
-                gas: 10_000
-            }("");
+            _safeTransferETH(_donees[i].to, donations[i]);
         }
-        (bool success2, ) = msg.sender.call{value: reimbursement, gas: 10_000}(
-            ""
-        );
+        _safeTransferETH(msg.sender, reimbursement);
     }
 
     /**
@@ -470,5 +470,27 @@ contract NounSeek is Ownable2Step, Pausable {
                 targetNounId
             )
         ) revert MatchFound(requestTrait, requestTraitId, targetNounId);
+    }
+
+    /**
+     * @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
+     */
+    function _safeTransferETHWithFallback(address to, uint256 amount) internal {
+        if (!_safeTransferETH(to, amount)) {
+            weth.deposit{value: amount}();
+            weth.transfer(to, amount);
+        }
+    }
+
+    /**
+     * @notice Transfer ETH and return the success status.
+     * @dev This function only forwards 10,000 gas to the callee.
+     */
+    function _safeTransferETH(address to, uint256 value)
+        internal
+        returns (bool)
+    {
+        (bool success, ) = to.call{value: value, gas: 10_000}("");
+        return success;
     }
 }
