@@ -63,8 +63,8 @@ contract NounSeekTest is EnhancedTest {
 
     uint256 AUCTION_END_LIMIT;
     uint256 AUCTION_START_LIMIT;
-    uint16 NO_PREFERENCE;
-    uint16 MAX;
+    uint16 ANY_ID;
+    uint16 MAX = 9999 wei;
     NounSeek.Traits BACKGROUND = NounSeek.Traits.BACKGROUND;
     NounSeek.Traits HEAD = NounSeek.Traits.HEAD;
     NounSeek.Traits GLASSES = NounSeek.Traits.GLASSES;
@@ -78,8 +78,7 @@ contract NounSeekTest is EnhancedTest {
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
-        NO_PREFERENCE = nounSeek.NO_PREFERENCE();
-        MAX = NO_PREFERENCE;
+        ANY_ID = nounSeek.ANY_ID();
         nounSeek.addDonee("donee1", donee1);
         nounSeek.addDonee("donee2", donee2);
         nounSeek.addDonee("donee3", donee3);
@@ -118,8 +117,8 @@ contract NounSeekTest is EnhancedTest {
     //         nounSeek.add{value: value}(
     //             5,
     //             5,
-    //             NO_PREFERENCE,
-    //             NO_PREFERENCE,
+    //             ANY_ID,
+    //             ANY_ID,
     //             11,
     //             true
     //         );
@@ -140,14 +139,14 @@ contract NounSeekTest is EnhancedTest {
 
     function test_ADD_happyCase() public {
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         NounSeek.Request memory request = nounSeek.requests(requestId);
 
         uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE
+            ANY_ID
         );
         assertEq(headRequestIds.length, 1);
         assertEq(headRequestIds[0], requestId);
@@ -155,8 +154,8 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
+            ANY_ID,
+            MAX
         );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].requester, request.requester);
@@ -168,18 +167,18 @@ contract NounSeekTest is EnhancedTest {
         assertEq(request.doneeId, 1);
 
         // assertEq(request.minNounId, 100);
-        assertEq(request.nounId, NO_PREFERENCE);
+        assertEq(request.nounId, ANY_ID);
         assertEq(request.requester, address(user1));
         assertEq(request.amount, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 0);
 
         NounSeek.Request memory request2 = nounSeek.requests(requestId2);
         uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE
+            ANY_ID
         );
 
         assertEq(headRequestIds2.length, 2, "headRequestIds2.length");
@@ -188,8 +187,8 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
+            ANY_ID,
+            MAX
         );
         assertEq(headRequests2.length, 2, "headRequests2.length");
         assertEq(headRequests2[0].requester, request.requester);
@@ -223,7 +222,7 @@ contract NounSeekTest is EnhancedTest {
             HEAD,
             9,
             100,
-            NO_PREFERENCE
+            MAX
         );
         assertEq(headRequests3.length, 1);
         assertEq(headRequests3[0].requester, request3.requester);
@@ -245,10 +244,10 @@ contract NounSeekTest is EnhancedTest {
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 0);
 
         vm.prank(user1);
         vm.expectRevert();
@@ -261,46 +260,46 @@ contract NounSeekTest is EnhancedTest {
         uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE
+            ANY_ID
         );
 
         assertEq(headRequestIds.length, 1);
         NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
+            ANY_ID,
+            MAX
         );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].id, requestId2);
-        assertEq(headRequests[0].seekIndex, 0);
-        assertEq(headRequests[0].requester, address(user2));
+        // assertEq(headRequests[0].seekIndex, 0);
+        // assertEq(headRequests[0].requester, address(user2));
 
-        vm.expectCall(address(user2), 1, "");
+        // vm.expectCall(address(user2), 1, "");
 
-        vm.prank(user2);
-        nounSeek.remove(requestId2);
+        // vm.prank(user2);
+        // nounSeek.remove(requestId2);
 
-        assertEq(address(nounSeek).balance, 0);
+        // assertEq(address(nounSeek).balance, 0);
 
-        uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
-            HEAD,
-            9,
-            NO_PREFERENCE
-        );
+        // uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
+        //     HEAD,
+        //     9,
+        //     ANY_ID
+        // );
 
-        assertEq(headRequestIds2.length, 0);
-        NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
-            HEAD,
-            9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
-        );
-        assertEq(headRequests2.length, 0);
+        // assertEq(headRequestIds2.length, 0);
+        // NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
+        //     HEAD,
+        //     9,
+        //     ANY_ID,
+        //     ANY_ID
+        // );
+        // assertEq(headRequests2.length, 0);
 
-        vm.prank(user2);
-        vm.expectRevert();
-        nounSeek.remove(requestId2);
+        // vm.prank(user2);
+        // vm.expectRevert();
+        // nounSeek.remove(requestId2);
     }
 
     function test_REMOVE_happyCaseLIFO() public {
@@ -308,10 +307,10 @@ contract NounSeekTest is EnhancedTest {
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.prank(user1);
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         vm.prank(user2);
-        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 0);
+        uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 0);
 
         vm.expectCall(address(user2), 1, "");
         vm.prank(user2);
@@ -320,15 +319,15 @@ contract NounSeekTest is EnhancedTest {
         uint16[] memory headRequestIds = nounSeek.requestIdsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE
+            ANY_ID
         );
 
         assertEq(headRequestIds.length, 1);
         NounSeek.Request[] memory headRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
+            ANY_ID,
+            MAX
         );
         assertEq(headRequests.length, 1);
         assertEq(headRequests[0].id, requestId);
@@ -345,15 +344,15 @@ contract NounSeekTest is EnhancedTest {
         uint16[] memory headRequestIds2 = nounSeek.requestIdsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE
+            ANY_ID
         );
 
         assertEq(headRequestIds2.length, 0);
         NounSeek.Request[] memory headRequests2 = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
-            NO_PREFERENCE
+            ANY_ID,
+            ANY_ID
         );
         assertEq(headRequests2.length, 0);
     }
@@ -364,7 +363,7 @@ contract NounSeekTest is EnhancedTest {
         vm.warp(timestamp);
         vm.prank(user1);
 
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -397,7 +396,7 @@ contract NounSeekTest is EnhancedTest {
         vm.warp(timestamp);
         vm.prank(user1);
 
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -431,7 +430,7 @@ contract NounSeekTest is EnhancedTest {
         vm.warp(timestamp);
         vm.prank(user1);
 
-        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, NO_PREFERENCE, 1);
+        uint16 requestId = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 1);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -685,7 +684,7 @@ contract NounSeekTest is EnhancedTest {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
                 9,
-                i % 2 == 0 ? 101 : NO_PREFERENCE,
+                i % 2 == 0 ? 101 : ANY_ID,
                 uint8(i % 2)
             );
         }
@@ -712,7 +711,7 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
+            ANY_ID,
             MAX
         );
 
@@ -747,7 +746,7 @@ contract NounSeekTest is EnhancedTest {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
                 9,
-                i % 2 == 0 ? 199 : NO_PREFERENCE,
+                i % 2 == 0 ? 199 : ANY_ID,
                 uint8(i % 2)
             );
         }
@@ -774,7 +773,7 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
+            ANY_ID,
             MAX
         );
 
@@ -811,9 +810,9 @@ contract NounSeekTest is EnhancedTest {
         for (uint256 i; i < (totalRequests / 4); i++) {
             nounSeek.add{value: 1000 wei}(HEAD, 9, 201, uint8(i % 2));
         }
-        // target = NO_PREFERENCE
+        // target = ANY_ID
         for (uint256 i; i < (totalRequests / 4); i++) {
-            nounSeek.add{value: 1000 wei}(HEAD, 9, NO_PREFERENCE, uint8(i % 2));
+            nounSeek.add{value: 1000 wei}(HEAD, 9, ANY_ID, uint8(i % 2));
         }
         // target = 200
         // head = 10
@@ -844,7 +843,7 @@ contract NounSeekTest is EnhancedTest {
         NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            NO_PREFERENCE,
+            ANY_ID,
             MAX
         );
 
@@ -891,7 +890,7 @@ contract NounSeekTest is EnhancedTest {
             if (i > (totalRequests / 4) * 2 && i <= (totalRequests / 4) * 3) {
                 assertEq(
                     uint16(nounSeek.requests(i).nounId),
-                    NO_PREFERENCE,
+                    ANY_ID,
                     "nounSeek.requests(i).nounId"
                 );
             }

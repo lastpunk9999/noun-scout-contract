@@ -58,7 +58,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     uint256 public constant REIMBURSMENT_BPS = 100;
 
-    uint16 public constant NO_PREFERENCE = type(uint16).max;
+    uint16 public constant ANY_ID = 0;
 
     uint16 public requestCount;
     uint16 public backgroundCount;
@@ -182,14 +182,12 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 targetNounId
     ) public view returns (bool) {
         // If a specific Noun Id is part of the request, but is not the target Noun id, can exit
-        if (requestNounId != NO_PREFERENCE && requestNounId != targetNounId) {
+        if (requestNounId != ANY_ID && requestNounId != targetNounId) {
             return false;
         }
 
         // No Preference Noun Id can only apply to auctioned Nouns
-        if (
-            requestNounId == NO_PREFERENCE && _isNonAuctionedNoun(targetNounId)
-        ) {
+        if (requestNounId == ANY_ID && _isNonAuctionedNoun(targetNounId)) {
             return false;
         }
 
@@ -273,10 +271,6 @@ contract NounSeek is Ownable2Step, Pausable {
         }
         if (!_donees[doneeId].active) {
             revert("a2");
-        }
-
-        if (nounId < uint16(auctionHouse.auction().nounId) + 1) {
-            revert("a3");
         }
 
         bytes32 hash = seekHash(trait, traitId, nounId);
@@ -399,7 +393,7 @@ contract NounSeek is Ownable2Step, Pausable {
             (donations, reimbursement, max) = _calcFundsAndDelete(
                 trait,
                 targetNounId,
-                NO_PREFERENCE,
+                ANY_ID,
                 max,
                 donations,
                 reimbursement
@@ -416,12 +410,12 @@ contract NounSeek is Ownable2Step, Pausable {
         //     );
         // }
 
-        // // Only auctioned Nouns can match "NO_PREFERENCE"
+        // // Only auctioned Nouns can match "ANY_ID"
         // if (max > 0 && _isAuctionedNoun(nounId)) {
         //     (donations, reimbursement, max) = _calcFundsAndDelete(
         //         trait,
         //         nounId,
-        //         NO_PREFERENCE,
+        //         ANY_ID,
         //         max,
         //         donations,
         //         reimbursement
