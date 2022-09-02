@@ -260,7 +260,15 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint16) {
-        if (trait == Traits.HEAD && traitId >= headCount) {
+        if (trait == Traits.BACKGROUND && traitId >= backgroundCount) {
+            revert("a1");
+        } else if (trait == Traits.BODY && traitId >= bodyCount) {
+            revert("a1");
+        } else if (trait == Traits.ACCESSORY && traitId >= accessoryCount) {
+            revert("a1");
+        } else if ((trait == Traits.HEAD && traitId >= headCount)) {
+            revert("a1");
+        } else if (trait == Traits.GLASSES && traitId >= glassesCount) {
             revert("a1");
         }
         if (!_donees[doneeId].active) {

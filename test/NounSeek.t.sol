@@ -87,7 +87,10 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.addDonee("donee5", donee5);
 
         mockDescriptor.setHeadCount(99);
-        mockDescriptor.setGlassesCount(99);
+        mockDescriptor.setGlassesCount(98);
+        mockDescriptor.setAccessoryCount(97);
+        mockDescriptor.setBodyCount(96);
+        mockDescriptor.setBackgroundCount(95);
         nounSeek.updateTraitCounts();
         mockAuctionHouse.setNounId(99);
     }
@@ -129,10 +132,10 @@ contract NounSeekTest is EnhancedTest {
     function testConstructor() public {
         assertEq(address(mockNouns), address(nounSeek.nouns()));
         assertEq(nounSeek.headCount(), 99);
-        assertEq(nounSeek.glassesCount(), 99);
-        assertEq(nounSeek.bodyCount(), 1);
-        assertEq(nounSeek.accessoryCount(), 1);
-        assertEq(nounSeek.backgroundCount(), 1);
+        assertEq(nounSeek.glassesCount(), 98);
+        assertEq(nounSeek.accessoryCount(), 97);
+        assertEq(nounSeek.bodyCount(), 96);
+        assertEq(nounSeek.backgroundCount(), 95);
     }
 
     function test_ADD_happyCase() public {
