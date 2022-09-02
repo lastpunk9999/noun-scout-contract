@@ -7,7 +7,6 @@ import "./NounsInterfaces.sol";
 import "forge-std/console2.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
-    error TooSoon();
     error TooLate();
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
     // error NoAmountSent();
@@ -50,9 +49,6 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Retreives the current auction data
     INounsAuctionHouseLike public immutable auctionHouse;
 
-    /// @notice Time limit after an auction starts
-    uint256 public constant AUCTION_START_LIMIT = 1 hours;
-
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
@@ -78,36 +74,6 @@ contract NounSeek is Ownable2Step, Pausable {
     --------- MODIFIERS ---------
     -----------------------------
      */
-
-    /// @notice Modified function must be called {AUCTION_START_LIMIT} after auction start time and {AUCTION_END_LIMIT} before auction end time
-    modifier withinRequestWindow() {
-        INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
-
-        // Cannot executed within a time from an auction's start
-        if (block.timestamp - auction.startTime <= AUCTION_START_LIMIT) {
-            revert TooSoon();
-        }
-
-        if (auction.endTime < block.timestamp) {
-            revert TooLate();
-        }
-
-        // Cannot executed within a time period from an auction's end
-        if (auction.endTime - block.timestamp <= AUCTION_END_LIMIT) {
-            revert TooLate();
-        }
-        _;
-    }
-
-    /// @notice Modified function must be called within {AUCTION_START_LIMIT} of the auction start time
-    modifier withinMatchWindow() {
-        INounsAuctionHouseLike.Auction memory auction = auctionHouse.auction();
-
-        if (block.timestamp - auction.startTime > AUCTION_START_LIMIT) {
-            revert TooLate();
-        }
-        _;
-    }
 
     modifier beforeAuctionEndWindow() {
         uint256 endTime = auctionHouse.auction().endTime;

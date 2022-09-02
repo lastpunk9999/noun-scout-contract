@@ -62,7 +62,6 @@ contract NounSeekTest is EnhancedTest {
     uint256 cleanSnapshot;
 
     uint256 AUCTION_END_LIMIT;
-    uint256 AUCTION_START_LIMIT;
     uint16 ANY_ID;
     uint16 MAX = 9999 wei;
     NounSeek.Traits BACKGROUND = NounSeek.Traits.BACKGROUND;
@@ -77,7 +76,6 @@ contract NounSeekTest is EnhancedTest {
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse);
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
-        AUCTION_START_LIMIT = nounSeek.AUCTION_START_LIMIT();
         ANY_ID = nounSeek.ANY_ID();
         nounSeek.addDonee("donee1", donee1);
         nounSeek.addDonee("donee2", donee2);
