@@ -9,13 +9,11 @@ import "forge-std/console2.sol";
 contract NounSeek is Ownable2Step, Pausable {
     error TooLate();
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
-    // error NoAmountSent();
-    // error NoPreferences();
-    // error OnlySeeker();
-    // error OnlyFinder();
-    // error AlreadyFound();
-    // error NoMatch(uint96 seekId);
-    error Ineligible();
+    error DoneeNotFound();
+    error InactiveDonee();
+    error NonExistantTraitId();
+    error NotRequester();
+    error IneligibleNounId();
 
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
@@ -168,8 +166,6 @@ contract NounSeek is Ownable2Step, Pausable {
             targetTraitId = uint16(nouns.seeds(targetNounId).head);
         } else if (requestTrait == Traits.GLASSES) {
             targetTraitId = uint16(nouns.seeds(targetNounId).glasses);
-        } else {
-            revert();
         }
 
         return requestTraitId == targetTraitId;
@@ -187,7 +183,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     function toggleDoneeActive(uint256 id) external onlyOwner {
         Donee memory donee = _donees[id];
-        if (donee.to == address(0)) revert();
+        if (donee.to == address(0)) revert DoneeNotFound();
         donee.active = !donee.active;
         _donees[id] = donee;
     }
@@ -225,18 +221,19 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 doneeId
     ) public payable whenNotPaused returns (uint16) {
         if (trait == Traits.BACKGROUND && traitId >= backgroundCount) {
-            revert("a1");
+            revert NonExistantTraitId();
         } else if (trait == Traits.BODY && traitId >= bodyCount) {
-            revert("a1");
+            revert NonExistantTraitId();
         } else if (trait == Traits.ACCESSORY && traitId >= accessoryCount) {
-            revert("a1");
-        } else if ((trait == Traits.HEAD && traitId >= headCount)) {
-            revert("a1");
+            revert NonExistantTraitId();
+        } else if (trait == Traits.HEAD && traitId >= headCount) {
+            revert NonExistantTraitId();
         } else if (trait == Traits.GLASSES && traitId >= glassesCount) {
-            revert("a1");
+            revert NonExistantTraitId();
         }
+
         if (!_donees[doneeId].active) {
-            revert("a2");
+            revert InactiveDonee();
         }
 
         bytes32 hash = seekHash(trait, traitId, nounId);
@@ -266,7 +263,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Request memory request = _requests[requestId];
 
         if (request.requester != msg.sender) {
-            revert();
+            revert NotRequester();
         }
 
         // Cannot remove a request if
@@ -329,7 +326,7 @@ contract NounSeek is Ownable2Step, Pausable {
         if (
             targetNounId != eligibleNounId && targetNounId != prevEligibleNounId
         ) {
-            revert Ineligible();
+            revert IneligibleNounId();
         }
 
         if (
@@ -337,7 +334,7 @@ contract NounSeek is Ownable2Step, Pausable {
             _isAuctionedNoun(prevEligibleNounId) &&
             targetNounId == prevEligibleNounId
         ) {
-            revert Ineligible();
+            revert IneligibleNounId();
         }
 
         uint256 reimbursement;
@@ -365,28 +362,6 @@ contract NounSeek is Ownable2Step, Pausable {
                 reimbursement
             );
         }
-        // if (max > 0 && _isNonAuctionedNoun(prevNounId)) {
-        //     (donations, reimbursement, max) = _calcFundsAndDelete(
-        //         trait,
-        //         prevNounId,
-        //         prevNounId,
-        //         max,
-        //         donations,
-        //         reimbursement
-        //     );
-        // }
-
-        // // Only auctioned Nouns can match "ANY_ID"
-        // if (max > 0 && _isAuctionedNoun(nounId)) {
-        //     (donations, reimbursement, max) = _calcFundsAndDelete(
-        //         trait,
-        //         nounId,
-        //         ANY_ID,
-        //         max,
-        //         donations,
-        //         reimbursement
-        //     );
-        // }
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
@@ -443,8 +418,6 @@ contract NounSeek is Ownable2Step, Pausable {
             traitId = uint16(nouns.seeds(actualNounId).head);
         } else if (trait == Traits.GLASSES) {
             traitId = uint16(nouns.seeds(actualNounId).glasses);
-        } else {
-            revert();
         }
 
         Request[] memory nounIdRequests = requestsForTrait(

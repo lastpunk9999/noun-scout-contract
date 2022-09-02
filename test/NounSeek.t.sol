@@ -248,7 +248,7 @@ contract NounSeekTest is EnhancedTest {
         uint16 requestId2 = nounSeek.add{value: 1}(HEAD, 9, ANY_ID, 0);
 
         vm.prank(user1);
-        vm.expectRevert();
+        vm.expectRevert(NounSeek.NotRequester.selector);
         nounSeek.remove(requestId2);
 
         vm.expectCall(address(user1), 1, "");
