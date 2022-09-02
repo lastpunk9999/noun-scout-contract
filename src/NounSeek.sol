@@ -16,7 +16,7 @@ contract NounSeek is Ownable2Step, Pausable {
     // error OnlyFinder();
     // error AlreadyFound();
     // error NoMatch(uint96 seekId);
-    // error BlockHashMismatch();
+    error Ineligible();
 
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
@@ -358,48 +358,75 @@ contract NounSeek is Ownable2Step, Pausable {
         }("");
     }
 
-    function matchPreviousNounAndDonate(Traits trait, uint256 max)
-        public
-        withinMatchWindow
-    {
-        uint16 nounId = uint16(auctionHouse.auction().nounId) - 1;
-        uint16 prevNounId = nounId - 1;
+    function matchAndDonate(
+        uint16 targetNounId,
+        Traits trait,
+        uint256 max
+    ) public {
+        uint16 eligibleNounId = uint16(auctionHouse.auction().nounId) - 1;
+        uint16 prevEligibleNounId = eligibleNounId - 1;
+
+        if (
+            targetNounId != eligibleNounId && targetNounId != prevEligibleNounId
+        ) {
+            revert Ineligible();
+        }
+
+        if (
+            _isAuctionedNoun(eligibleNounId) &&
+            _isAuctionedNoun(prevEligibleNounId) &&
+            targetNounId == prevEligibleNounId
+        ) {
+            revert Ineligible();
+        }
 
         uint256 reimbursement;
         uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
 
+        // Match specify Noun Id requests
         (donations, reimbursement, max) = _calcFundsAndDelete(
             trait,
-            nounId,
-            nounId,
+            targetNounId,
+            targetNounId,
             max,
             donations,
             reimbursement
         );
 
-        if (max > 0 && _isNonAuctionedNoun(prevNounId)) {
+        // If the Noun was auctioned, match NO PREFERENCE requesets
+        if (_isAuctionedNoun(targetNounId)) {
             (donations, reimbursement, max) = _calcFundsAndDelete(
                 trait,
-                prevNounId,
-                prevNounId,
-                max,
-                donations,
-                reimbursement
-            );
-        }
-
-        // Only auctioned Nouns can match "NO_PREFERENCE"
-        if (max > 0 && _isAuctionedNoun(nounId)) {
-            (donations, reimbursement, max) = _calcFundsAndDelete(
-                trait,
-                nounId,
+                targetNounId,
                 NO_PREFERENCE,
                 max,
                 donations,
                 reimbursement
             );
         }
+        // if (max > 0 && _isNonAuctionedNoun(prevNounId)) {
+        //     (donations, reimbursement, max) = _calcFundsAndDelete(
+        //         trait,
+        //         prevNounId,
+        //         prevNounId,
+        //         max,
+        //         donations,
+        //         reimbursement
+        //     );
+        // }
+
+        // // Only auctioned Nouns can match "NO_PREFERENCE"
+        // if (max > 0 && _isAuctionedNoun(nounId)) {
+        //     (donations, reimbursement, max) = _calcFundsAndDelete(
+        //         trait,
+        //         nounId,
+        //         NO_PREFERENCE,
+        //         max,
+        //         donations,
+        //         reimbursement
+        //     );
+        // }
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
@@ -428,8 +455,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
     function _calcFundsAndDelete(
         Traits trait,
-        uint16 targetNounId,
-        uint16 seekNounId,
+        uint16 actualNounId,
+        uint16 requestNounId,
         uint256 max,
         uint256[] memory donations,
         uint256 reimbursement
@@ -447,15 +474,15 @@ contract NounSeek is Ownable2Step, Pausable {
 
         uint16 traitId;
         if (trait == Traits.BACKGROUND) {
-            traitId = uint16(nouns.seeds(targetNounId).background);
+            traitId = uint16(nouns.seeds(actualNounId).background);
         } else if (trait == Traits.BODY) {
-            traitId = uint16(nouns.seeds(targetNounId).body);
+            traitId = uint16(nouns.seeds(actualNounId).body);
         } else if (trait == Traits.ACCESSORY) {
-            traitId = uint16(nouns.seeds(targetNounId).accessory);
+            traitId = uint16(nouns.seeds(actualNounId).accessory);
         } else if (trait == Traits.HEAD) {
-            traitId = uint16(nouns.seeds(targetNounId).head);
+            traitId = uint16(nouns.seeds(actualNounId).head);
         } else if (trait == Traits.GLASSES) {
-            traitId = uint16(nouns.seeds(targetNounId).glasses);
+            traitId = uint16(nouns.seeds(actualNounId).glasses);
         } else {
             revert();
         }
@@ -463,7 +490,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Request[] memory nounIdRequests = requestsForTrait(
             trait,
             traitId,
-            seekNounId,
+            requestNounId,
             max
         );
 
@@ -489,7 +516,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         if (nounIdRequestsLength > 0) {
-            bytes32 hash = seekHash(trait, traitId, seekNounId);
+            bytes32 hash = seekHash(trait, traitId, requestNounId);
             delete _seeks[hash];
         }
 

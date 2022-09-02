@@ -7,3 +7,5 @@ out/
 /broadcast/*
 /broadcast/*/31337/
 *.log
+.gas-report
+.gas-snapshot

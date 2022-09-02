@@ -615,83 +615,14 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.remove(requestId);
     }
 
-    function test_matchPreviousNounAndDonate_NonAuctionedNounHappyCase()
-        public
-    {
+    function test_MATCHANDDONATE_auctionedSpecificIdNounHappyCase() public {
         vm.startPrank(user1);
-        uint256 totalRequests = 100;
+        uint256 totalRequests = 4;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
                 9,
-                i % 2 == 0 ? 101 : 100,
-                uint8(i % 2)
-            );
-        }
-        vm.stopPrank();
-        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-            0,
-            0,
-            0,
-            9,
-            0
-        );
-        mockNouns.setSeed(seed, 100);
-        mockAuctionHouse.setNounId(102);
-        vm.prank(user2);
-        nounSeek.matchPreviousNounAndDonate(HEAD, MAX);
-        NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
-            HEAD,
-            9,
-            101,
-            MAX
-        );
-        assertEq(
-            noPrefRequests.length,
-            totalRequests / 2,
-            "noPrefRequests.length"
-        );
-        for (uint256 i = 0; i < noPrefRequests.length; i++) {
-            NounSeek.Request memory request = noPrefRequests[i];
-            assertEq(request.id, 2 * i + 1, "request.id");
-            assertEq(request.seekIndex, i, "request.seekIndex");
-        }
-        NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
-            HEAD,
-            9,
-            100,
-            MAX
-        );
-
-        assertEq(nounIdRequests.length, 0, "nounIdRequests.length");
-
-        // Check requests are deleted from mapping
-        for (uint16 i = 1; i <= totalRequests; i++) {
-            NounSeek.Request memory request = nounSeek.requests(i);
-            assertEq(
-                uint16(nounSeek.requests(i).trait),
-                i % 2 == 1 ? uint16(HEAD) : uint16(BACKGROUND),
-                "nounSeek.requests(i).trait"
-            );
-            assertEq(
-                uint16(nounSeek.requests(i).nounId),
-                i % 2 == 1 ? 101 : 0,
-                "nounSeek.requests(i).nounId"
-            );
-            assertEq(request.id, i % 2 == 1 ? i : 0, "request.id");
-        }
-    }
-
-    function test_matchPreviousNounAndDonate_auctionedNounOnlyNoPreferenceMatchesHappyCase()
-        public
-    {
-        vm.startPrank(user1);
-        uint256 totalRequests = 100;
-        for (uint256 i; i < totalRequests; i++) {
-            nounSeek.add{value: 1000 wei}(
-                HEAD,
-                9,
-                i % 2 == 0 ? 102 : NO_PREFERENCE,
+                i % 2 == 0 ? 100 : 101,
                 uint8(i % 2)
             );
         }
@@ -706,31 +637,27 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
         vm.prank(user2);
-        nounSeek.matchPreviousNounAndDonate(HEAD, MAX);
-        NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
+        nounSeek.matchAndDonate(101, HEAD, MAX);
+        NounSeek.Request[] memory ineligibleReqs = nounSeek.requestsForTrait(
             HEAD,
             9,
-            102,
+            100,
             MAX
         );
         assertEq(
-            nounIdRequests.length,
+            ineligibleReqs.length,
             totalRequests / 2,
-            "nounIdRequests.length"
+            "ineligibleReqs.length"
         );
-        for (uint256 i = 0; i < nounIdRequests.length; i++) {
-            NounSeek.Request memory request = nounIdRequests[i];
-            assertEq(request.id, 2 * i + 1);
-            assertEq(request.seekIndex, i);
+        for (uint256 i = 0; i < ineligibleReqs.length; i++) {
+            NounSeek.Request memory request = ineligibleReqs[i];
+            assertEq(request.id, 2 * i + 1, "request.id");
+            assertEq(request.seekIndex, i, "request.seekIndex");
         }
-        NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
-            HEAD,
-            9,
-            NO_PREFERENCE,
-            MAX
-        );
+        NounSeek.Request[] memory eligibleIdRequests = nounSeek
+            .requestsForTrait(HEAD, 9, 101, MAX);
 
-        assertEq(noPrefRequests.length, 0, "noPrefRequests.length");
+        assertEq(eligibleIdRequests.length, 0, "eligibleIdRequests.length");
 
         // Check requests are deleted from mapping
         for (uint16 i = 1; i <= totalRequests; i++) {
@@ -742,18 +669,18 @@ contract NounSeekTest is EnhancedTest {
             );
             assertEq(
                 uint16(nounSeek.requests(i).nounId),
-                i % 2 == 1 ? 102 : 0,
+                i % 2 == 1 ? 100 : 0,
                 "nounSeek.requests(i).nounId"
             );
             assertEq(request.id, i % 2 == 1 ? i : 0, "request.id");
         }
     }
 
-    function test_matchPreviousNounAndDonate_auctionedNounNounIdAndNoPreferenceMatchesHappyCase()
+    function test_MATCHANDDONATE_auctionedNounNoPreferenceMatchesHappyCase()
         public
     {
         vm.startPrank(user1);
-        uint256 totalRequests = 100;
+        uint256 totalRequests = 4;
         for (uint256 i; i < totalRequests; i++) {
             nounSeek.add{value: 1000 wei}(
                 HEAD,
@@ -773,30 +700,211 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
         vm.prank(user2);
-        nounSeek.matchPreviousNounAndDonate(HEAD, NO_PREFERENCE);
+        nounSeek.matchAndDonate(101, HEAD, MAX);
         NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
-            102,
-            NO_PREFERENCE
+            101,
+            MAX
         );
-        assertEq(nounIdRequests.length, 0);
+        assertEq(nounIdRequests.length, 0, "nounIdRequests.length");
 
         NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
             HEAD,
             9,
             NO_PREFERENCE,
-            NO_PREFERENCE
+            MAX
         );
 
-        assertEq(noPrefRequests.length, 0);
+        assertEq(noPrefRequests.length, 0, "noPrefRequests.length");
 
         // Check requests are deleted from mapping
         for (uint16 i = 1; i <= totalRequests; i++) {
             NounSeek.Request memory request = nounSeek.requests(i);
-            assertEq(uint16(nounSeek.requests(i).trait), uint16(BACKGROUND));
-            assertEq(uint16(nounSeek.requests(i).nounId), 0);
-            assertEq(request.id, 0);
+            assertEq(
+                uint16(nounSeek.requests(i).trait),
+                uint16(BACKGROUND),
+                "nounSeek.requests(i).trait"
+            );
+            assertEq(
+                uint16(nounSeek.requests(i).nounId),
+                0,
+                "nounSeek.requests(i).nounId"
+            );
+            assertEq(request.id, 0, "request.id");
+        }
+    }
+
+    function test_MATCHANDDONATE_auctionedAfterNonAuctionedNounAndNoPreferenceMatchesHappyCase()
+        public
+    {
+        // current auction = 201
+        // target noun = 199
+        // (noun id 200 in between)
+        vm.startPrank(user1);
+        uint256 totalRequests = 4;
+        for (uint256 i; i < totalRequests; i++) {
+            nounSeek.add{value: 1000 wei}(
+                HEAD,
+                9,
+                i % 2 == 0 ? 199 : NO_PREFERENCE,
+                uint8(i % 2)
+            );
+        }
+        vm.stopPrank();
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 199);
+        mockAuctionHouse.setNounId(201);
+        vm.prank(user2);
+        nounSeek.matchAndDonate(199, HEAD, MAX);
+        NounSeek.Request[] memory nounIdRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            199,
+            MAX
+        );
+        assertEq(nounIdRequests.length, 0, "nounIdRequests.length");
+
+        NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            MAX
+        );
+
+        assertEq(noPrefRequests.length, 0, "noPrefRequests.length");
+
+        // Check requests are deleted from mapping
+        for (uint16 i = 1; i <= totalRequests; i++) {
+            NounSeek.Request memory request = nounSeek.requests(i);
+            assertEq(
+                uint16(nounSeek.requests(i).trait),
+                uint16(BACKGROUND),
+                "nounSeek.requests(i).trait"
+            );
+            assertEq(
+                uint16(nounSeek.requests(i).nounId),
+                0,
+                "nounSeek.requests(i).nounId"
+            );
+            assertEq(request.id, 0, "request.id");
+        }
+    }
+
+    function test_MATCHANDDONATE_nonAuctionedMatchesHappyCase() public {
+        // current auction = 201
+        // target noun = 200
+        vm.startPrank(user1);
+        uint256 totalRequests = 8;
+
+        // target = 200
+        for (uint256 i; i < (totalRequests / 4); i++) {
+            nounSeek.add{value: 1000 wei}(HEAD, 9, 200, uint8(i % 2));
+        }
+        // target = 201
+        for (uint256 i; i < (totalRequests / 4); i++) {
+            nounSeek.add{value: 1000 wei}(HEAD, 9, 201, uint8(i % 2));
+        }
+        // target = NO_PREFERENCE
+        for (uint256 i; i < (totalRequests / 4); i++) {
+            nounSeek.add{value: 1000 wei}(HEAD, 9, NO_PREFERENCE, uint8(i % 2));
+        }
+        // target = 200
+        // head = 10
+        for (uint256 i; i < (totalRequests / 4); i++) {
+            nounSeek.add{value: 1000 wei}(HEAD, 10, 200, uint8(i % 2));
+        }
+        vm.stopPrank();
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 200);
+        mockAuctionHouse.setNounId(201);
+        vm.prank(user2);
+        nounSeek.matchAndDonate(200, HEAD, MAX);
+        NounSeek.Request[] memory matchIdRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            200,
+            MAX
+        );
+
+        assertEq(matchIdRequests.length, 0, "matchIdRequests.length");
+
+        NounSeek.Request[] memory noPrefRequests = nounSeek.requestsForTrait(
+            HEAD,
+            9,
+            NO_PREFERENCE,
+            MAX
+        );
+
+        assertEq(
+            noPrefRequests.length,
+            totalRequests / 4,
+            "noPrefRequests.length"
+        );
+
+        NounSeek.Request[] memory nonMatchingIdRequests = nounSeek
+            .requestsForTrait(HEAD, 9, 201, MAX);
+
+        assertEq(
+            nonMatchingIdRequests.length,
+            totalRequests / 4,
+            "nonMatchingIdRequests.length"
+        );
+
+        NounSeek.Request[] memory nonMatchingHeadRequestIds = nounSeek
+            .requestsForTrait(HEAD, 10, 200, MAX);
+
+        assertEq(
+            nonMatchingHeadRequestIds.length,
+            totalRequests / 4,
+            "nonMatchingHeadRequestIds.length"
+        );
+
+        // Check requests are deleted from mapping
+        for (uint16 i = 1; i <= totalRequests; i++) {
+            NounSeek.Request memory request = nounSeek.requests(i);
+            assertEq(
+                uint16(nounSeek.requests(i).trait),
+                i > totalRequests / 4 ? uint16(HEAD) : uint16(BACKGROUND),
+                "nounSeek.requests(i).trait"
+            );
+            if (i > (totalRequests / 4) * 1 && i <= (totalRequests / 4) * 2) {
+                assertEq(
+                    uint16(nounSeek.requests(i).nounId),
+                    201,
+                    "nounSeek.requests(i).nounId"
+                );
+            }
+
+            if (i > (totalRequests / 4) * 2 && i <= (totalRequests / 4) * 3) {
+                assertEq(
+                    uint16(nounSeek.requests(i).nounId),
+                    NO_PREFERENCE,
+                    "nounSeek.requests(i).nounId"
+                );
+            }
+
+            if (i > (totalRequests / 4) * 3 && i <= (totalRequests / 4) * 4) {
+                assertEq(
+                    uint16(nounSeek.requests(i).nounId),
+                    200,
+                    "nounSeek.requests(i).nounId"
+                );
+            }
+
+            assertEq(request.id, i > totalRequests / 4 ? i : 0, "request.id");
         }
     }
 }
