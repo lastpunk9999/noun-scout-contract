@@ -7,21 +7,16 @@ import "./NounsInterfaces.sol";
 import "forge-std/console2.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
-    /// @notice Retreives historical mapping of nounId -> seed
-    INounsTokenLike public immutable nouns;
-
-    /// @notice Retreives the current auction data
-    INounsAuctionHouseLike public immutable auctionHouse;
-
-    /// @notice Time limit after an auction starts
-    uint256 public constant AUCTION_START_LIMIT = 1 hours;
-
-    /// @notice Time limit before an auction ends
-    uint256 public constant AUCTION_END_LIMIT = 5 minutes;
-
-    uint256 public constant REIMBURSMENT_BPS = 100;
-
-    uint16 public constant NO_PREFERENCE = type(uint16).max;
+    error TooSoon();
+    error TooLate();
+    error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
+    // error NoAmountSent();
+    // error NoPreferences();
+    // error OnlySeeker();
+    // error OnlyFinder();
+    // error AlreadyFound();
+    // error NoMatch(uint96 seekId);
+    // error BlockHashMismatch();
 
     /// @notice Stores deposited value with the addresses that sent it
     struct Request {
@@ -49,6 +44,22 @@ contract NounSeek is Ownable2Step, Pausable {
         GLASSES
     }
 
+    /// @notice Retreives historical mapping of nounId -> seed
+    INounsTokenLike public immutable nouns;
+
+    /// @notice Retreives the current auction data
+    INounsAuctionHouseLike public immutable auctionHouse;
+
+    /// @notice Time limit after an auction starts
+    uint256 public constant AUCTION_START_LIMIT = 1 hours;
+
+    /// @notice Time limit before an auction ends
+    uint256 public constant AUCTION_END_LIMIT = 5 minutes;
+
+    uint256 public constant REIMBURSMENT_BPS = 100;
+
+    uint16 public constant NO_PREFERENCE = type(uint16).max;
+
     uint16 public requestCount;
     uint16 public backgroundCount;
     uint16 public bodyCount;
@@ -61,17 +72,6 @@ contract NounSeek is Ownable2Step, Pausable {
     mapping(bytes32 => uint16[]) internal _seeks;
 
     mapping(uint16 => Request) internal _requests;
-
-    error TooSoon();
-    error TooLate();
-    error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
-    // error NoAmountSent();
-    // error NoPreferences();
-    // error OnlySeeker();
-    // error OnlyFinder();
-    // error AlreadyFound();
-    // error NoMatch(uint96 seekId);
-    // error BlockHashMismatch();
 
     /**
     -----------------------------
