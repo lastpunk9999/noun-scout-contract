@@ -484,6 +484,7 @@ contract NounSeek is Ownable2Step, Pausable {
             delete _requests[request.id];
         }
 
+        /// @TODO: Bug here - all Request are deleted but should only be up to max
         if (nounIdRequestsLength > 0) {
             bytes32 hash = _seekHash(
                 trait,
