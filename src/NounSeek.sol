@@ -350,24 +350,32 @@ contract NounSeek is Ownable2Step, Pausable {
         uint256[] memory donations = new uint256[](doneesLength);
 
         // Match specify Noun Id requests
-        (donations, reimbursement, max) = _calcFundsAndDelete(
+        (
+            donations,
+            reimbursement,
+            max
+        ) = _matchOnChainTraitGatherFundsAndDelete(
             trait,
             targetNounId,
             false,
-            max,
             donations,
-            reimbursement
+            reimbursement,
+            max
         );
 
         // If the Noun was auctioned, match NO PREFERENCE requesets
         if (_isAuctionedNoun(targetNounId)) {
-            (donations, reimbursement, max) = _calcFundsAndDelete(
+            (
+                donations,
+                reimbursement,
+                max
+            ) = _matchOnChainTraitGatherFundsAndDelete(
                 trait,
                 targetNounId,
                 true,
-                max,
                 donations,
-                reimbursement
+                reimbursement,
+                max
             );
         }
 
@@ -405,16 +413,24 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    @notice Gets the seed for `onChainNounId` and uses it to look up requests that match.
-    @dev Donation amounts and reimbursement is calculated from the matching set of requests and the requests are cleared.
+    @notice Gets the seed for `onChainNounId` and uses it to look up requests that match. Donation amounts and reimbursement is calculated from the matching set of requests and the requests are cleared.
+    @param trait On-chain trait to get from on-chain Noun
+    @param onChainNounId On-chain Noun Id
+    @param matchAnyId Get requests by specific id or any id
+    @param max Maximum number of returned amounts
+    @param donations Donations array to be mutated and returned
+    @param reimbursement Reimbursement amount to be mutated and returne
+    @return donations Mutated donations array
+    @return reimbursement Mutated reimursement amount
+    @return max Maximum remaining after request lookup
      */
-    function _calcFundsAndDelete(
+    function _matchOnChainTraitGatherFundsAndDelete(
         Traits trait,
         uint16 onChainNounId,
         bool matchAnyId,
-        uint256 max,
         uint256[] memory donations,
-        uint256 reimbursement
+        uint256 reimbursement,
+        uint256 max
     )
         internal
         returns (
