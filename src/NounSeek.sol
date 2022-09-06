@@ -12,6 +12,7 @@ contract NounSeek is Ownable2Step, Pausable {
     error DoneeNotFound();
     error InactiveDonee();
     error NonExistantTraitId();
+    error UnsupportedTraitType();
     error NotRequester();
     error IneligibleNounId();
 
@@ -198,6 +199,8 @@ contract NounSeek is Ownable2Step, Pausable {
             targetTraitId = uint16(nouns.seeds(nounId).head);
         } else if (requestTrait == Traits.GLASSES) {
             targetTraitId = uint16(nouns.seeds(nounId).glasses);
+        } else {
+            revert UnsupportedTraitType();
         }
 
         return requestTraitId == targetTraitId;
@@ -237,6 +240,15 @@ contract NounSeek is Ownable2Step, Pausable {
             revert NonExistantTraitId();
         } else if (trait == Traits.GLASSES && traitId >= glassesCount) {
             revert NonExistantTraitId();
+        } else if (
+            // q: is this helpful?
+            trait != Traits.BACKGROUND &&
+            trait != Traits.BODY &&
+            trait != Traits.ACCESSORY &&
+            trait != Traits.HEAD &&
+            trait != Traits.GLASSES
+        ) {
+            revert UnsupportedTraitType();
         }
 
         if (!_donees[doneeId].active) {
@@ -358,6 +370,8 @@ contract NounSeek is Ownable2Step, Pausable {
             traitId = uint16(nouns.seeds(nounId).head);
         } else if (trait == Traits.GLASSES) {
             traitId = uint16(nouns.seeds(nounId).glasses);
+        } else {
+            revert UnsupportedTraitType();
         }
 
         // Match specify Noun Id requests
