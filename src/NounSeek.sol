@@ -335,6 +335,32 @@ contract NounSeek is Ownable2Step, Pausable {
             revert IneligibleNounId();
         }
 
+
+        // spec: "the match can only be made after its auction has been settled, and at any time during the auction of the next Noun"
+        //     IIUC, this means when auction.noundId = nounId + 1
+        //     it's not clear from the spec when can non-auctioned nouns be matched, perhaps during the same window as the auction noun minted in the same block
+        //         i.e if trying to match noun id 90: it was minted in the same block as noun 91
+        //            so noun 90 should be matchable after noun 91 auction has settled, i.e when noun 92 is on auction
+
+        // Q: I'm not clear on the check here, some examples:
+        /*
+            
+            currently in auction: 93
+            eligible noun id:     92
+            prev eligible:        91
+                in this case only 92 is allowed to be matched      ✔️
+            
+            currently in auction: 92
+            eligible noun id:     91
+            prev eligible:        90
+                in this case both 91 and 90 are allowed to be matched    ✔️
+
+            currently in auction: 91
+            eligible noun id:     90
+            prev eligible:        89
+                in this case both 90 and 89 are allowed to be matched - X don't think 90 should be matchable yet ?
+
+        */
         if (
             _isAuctionedNoun(eligibleNounId) &&
             _isAuctionedNoun(prevEligibleNounId) &&
