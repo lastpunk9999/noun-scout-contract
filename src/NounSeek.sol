@@ -326,7 +326,7 @@ contract NounSeek is Ownable2Step, Pausable {
         _requestsIdsForTraits[hash].pop();
         delete _requests[requestId];
 
-        _safeTransferETH(request.requester, request.amount);
+        _safeTransferETHWithFallback(request.requester, request.amount);
     }
 
     function matchAndDonate(
@@ -390,9 +390,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
-            _safeTransferETH(_donees[i].to, donations[i]);
+            _safeTransferETHWithFallback(_donees[i].to, donations[i]);
         }
-        _safeTransferETH(msg.sender, reimbursement);
+        _safeTransferETHWithFallback(msg.sender, reimbursement);
     }
 
     /**
