@@ -48,7 +48,7 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    /// @notice Retreives historical mapping of nounId -> seed
+    /// @notice Retreives historical mapping of Noun ID -> seed
     INounsTokenLike public immutable nouns;
 
     /// @notice Retreives the current auction data
@@ -60,8 +60,10 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
+    /// @notice 1% of donated funds are sent to the address performing a match
     uint256 public constant REIMBURSMENT_BPS = 100;
 
+    /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID
     uint16 public constant ANY_ID = 0;
 
     uint16 public requestCount;
@@ -162,7 +164,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Fetch all request IDs for the given Trait type, Trait ID, and Noun ID pattern.
     /// Note that a request that specifies a Noun ID and a request that has an open Noun ID (the value `ANY_ID`), will be in different sets.
-    /// @param trait The trait type to fetch requests for (see Traits Enum)
+    /// @param trait The trait type to fetch requests for (see Traits enum)
     /// @param traitId The trait ID (within the trait type) to fetch requests matching
     /// @param nounId The Noun ID or `ANY_ID` to fetch requests matching. See Note regarding Noun IDs.
     function requestIdsForTrait(
@@ -174,7 +176,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Fetch requests for the given Trait type, Trait ID, and Noun ID pattern up to a max count.
-    /// @param trait The trait type to fetch requests for (see Traits Enum)
+    /// @param trait The trait type to fetch requests for (see Traits enum)
     /// @param traitId The trait ID (within the trait type) to fetch requests matching
     /// @param nounId The NoundID or "any Noun" to fetch requests matching. See Note regarding NounIDs.
     /// @param max The maximum number of requests to resolve and return
@@ -231,6 +233,9 @@ contract NounSeek is Ownable2Step, Pausable {
         return requestTraitId == targetTraitId;
     }
 
+    /// @notice Maps a list of request ids to stored Request
+    /// @param ids List of request ids
+    /// @return Request[] List of matched Requests
     function requestIdsToRequests(uint16[] memory ids)
         public
         view
@@ -263,7 +268,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Donee. Request amount is tied to the sent value.
-    /// @param trait Trait type the request is for (see Traits Enum)
+    /// @param trait Trait type the request is for (see Traits enum)
     /// @param traitId ID of the specified Trait that the request is for
     /// @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
     /// @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
@@ -370,8 +375,8 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
-    /// @param nounId The NounID to match requests against
-    /// @param trait The Trait type to enumerate requests for (see Traits Enum)
+    /// @param nounId The Noun ID to match requests against
+    /// @param trait The Trait type to enumerate requests for (see Traits enum)
     /// @param max The maximum number of requests to process
     function matchAndDonate(
         uint16 nounId,
@@ -420,7 +425,7 @@ contract NounSeek is Ownable2Step, Pausable {
             max
         );
 
-        // If the Noun was auctioned, match ANY_ID requesets
+        // If the Noun was auctioned, match open Noun ID requests by passing `ANY_ID` as `nounId`
         if (_isAuctionedNoun(nounId)) {
             (donations, reimbursement, max) = _getAmountsAndDeleteRequests(
                 trait,
@@ -445,10 +450,8 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    /**
-     @notice The canonical path for requests that target the same `trait`, `traitId`, and `nounId`
-     Used to store similar requests in the `_requestsIdsForTraits` mapping
-    */
+    /// @notice The canonical path for requests that target the same `trait`, `traitId`, and `nounId`
+    /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
     function _path(
         Traits trait,
         uint16 traitId,
@@ -457,6 +460,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return keccak256(abi.encodePacked(trait, traitId, nounId));
     }
 
+    /// @notice Was the specified Noun ID not auctioned
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {
         return nounId % 10 == 0 && nounId <= 1820;
     }
@@ -467,8 +471,8 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    @notice Looks up requests that with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts then removes the requests from storage.
-    @param trait Trait enum
+    @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
+    @param trait The trait type requests should match (see Traits enum)
     @param traitId Specific trait Id
     @param nounId Specific Noun Id
     @param max Maximum number of returned amounts
@@ -591,9 +595,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return (requestIdsToRequests(subsetRequestIds), requestIdsLength);
     }
 
-    /**
-     * @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
-     */
+    /// @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
     function _safeTransferETHWithFallback(address to, uint256 amount) internal {
         if (!_safeTransferETH(to, amount)) {
             weth.deposit{value: amount}();
@@ -601,10 +603,8 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    /**
-     * @notice Transfer ETH and return the success status.
-     * @dev This function only forwards 10,000 gas to the callee.
-     */
+    /// @notice Transfer ETH and return the success status.
+    /// @dev This function only forwards 10,000 gas to the callee.
     function _safeTransferETH(address to, uint256 value)
         internal
         returns (bool)
