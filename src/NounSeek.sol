@@ -113,10 +113,17 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    /// @notice Add a Donee by specifying the name and address funds should be sent to
+    /// @dev Adds a Donee to the donees set and activates the Donee
+    /// @param name The Donee's name that should be displayed to users/consumers
+    /// @param to Address that funds should be sent to in order to fund the Donee
     function addDonee(string calldata name, address to) external onlyOwner {
         _donees.push(Donee({name: name, to: to, active: true}));
     }
 
+    /// @notice Toggles a Donee's active state by its index within the set, reverts if Donee is not configured
+    /// @param id Donee id based on its index within the donees set
+    /// @dev If the Done is not configured, a revert will be triggered
     function toggleDoneeActive(uint256 id) external onlyOwner {
         Donee memory donee = _donees[id];
         if (donee.to == address(0)) revert DoneeNotFound();
@@ -124,10 +131,12 @@ contract NounSeek is Ownable2Step, Pausable {
         _donees[id] = donee;
     }
 
+    /// @notice Pauses the NounSeek contract. Pausing can be reversed by unpausing.
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice Unpauses (resumes) the NounSeek contract. Unpausing can be reversed by pausing.
     function unpause() external onlyOwner {
         _unpause();
     }
@@ -138,14 +147,24 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    /// @notice Fetches a request based on its ID (index within the requests set)
+    /// @dev Fetching a request based on its ID/index within the requests sets is zero indexed.
+    /// @param requestId the ID to fetch based on its index within the requests sets
     function requests(uint16 requestId) public view returns (Request memory) {
         return _requests[requestId];
     }
 
+    /// @notice Fetch a Donee based on its ID (index within the donees set)
+    /// @param id the ID to fetch based on its index within the Donees set
     function donees(uint16 id) public view returns (Donee memory) {
         return _donees[id];
     }
 
+    /// @notice Fetch all request IDs for the given Trait type, Trait ID, and Noun ID pattern.
+    /// Note that a request that specifies a Noun ID and a request that has an open Noun ID (the value `ANY_ID`), will be in different sets.
+    /// @param trait The trait type to fetch requests for (see Traits Enum)
+    /// @param traitId The trait ID (within the trait type) to fetch requests matching
+    /// @param nounId The Noun ID or `ANY_ID` to fetch requests matching. See Note regarding Noun IDs.
     function requestIdsForTrait(
         Traits trait,
         uint16 traitId,
@@ -154,6 +173,11 @@ contract NounSeek is Ownable2Step, Pausable {
         return _requestsIdsForTraits[_path(trait, traitId, nounId)];
     }
 
+    /// @notice Fetch requests for the given Trait type, Trait ID, and Noun ID pattern up to a max count.
+    /// @param trait The trait type to fetch requests for (see Traits Enum)
+    /// @param traitId The trait ID (within the trait type) to fetch requests matching
+    /// @param nounId The NoundID or "any Noun" to fetch requests matching. See Note regarding NounIDs.
+    /// @param max The maximum number of requests to resolve and return
     function requestsForTrait(
         Traits trait,
         uint16 traitId,
@@ -169,6 +193,12 @@ contract NounSeek is Ownable2Step, Pausable {
         return traitRequests;
     }
 
+    /// @notice Evaluate if the provided request Noun Trait matches the specified Noun ID
+    /// @param requestTrait The trait type to compare the given Noun ID with
+    /// @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
+    /// @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
+    /// @param nounId Noun ID to fetch the attributes of to compare against the given request properties
+    /// @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
     function requestParamsMatchNounParams(
         Traits requestTrait,
         uint16 requestTraitId,
@@ -219,6 +249,7 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    /// @notice Fetch the count of NounsDescriptor traits and update local counts
     function updateTraitCounts() public {
         INounsDescriptorLike descriptor = INounsDescriptorLike(
             nouns.descriptor()
@@ -231,6 +262,11 @@ contract NounSeek is Ownable2Step, Pausable {
         glassesCount = uint16(descriptor.glassesCount());
     }
 
+    /// @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Donee. Request amount is tied to the sent value.
+    /// @param trait Trait type the request is for (see Traits Enum)
+    /// @param traitId ID of the specified Trait that the request is for
+    /// @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
+    /// @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
     function add(
         Traits trait,
         uint16 traitId,
@@ -276,6 +312,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return requestId;
     }
 
+    /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
     function remove(uint16 requestId) public beforeAuctionEndWindow {
         Request memory request = _requests[requestId];
 
@@ -317,6 +354,9 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 hash = _path(request.trait, request.traitId, request.nounId);
         uint256 lastIndex = _requestsIdsForTraits[hash].length - 1;
 
+        /// Swap the ID currently at the end of the set with selected index, allowing for a "pop"
+        /// to remove the desired value (N). [..., N, ..., M] -> [..., M, ..., M] -> pop -> [..., M, ...]
+        ///                                         <----->
         if (request.seekIndex < lastIndex) {
             uint16 lastId = _requestsIdsForTraits[hash][lastIndex];
             _requests[lastId].seekIndex = request.seekIndex;
@@ -329,6 +369,10 @@ contract NounSeek is Ownable2Step, Pausable {
         _safeTransferETHWithFallback(request.requester, request.amount);
     }
 
+    /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
+    /// @param nounId The NounID to match requests against
+    /// @param trait The Trait type to enumerate requests for (see Traits Enum)
+    /// @param max The maximum number of requests to process
     function matchAndDonate(
         uint16 nounId,
         Traits trait,
@@ -417,6 +461,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return nounId % 10 == 0 && nounId <= 1820;
     }
 
+    /// @notice Was the specified Noun ID auctioned
     function _isAuctionedNoun(uint16 nounId) internal pure returns (bool) {
         return nounId % 10 != 0 || nounId > 1820;
     }
