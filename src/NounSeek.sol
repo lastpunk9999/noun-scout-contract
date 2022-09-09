@@ -148,6 +148,85 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    function allTraitRequestsForNoun(Traits trait, uint16 nounId)
+        public
+        view
+        returns (Request[][] memory)
+    {
+        uint16 traitCount;
+        if (trait == Traits.BACKGROUND) {
+            traitCount = backgroundCount;
+        } else if (trait == Traits.BODY) {
+            traitCount = bodyCount;
+        } else if (trait == Traits.ACCESSORY) {
+            traitCount = accessoryCount;
+        } else if (trait == Traits.HEAD) {
+            traitCount = headCount;
+        } else if (trait == Traits.GLASSES) {
+            traitCount = glassesCount;
+        }
+        Request[][] memory allRequests = new Request[][](traitCount);
+        uint16 max = type(uint16).max;
+        for (uint16 traitId; traitId < traitCount; traitId++) {
+            (allRequests[traitId], ) = _requestsForTrait(
+                trait,
+                traitId,
+                nounId,
+                max
+            );
+        }
+
+        return allRequests;
+    }
+
+    function allTraitRequestsForUpcomingNoun(Traits trait)
+        public
+        view
+        returns (
+            uint16,
+            uint16,
+            uint16,
+            Request[][] memory,
+            Request[][] memory,
+            Request[][] memory
+        )
+    {
+        uint16 nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+        uint16 nextNonAuctionedId = type(uint16).max;
+
+        if (_isNonAuctionedNoun(nextAuctionedId)) {
+            nextNonAuctionedId = nextAuctionedId;
+            nextAuctionedId++;
+        }
+
+        Request[][] memory nextAuctionedRequests = allTraitRequestsForNoun(
+            trait,
+            nextAuctionedId
+        );
+        Request[][] memory anyIdRequests = allTraitRequestsForNoun(
+            trait,
+            ANY_ID
+        );
+
+        Request[][] memory nextNonAuctionedRequests;
+
+        if (nextNonAuctionedId < nextAuctionedId) {
+            nextNonAuctionedRequests = allTraitRequestsForNoun(
+                trait,
+                nextNonAuctionedId
+            );
+        }
+
+        return (
+            ANY_ID,
+            nextAuctionedId,
+            nextNonAuctionedId,
+            anyIdRequests,
+            nextAuctionedRequests,
+            nextNonAuctionedRequests
+        );
+    }
+
     /// @notice Fetches a request based on its ID (index within the requests set)
     /// @dev Fetching a request based on its ID/index within the requests sets is zero indexed.
     /// @param requestId the ID to fetch based on its index within the requests sets
