@@ -11,7 +11,6 @@ contract NounSeek is Ownable2Step, Pausable {
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
     error DoneeNotFound();
     error InactiveDonee();
-    error NonExistantTraitId();
     error NotRequester();
     error IneligibleNounId();
 
@@ -278,18 +277,6 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint16) {
-        if (trait == Traits.BACKGROUND && traitId >= backgroundCount) {
-            revert NonExistantTraitId();
-        } else if (trait == Traits.BODY && traitId >= bodyCount) {
-            revert NonExistantTraitId();
-        } else if (trait == Traits.ACCESSORY && traitId >= accessoryCount) {
-            revert NonExistantTraitId();
-        } else if (trait == Traits.HEAD && traitId >= headCount) {
-            revert NonExistantTraitId();
-        } else if (trait == Traits.GLASSES && traitId >= glassesCount) {
-            revert NonExistantTraitId();
-        }
-
         if (!_donees[doneeId].active) {
             revert InactiveDonee();
         }
