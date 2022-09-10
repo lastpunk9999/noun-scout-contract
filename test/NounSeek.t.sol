@@ -166,7 +166,7 @@ contract NounSeekTest is EnhancedTest {
             NounSeek.Request[][] memory anyIdRequests,
             NounSeek.Request[][] memory nextAuctionedRequests,
             NounSeek.Request[][] memory nextNonAuctionedRequests
-        ) = nounSeek.allTraitRequestsForUpcomingNoun(HEAD);
+        ) = nounSeek.allTraitRequestsForNextNoun(HEAD);
 
         assertEq(any_id, ANY_ID);
         assertEq(nextNonAuctionedId, 100);
@@ -192,19 +192,30 @@ contract NounSeekTest is EnhancedTest {
     }
 
     function test_ALLTRAITREQUESTSFORNOUN() public {
-        for (uint16 i; i < 100; i++) {
+        for (uint16 i; i < 20; i++) {
             for (uint16 j; j < 5; j++) {
                 nounSeek.add{value: 1}(HEAD, i, ANY_ID, j);
             }
         }
-        NounSeek.Request[][] memory requests = nounSeek.allTraitRequestsForNoun(
-            HEAD,
-            ANY_ID
-        );
-        assertEq(requests.length, nounSeek.headCount());
-        assertEq(requests[0].length, 5);
-        assertEq(requests[0][0].id, 1);
-        assertEq(requests[101].length, 0);
+        for (uint16 i; i < 20; i++) {
+            for (uint16 j; j < 5; j++) {
+                nounSeek.add{value: 1}(HEAD, i, 5, j);
+            }
+        }
+        (
+            NounSeek.Request[][] memory anyIdRequests,
+            NounSeek.Request[][] memory nounIdRequests
+        ) = nounSeek.allTraitRequestsForNoun(HEAD, 5);
+
+        assertEq(anyIdRequests.length, nounSeek.headCount());
+        assertEq(anyIdRequests[0].length, 5);
+        assertEq(anyIdRequests[0][0].id, 1);
+        assertEq(anyIdRequests[20].length, 0);
+
+        assertEq(nounIdRequests.length, nounSeek.headCount());
+        assertEq(nounIdRequests[0].length, 5);
+        assertEq(nounIdRequests[0][0].id, 101);
+        assertEq(nounIdRequests[20].length, 0);
     }
 
     function test_ADD_happyCase() public {

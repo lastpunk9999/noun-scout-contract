@@ -148,11 +148,38 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    function allHeadRequestsForNoun(uint16 nounId)
+        public
+        view
+        returns (
+            Request[][] memory anyIdRequests,
+            Request[][] memory nounIdRequests
+        )
+    {
+        return allTraitRequestsForNoun(Traits.HEAD, nounId);
+    }
+
     function allTraitRequestsForNoun(Traits trait, uint16 nounId)
         public
         view
+        returns (
+            Request[][] memory anyIdRequests,
+            Request[][] memory nounIdRequests
+        )
+    {
+        nounIdRequests = _allTraitRequestsForSpecificNounId(trait, nounId);
+
+        if (_isAuctionedNoun(nounId)) {
+            anyIdRequests = _allTraitRequestsForSpecificNounId(trait, ANY_ID);
+        }
+    }
+
+    function _allTraitRequestsForSpecificNounId(Traits trait, uint16 nounId)
+        internal
+        view
         returns (Request[][] memory)
     {
+        uint16 max = type(uint16).max;
         uint16 traitCount;
         if (trait == Traits.BACKGROUND) {
             traitCount = backgroundCount;
@@ -165,10 +192,10 @@ contract NounSeek is Ownable2Step, Pausable {
         } else if (trait == Traits.GLASSES) {
             traitCount = glassesCount;
         }
-        Request[][] memory allRequests = new Request[][](traitCount);
-        uint16 max = type(uint16).max;
+
+        Request[][] memory nounIdRequests = new Request[][](traitCount);
         for (uint16 traitId; traitId < traitCount; traitId++) {
-            (allRequests[traitId], ) = _requestsForTrait(
+            (nounIdRequests[traitId], ) = _requestsForTrait(
                 trait,
                 traitId,
                 nounId,
@@ -176,55 +203,56 @@ contract NounSeek is Ownable2Step, Pausable {
             );
         }
 
-        return allRequests;
+        return nounIdRequests;
     }
 
-    function allTraitRequestsForUpcomingNoun(Traits trait)
+    function allHeadRequestsForNextNoun()
         public
         view
         returns (
-            uint16,
-            uint16,
-            uint16,
-            Request[][] memory,
-            Request[][] memory,
-            Request[][] memory
+            uint16 anyId,
+            uint16 nextAuctionedId,
+            uint16 nextNonAuctionedId,
+            Request[][] memory anyIdRequests,
+            Request[][] memory nextAuctionedRequests,
+            Request[][] memory nextNonAuctionedRequests
         )
     {
-        uint16 nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-        uint16 nextNonAuctionedId = type(uint16).max;
+        return allTraitRequestsForNextNoun(Traits.HEAD);
+    }
+
+    function allTraitRequestsForNextNoun(Traits trait)
+        public
+        view
+        returns (
+            uint16 anyId,
+            uint16 nextAuctionedId,
+            uint16 nextNonAuctionedId,
+            Request[][] memory anyIdRequests,
+            Request[][] memory nextAuctionedRequests,
+            Request[][] memory nextNonAuctionedRequests
+        )
+    {
+        anyId = ANY_ID;
+        nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+        nextNonAuctionedId = type(uint16).max;
 
         if (_isNonAuctionedNoun(nextAuctionedId)) {
             nextNonAuctionedId = nextAuctionedId;
             nextAuctionedId++;
         }
 
-        Request[][] memory nextAuctionedRequests = allTraitRequestsForNoun(
+        (anyIdRequests, nextAuctionedRequests) = allTraitRequestsForNoun(
             trait,
             nextAuctionedId
         );
-        Request[][] memory anyIdRequests = allTraitRequestsForNoun(
-            trait,
-            ANY_ID
-        );
-
-        Request[][] memory nextNonAuctionedRequests;
 
         if (nextNonAuctionedId < nextAuctionedId) {
-            nextNonAuctionedRequests = allTraitRequestsForNoun(
+            nextNonAuctionedRequests = _allTraitRequestsForSpecificNounId(
                 trait,
                 nextNonAuctionedId
             );
         }
-
-        return (
-            ANY_ID,
-            nextAuctionedId,
-            nextNonAuctionedId,
-            anyIdRequests,
-            nextAuctionedRequests,
-            nextNonAuctionedRequests
-        );
     }
 
     /// @notice Fetches a request based on its ID (index within the requests set)
