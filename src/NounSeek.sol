@@ -129,8 +129,8 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @param id Donee id based on its index within the donees set
     /// @dev If the Done is not configured, a revert will be triggered
     function toggleDoneeActive(uint256 id) external onlyOwner {
+        /// @dev If the id is larger than the donee set, will revert `Index out of bounds` error
         Donee memory donee = _donees[id];
-        if (donee.to == address(0)) revert DoneeNotFound();
         donee.active = !donee.active;
         _donees[id] = donee;
     }
