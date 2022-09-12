@@ -65,7 +65,7 @@ contract NounSeekTest is EnhancedTest {
     uint256 AUCTION_END_LIMIT;
     uint16 ANY_ID;
     uint16 MAX = 9999 wei;
-    uint256 REIMBURSMENT_BPS;
+    uint256 reimbursementBPS;
     NounSeek.Traits BACKGROUND = NounSeek.Traits.BACKGROUND;
     NounSeek.Traits HEAD = NounSeek.Traits.HEAD;
     NounSeek.Traits GLASSES = NounSeek.Traits.GLASSES;
@@ -79,7 +79,7 @@ contract NounSeekTest is EnhancedTest {
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         ANY_ID = nounSeek.ANY_ID();
-        REIMBURSMENT_BPS = nounSeek.REIMBURSMENT_BPS();
+        reimbursementBPS = nounSeek.reimbursementBPS();
 
         nounSeek.addDonee("donee1", donee1);
         nounSeek.addDonee("donee2", donee2);
@@ -720,7 +720,7 @@ contract NounSeekTest is EnhancedTest {
 
         vm.prank(user2);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(address(donee2), value - reimbursement_per_donation, "");
         vm.expectCall(address(donee4), value - reimbursement_per_donation, "");
@@ -789,7 +789,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
         vm.expectCall(address(user2), reimbursement_per_donation * 4, "");
         vm.expectCall(
             address(donee1),
@@ -876,7 +876,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 199);
         mockAuctionHouse.setNounId(201);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 4, "");
         vm.expectCall(
@@ -961,7 +961,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 199);
         mockAuctionHouse.setNounId(201);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(
@@ -1075,7 +1075,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 201);
         mockAuctionHouse.setNounId(202);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(
@@ -1167,7 +1167,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 201);
         mockAuctionHouse.setNounId(202);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(
@@ -1264,7 +1264,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 201);
         mockAuctionHouse.setNounId(202);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(
@@ -1369,7 +1369,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 201);
         mockAuctionHouse.setNounId(202);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         vm.expectCall(address(user2), reimbursement_per_donation * 2, "");
         vm.expectCall(
@@ -1486,7 +1486,7 @@ contract NounSeekTest is EnhancedTest {
         mockNouns.setSeed(seed, 201);
         mockAuctionHouse.setNounId(202);
 
-        uint256 reimbursement_per_donation = (value * REIMBURSMENT_BPS) / 10000;
+        uint256 reimbursement_per_donation = (value * reimbursementBPS) / 10000;
 
         // expecting 3 donation requests
         vm.expectCall(address(user2), reimbursement_per_donation * 3, "");

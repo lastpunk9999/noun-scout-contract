@@ -59,9 +59,6 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Time limit before an auction ends
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
-    /// @notice 1% of donated funds are sent to the address performing a match
-    uint256 public constant REIMBURSMENT_BPS = 100;
-
     /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID
     uint16 public constant ANY_ID = 0;
 
@@ -71,6 +68,11 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public accessoryCount;
     uint16 public headCount;
     uint16 public glassesCount;
+
+    /// @notice % of donated funds are sent to the address performing a match. Default is 1%
+    uint16 public reimbursementBPS = 100;
+
+    uint256 public minValue = 0.02 ether;
 
     Donee[] public _donees;
 
@@ -142,6 +144,11 @@ contract NounSeek is Ownable2Step, Pausable {
         _unpause();
     }
 
+    function setReimbursementBPS(uint16 newBPS) external onlyOwner {
+        /// BPS cannot be less than 0.1% or greater than 10%
+        if (newBPS < 10 || newBPS > 1000) revert();
+        reimbursementBPS = newBPS;
+    }
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
       VIEW FUNCTIONS
@@ -616,7 +623,7 @@ contract NounSeek is Ownable2Step, Pausable {
             Request memory request;
             request = traitRequests[i];
 
-            uint256 donation = (request.amount * (10000 - REIMBURSMENT_BPS)) /
+            uint256 donation = (request.amount * (10000 - reimbursementBPS)) /
                 10000;
             reimbursement += request.amount - donation;
             donations[request.doneeId] += donation;
