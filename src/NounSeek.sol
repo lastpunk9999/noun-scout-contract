@@ -13,6 +13,7 @@ contract NounSeek is Ownable2Step, Pausable {
     error InactiveDonee();
     error NotRequester();
     error IneligibleNounId();
+    error ValueTooLow();
 
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
@@ -149,6 +150,11 @@ contract NounSeek is Ownable2Step, Pausable {
         if (newBPS < 10 || newBPS > 1000) revert();
         reimbursementBPS = newBPS;
     }
+
+    function setMinValue(uint256 value) external onlyOwner {
+        minValue = value;
+    }
+
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
       VIEW FUNCTIONS
@@ -391,6 +397,11 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint16) {
+        if (msg.value < minValue) {
+            revert ValueTooLow();
+        }
+
+        /// @dev If the id is larger than the donee set, will revert `Index out of bounds` error
         if (!_donees[doneeId].active) {
             revert InactiveDonee();
         }

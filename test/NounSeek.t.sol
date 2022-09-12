@@ -86,6 +86,7 @@ contract NounSeekTest is EnhancedTest {
         nounSeek.addDonee("donee3", donee3);
         nounSeek.addDonee("donee4", donee4);
         nounSeek.addDonee("donee5", donee5);
+        nounSeek.setMinValue(1);
 
         mockDescriptor.setHeadCount(242);
         mockDescriptor.setGlassesCount(98);
