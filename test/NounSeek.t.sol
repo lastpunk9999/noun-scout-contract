@@ -81,11 +81,11 @@ contract NounSeekTest is EnhancedTest {
         ANY_ID = nounSeek.ANY_ID();
         reimbursementBPS = nounSeek.reimbursementBPS();
 
-        nounSeek.addDonee("donee1", donee1);
-        nounSeek.addDonee("donee2", donee2);
-        nounSeek.addDonee("donee3", donee3);
-        nounSeek.addDonee("donee4", donee4);
-        nounSeek.addDonee("donee5", donee5);
+        nounSeek.addDonee("donee1", donee1, "");
+        nounSeek.addDonee("donee2", donee2, "");
+        nounSeek.addDonee("donee3", donee3, "");
+        nounSeek.addDonee("donee4", donee4, "");
+        nounSeek.addDonee("donee5", donee5, "");
         nounSeek.setMinValue(1);
 
         mockDescriptor.setHeadCount(242);

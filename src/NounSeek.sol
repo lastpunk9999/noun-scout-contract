@@ -44,6 +44,37 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      EVENTS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
+    event RequestAdded(
+        uint16 requestId,
+        Traits trait,
+        uint16 traitId,
+        uint16 doneeId,
+        uint16 nounId,
+        address requester,
+        uint256 amount
+    );
+    event RequestRemoved(uint16 requestId);
+    event Matched(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint16[] removedRequestIds
+    );
+    event Donated(uint256 doneeId, address to, uint256 amount);
+    event DoneeAdded(
+        uint256 doneeId,
+        string name,
+        address to,
+        string description
+    );
+    event DoneeActiveStatusChanged(uint256 doneeId, bool active);
+
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
       STORAGE VARIABLES
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
@@ -121,8 +152,13 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @dev Adds a Donee to the donees set and activates the Donee
     /// @param name The Donee's name that should be displayed to users/consumers
     /// @param to Address that funds should be sent to in order to fund the Donee
-    function addDonee(string calldata name, address to) external onlyOwner {
+    function addDonee(
+        string calldata name,
+        address to,
+        string calldata description
+    ) public onlyOwner {
         _donees.push(Donee({name: name, to: to, active: true}));
+        emit DoneeAdded(_donees.length - 1, name, to, description);
     }
 
     /// @notice Toggles a Donee's active state by its index within the set, reverts if Donee is not configured
@@ -133,6 +169,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Donee memory donee = _donees[id];
         donee.active = !donee.active;
         _donees[id] = donee;
+        emit DoneeActiveStatusChanged(id, donee.active);
     }
 
     /// @notice Pauses the NounSeek contract. Pausing can be reversed by unpausing.
@@ -305,7 +342,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint256 max
     ) public view returns (Request[] memory) {
-        (Request[] memory traitRequests, ) = _requestsForTrait(
+        (Request[] memory traitRequests, , ) = _requestsForTrait(
             trait,
             traitId,
             nounId,
@@ -426,6 +463,16 @@ contract NounSeek is Ownable2Step, Pausable {
 
         _requestsIdsForTraits[hash].push(requestId);
 
+        emit RequestAdded(
+            requestId,
+            trait,
+            traitId,
+            doneeId,
+            nounId,
+            msg.sender,
+            msg.value
+        );
+
         return requestId;
     }
 
@@ -482,6 +529,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
         _requestsIdsForTraits[hash].pop();
         delete _requests[requestId];
+
+        emit RequestRemoved(requestId);
 
         _safeTransferETHWithFallback(request.requester, request.amount);
     }
@@ -551,7 +600,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
-            _safeTransferETHWithFallback(_donees[i].to, donations[i]);
+            address to = _donees[i].to;
+            _safeTransferETHWithFallback(to, donations[i]);
+            emit Donated(i, to, donations[i]);
         }
         _safeTransferETHWithFallback(msg.sender, reimbursement);
     }
@@ -616,7 +667,8 @@ contract NounSeek is Ownable2Step, Pausable {
         /// get non-empty Requests filtered by trait parameters, maximum along with the total length of all request ids including empty requests
         (
             Request[] memory traitRequests,
-            uint256 traitRequestIdsLength
+            uint16[] memory removedRequestIds,
+            uint256 allTraitRequestIdsLength
         ) = _requestsForTrait(trait, traitId, nounId, max);
 
         uint256 traitRequestsLength = traitRequests.length;
@@ -628,7 +680,7 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 hash = _path(trait, traitId, nounId);
 
         /// When the maximum is less than the total number of requests, only a subset will be returned
-        bool isSubset = max < traitRequestIdsLength;
+        bool isSubset = max < allTraitRequestIdsLength;
 
         for (uint256 i; i < traitRequestsLength; i++) {
             Request memory request;
@@ -648,6 +700,8 @@ contract NounSeek is Ownable2Step, Pausable {
         if (!isSubset) {
             delete _requestsIdsForTraits[hash];
         }
+
+        emit Matched(trait, traitId, nounId, removedRequestIds);
 
         return (donations, reimbursement, max - traitRequestsLength);
     }
@@ -673,7 +727,15 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 nounId,
         uint256 max
-    ) internal view returns (Request[] memory, uint256) {
+    )
+        internal
+        view
+        returns (
+            Request[] memory,
+            uint16[] memory,
+            uint256
+        )
+    {
         /// Get the complete array of request ids grouped by trait parameters
         uint16[] memory requestIds = _requestsIdsForTraits[
             _path(trait, traitId, nounId)
@@ -694,7 +756,11 @@ contract NounSeek is Ownable2Step, Pausable {
 
         /// If all ids exist in the temporary array, return the mapped Requests
         if (subsetCount == requestIdsLength) {
-            return (requestIdsToRequests(requestIds), requestIdsLength);
+            return (
+                requestIdsToRequests(requestIds),
+                requestIds,
+                requestIdsLength
+            );
         }
 
         /// Create a new array for the subset of request ids
@@ -704,7 +770,11 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         // return the subset of Requests
-        return (requestIdsToRequests(subsetRequestIds), requestIdsLength);
+        return (
+            requestIdsToRequests(subsetRequestIds),
+            subsetRequestIds,
+            requestIdsLength
+        );
     }
 
     /// @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
