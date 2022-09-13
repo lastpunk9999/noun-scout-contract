@@ -455,14 +455,16 @@ contract NounSeek is Ownable2Step, Pausable {
         );
         uint16 nonce = _nonces[hash];
 
-        if (nonce > request.nonce) revert("Already matched");
-
-        _amountsByDonee[hash][request.doneeId] -= request.amount;
-        _totalAmounts[hash] -= request.amount;
+        if (nonce == request.nonce) {
+            _amountsByDonee[hash][request.doneeId] -= request.amount;
+            _totalAmounts[hash] -= request.amount;
+        }
 
         delete _userRequests[msg.sender][requestId];
 
-        _safeTransferETHWithFallback(request.requester, request.amount);
+        if (nonce == request.nonce) {
+            _safeTransferETHWithFallback(request.requester, request.amount);
+        }
     }
 
     /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
