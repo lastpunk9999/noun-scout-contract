@@ -224,38 +224,6 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function _allTraitRequestsForSpecificNounId(Traits trait, uint16 nounId)
-        internal
-        view
-        returns (Request[][] memory)
-    {
-        uint16 max = type(uint16).max;
-        uint16 traitCount;
-        if (trait == Traits.BACKGROUND) {
-            traitCount = backgroundCount;
-        } else if (trait == Traits.BODY) {
-            traitCount = bodyCount;
-        } else if (trait == Traits.ACCESSORY) {
-            traitCount = accessoryCount;
-        } else if (trait == Traits.HEAD) {
-            traitCount = headCount;
-        } else if (trait == Traits.GLASSES) {
-            traitCount = glassesCount;
-        }
-
-        Request[][] memory nounIdRequests = new Request[][](traitCount);
-        for (uint16 traitId; traitId < traitCount; traitId++) {
-            (nounIdRequests[traitId], ) = _requestsForTrait(
-                trait,
-                traitId,
-                nounId,
-                max
-            );
-        }
-
-        return nounIdRequests;
-    }
-
     function allHeadRequestsForNextNoun()
         public
         view
@@ -612,6 +580,38 @@ contract NounSeek is Ownable2Step, Pausable {
      INTERNAL FUNCTIONS
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
+
+    function _allTraitRequestsForSpecificNounId(Traits trait, uint16 nounId)
+        internal
+        view
+        returns (Request[][] memory)
+    {
+        uint16 max = type(uint16).max;
+        uint16 traitCount;
+        if (trait == Traits.BACKGROUND) {
+            traitCount = backgroundCount;
+        } else if (trait == Traits.BODY) {
+            traitCount = bodyCount;
+        } else if (trait == Traits.ACCESSORY) {
+            traitCount = accessoryCount;
+        } else if (trait == Traits.HEAD) {
+            traitCount = headCount;
+        } else if (trait == Traits.GLASSES) {
+            traitCount = glassesCount;
+        }
+
+        Request[][] memory nounIdRequests = new Request[][](traitCount);
+        for (uint16 traitId; traitId < traitCount; traitId++) {
+            (nounIdRequests[traitId], , ) = _requestsForTrait(
+                trait,
+                traitId,
+                nounId,
+                max
+            );
+        }
+
+        return nounIdRequests;
+    }
 
     /// @notice The canonical path for requests that target the same `trait`, `traitId`, and `nounId`
     /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
