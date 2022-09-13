@@ -7,6 +7,12 @@ import "./Interfaces.sol";
 import "forge-std/console2.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      ERRORS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
     error TooLate();
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
     error DoneeNotFound();
@@ -14,6 +20,12 @@ contract NounSeek is Ownable2Step, Pausable {
     error NotRequester();
     error IneligibleNounId();
     error ValueTooLow();
+
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      STRUCTURED VARIABLES
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
 
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
