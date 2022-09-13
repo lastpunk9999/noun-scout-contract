@@ -204,6 +204,39 @@ contract NounSeek is Ownable2Step, Pausable {
         return donations;
     }
 
+    function allDonationsForNextNoun(Traits trait)
+        public
+        view
+        returns (
+            uint16 any_id,
+            uint16 nextAuctionedId,
+            uint16 nextNonAuctionedId,
+            uint256[][] memory anyIdRequests,
+            uint256[][] memory nextAuctionedRequests,
+            uint256[][] memory nextNonAuctionedRequests
+        )
+    {
+        any_id = ANY_ID;
+        nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+        nextNonAuctionedId = type(uint16).max;
+
+        if (_isNonAuctionedNoun(nextAuctionedId)) {
+            nextNonAuctionedId = nextAuctionedId;
+            nextAuctionedId++;
+        }
+
+        anyIdRequests = donationForAllTraits(trait, ANY_ID);
+
+        nextAuctionedRequests = donationForAllTraits(trait, nextAuctionedId);
+
+        if (nextNonAuctionedId < nextAuctionedId) {
+            nextNonAuctionedRequests = donationForAllTraits(
+                trait,
+                nextNonAuctionedId
+            );
+        }
+    }
+
     /// @notice Fetches a request based on its ID (index within the requests set)
     /// @dev Fetching a request based on its ID/index within the requests sets is zero indexed.
     /// @param requestId the ID to fetch based on its index within the requests sets
@@ -347,21 +380,6 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint256) {
-        if (trait == Traits.BACKGROUND && traitId >= backgroundCount) {
-            revert NonExistentTraitId();
-        } else if (trait == Traits.BODY && traitId >= bodyCount) {
-            revert NonExistentTraitId();
-        } else if (trait == Traits.ACCESSORY && traitId >= accessoryCount) {
-            revert NonExistentTraitId();
-        } else if (trait == Traits.HEAD && traitId >= headCount) {
-            console2.log("traitId", traitId);
-            console2.log("headCount", headCount);
-            console2.log("traitId >= headCount", traitId >= headCount);
-            revert NonExistentTraitId();
-        } else if (trait == Traits.GLASSES && traitId >= glassesCount) {
-            revert NonExistentTraitId();
-        }
-
         if (!_donees[doneeId].active) {
             revert InactiveDonee();
         }
