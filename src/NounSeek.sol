@@ -17,8 +17,6 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
-        // uint16 id;
-        // uint16 seekIndex;
         uint16 nonce;
         Traits trait;
         uint16 traitId;
@@ -62,7 +60,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public constant AUCTION_END_LIMIT = 5 minutes;
 
     /// @notice 1% of donated funds are sent to the address performing a match
-    uint256 public constant REIMBURSMENT_BPS = 100;
+    uint256 public reimbursementBPS = 100;
 
     /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID
     uint16 public constant ANY_ID = 0;
@@ -76,40 +74,15 @@ contract NounSeek is Ownable2Step, Pausable {
 
     Donee[] public _donees;
 
-    mapping(bytes32 => uint16[]) internal _requestsIdsForTraits;
-
-    mapping(uint256 => Request) internal _requests;
-
     /// Cumulative amount for hash(trait traitId nounId) doneeId
     mapping(bytes32 => mapping(uint16 => uint256)) internal _amountsByDonee;
-
-    mapping(bytes32 => uint256) internal _totalAmounts;
 
     /// Incremented nonce for hash(trait, traitId, nounId)
     mapping(bytes32 => uint16) internal _nonces;
 
+    // mapping(bytes32 => uint256) internal _totalAmounts;
+
     mapping(address => Request[]) internal _userRequests;
-
-    mapping(address => uint256) internal _userRequestsCount;
-
-    /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      MODIFIERS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-     */
-
-    modifier beforeAuctionEndWindow() {
-        uint256 endTime = auctionHouse.auction().endTime;
-        if (endTime <= block.timestamp) {
-            revert TooLate();
-        }
-
-        // Cannot executed within a time period from an auction's end
-        if (endTime - block.timestamp <= AUCTION_END_LIMIT) {
-            revert TooLate();
-        }
-        _;
-    }
 
     constructor(
         INounsTokenLike _nouns,
@@ -132,7 +105,11 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @dev Adds a Donee to the donees set and activates the Donee
     /// @param name The Donee's name that should be displayed to users/consumers
     /// @param to Address that funds should be sent to in order to fund the Donee
-    function addDonee(string calldata name, address to) external onlyOwner {
+    function addDonee(
+        string calldata name,
+        address to,
+        string calldata description
+    ) external onlyOwner {
         _donees.push(Donee({name: name, to: to, active: true}));
     }
 
@@ -162,7 +139,7 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    function donationForAmountTrait(
+    function amountForDoneeByTrait(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
@@ -178,26 +155,39 @@ contract NounSeek is Ownable2Step, Pausable {
         returns (uint256[][] memory)
     {
         uint16 traitCount;
-        if (trait == Traits.HEAD) {
+        if (trait == Traits.BACKGROUND) {
+            traitCount = backgroundCount;
+        } else if (trait == Traits.BODY) {
+            traitCount = bodyCount;
+        } else if (trait == Traits.ACCESSORY) {
+            traitCount = accessoryCount;
+        } else if (trait == Traits.HEAD) {
             traitCount = headCount;
+        } else if (trait == Traits.GLASSES) {
+            traitCount = glassesCount;
         }
 
         uint256 doneesLength = _donees.length;
         uint256[][] memory donations = new uint256[][](traitCount);
 
+        bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
+
         for (uint16 traitId; traitId < traitCount; traitId++) {
             bytes32 hash = _traitPath(trait, traitId, nounId);
-            if (_totalAmounts[hash] == 0) {
-                continue;
-            }
+            bytes32 anyIdHash = processAnyId
+                ? _traitPath(trait, traitId, ANY_ID)
+                : bytes32("");
+            // if (_totalAmounts[hash] == 0) {
+            //     continue;
+            // }
+            donations[traitId] = new uint256[](doneesLength);
             for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-                if (doneeId == 0) {
-                    donations[traitId] = new uint256[](doneesLength);
-                }
-
-                uint256 amount = _amountsByDonee[hash][doneeId];
-
-                donations[traitId][doneeId] = amount;
+                uint256 anyIdAmount = processAnyId
+                    ? _amountsByDonee[anyIdHash][doneeId]
+                    : 0;
+                donations[traitId][doneeId] =
+                    _amountsByDonee[hash][doneeId] +
+                    anyIdAmount;
             }
         }
 
@@ -208,15 +198,12 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         view
         returns (
-            uint16 any_id,
             uint16 nextAuctionedId,
             uint16 nextNonAuctionedId,
-            uint256[][] memory anyIdRequests,
-            uint256[][] memory nextAuctionedRequests,
-            uint256[][] memory nextNonAuctionedRequests
+            uint256[][] memory nextAuctionDonations,
+            uint256[][] memory nextNonAuctionDonations
         )
     {
-        any_id = ANY_ID;
         nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
         nextNonAuctionedId = type(uint16).max;
 
@@ -225,12 +212,10 @@ contract NounSeek is Ownable2Step, Pausable {
             nextAuctionedId++;
         }
 
-        anyIdRequests = donationForAllTraits(trait, ANY_ID);
-
-        nextAuctionedRequests = donationForAllTraits(trait, nextAuctionedId);
+        nextAuctionDonations = donationForAllTraits(trait, nextAuctionedId);
 
         if (nextNonAuctionedId < nextAuctionedId) {
-            nextNonAuctionedRequests = donationForAllTraits(
+            nextNonAuctionDonations = donationForAllTraits(
                 trait,
                 nextNonAuctionedId
             );
@@ -239,11 +224,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Fetches a request based on its ID (index within the requests set)
     /// @dev Fetching a request based on its ID/index within the requests sets is zero indexed.
+    /// @param requester requester
     /// @param requestId the ID to fetch based on its index within the requests sets
-    function requests(uint16 requestId) public view returns (Request memory) {
-        return _requests[requestId];
-    }
-
     function requests(address requester, uint256 requestId)
         public
         view
@@ -254,45 +236,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Fetch a Donee based on its ID (index within the donees set)
     /// @param id the ID to fetch based on its index within the Donees set
-    function donees(uint16 id) public view returns (Donee memory) {
+    function doneesById(uint16 id) public view returns (Donee memory) {
         return _donees[id];
     }
 
     function donees() public view returns (Donee[] memory) {
         return _donees;
-    }
-
-    /// @notice Fetch all request IDs for the given Trait type, Trait ID, and Noun ID pattern.
-    /// Note that a request that specifies a Noun ID and a request that has an open Noun ID (the value `ANY_ID`), will be in different sets.
-    /// @param trait The trait type to fetch requests for (see Traits enum)
-    /// @param traitId The trait ID (within the trait type) to fetch requests matching
-    /// @param nounId The Noun ID or `ANY_ID` to fetch requests matching. See Note regarding Noun IDs.
-    function requestIdsForTrait(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId
-    ) public view returns (uint16[] memory) {
-        return _requestsIdsForTraits[_path(trait, traitId, nounId)];
-    }
-
-    /// @notice Fetch requests for the given Trait type, Trait ID, and Noun ID pattern up to a max count.
-    /// @param trait The trait type to fetch requests for (see Traits enum)
-    /// @param traitId The trait ID (within the trait type) to fetch requests matching
-    /// @param nounId The NoundID or "any Noun" to fetch requests matching. See Note regarding NounIDs.
-    /// @param max The maximum number of requests to resolve and return
-    function requestsForTrait(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        uint256 max
-    ) public view returns (Request[] memory) {
-        (Request[] memory traitRequests, ) = _requestsForTrait(
-            trait,
-            traitId,
-            nounId,
-            max
-        );
-        return traitRequests;
     }
 
     /// @notice Evaluate if the provided request Noun Trait matches the specified Noun ID
@@ -333,21 +282,6 @@ contract NounSeek is Ownable2Step, Pausable {
         return requestTraitId == targetTraitId;
     }
 
-    /// @notice Maps a list of request ids to stored Request
-    /// @param ids List of request ids
-    /// @return Request[] List of matched Requests
-    function requestIdsToRequests(uint16[] memory ids)
-        public
-        view
-        returns (Request[] memory)
-    {
-        Request[] memory requestsArr = new Request[](ids.length);
-        for (uint256 i; i < ids.length; i++) {
-            requestsArr[i] = _requests[ids[i]];
-        }
-        return requestsArr;
-    }
-
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
       WRITE FUNCTIONS
@@ -367,8 +301,6 @@ contract NounSeek is Ownable2Step, Pausable {
         glassesCount = uint16(descriptor.glassesCount());
     }
 
-    uint256[] test;
-
     /// @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Donee. Request amount is tied to the sent value.
     /// @param trait Trait type the request is for (see Traits enum)
     /// @param traitId ID of the specified Trait that the request is for
@@ -380,15 +312,20 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint256) {
+        if (msg.value == 0) {
+            revert();
+        }
+
         if (!_donees[doneeId].active) {
             revert InactiveDonee();
         }
+
         bytes32 hash = _traitPath(trait, traitId, nounId);
         uint16 nonce = _nonces[hash];
 
         _amountsByDonee[hash][doneeId] += msg.value;
 
-        _totalAmounts[hash] += msg.value;
+        // _totalAmounts[hash] = msg.value;
 
         _userRequests[msg.sender].push(
             Request({
@@ -406,7 +343,15 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
-    function remove(uint256 requestId) public beforeAuctionEndWindow {
+    function remove(uint256 requestId) public {
+        // Cannot executed within a time period from an auction's end
+        if (
+            block.timestamp + AUCTION_END_LIMIT >=
+            auctionHouse.auction().endTime
+        ) {
+            revert TooLate();
+        }
+
         Request memory request = _userRequests[msg.sender][requestId];
 
         if (request.requester != msg.sender) {
@@ -453,13 +398,16 @@ contract NounSeek is Ownable2Step, Pausable {
             request.traitId,
             request.nounId
         );
+
         uint16 nonce = _nonces[hash];
 
+        /// Funds can be returned if request has yet to be matched
         if (nonce == request.nonce) {
             _amountsByDonee[hash][request.doneeId] -= request.amount;
-            _totalAmounts[hash] -= request.amount;
+            // _totalAmounts[hash] -= request.amount;
         }
 
+        /// Delete the record regardless
         delete _userRequests[msg.sender][requestId];
 
         if (nonce == request.nonce) {
@@ -470,12 +418,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
     /// @param nounId The Noun ID to match requests against
     /// @param trait The Trait type to enumerate requests for (see Traits enum)
-    /// @param max The maximum number of requests to process
-    function matchAndDonate(
-        uint16 nounId,
-        Traits trait,
-        uint256 max
-    ) public {
+    function matchAndDonate(uint16 nounId, Traits trait) public {
         uint16 eligibleNounId = uint16(auctionHouse.auction().nounId) - 1;
         uint16 prevEligibleNounId = eligibleNounId - 1;
 
@@ -509,26 +452,26 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         // Match specify Noun Id requests
-        (donations, reimbursement, max) = _getAmountsAndDeleteRequests(
+        (donations, reimbursement) = _getAmountsAndDeleteRequests(
             trait,
             traitId,
             nounId,
             donations,
-            reimbursement,
-            max
+            reimbursement
         );
 
         // If the Noun was auctioned, match open Noun ID requests by passing `ANY_ID` as `nounId`
-        if (_isAuctionedNoun(nounId)) {
-            (donations, reimbursement, max) = _getAmountsAndDeleteRequests(
-                trait,
-                traitId,
-                ANY_ID,
-                donations,
-                reimbursement,
-                max
-            );
-        }
+        // if (_isAuctionedNoun(nounId)) {
+        //     (donations, reimbursement) = _getAmountsAndDeleteRequests(
+        //         trait,
+        //         traitId,
+        //         ANY_ID,
+        //         donations,
+        //         reimbursement
+        //     );
+        // }
+
+        if (reimbursement == 0) revert();
 
         for (uint256 i; i < doneesLength; i++) {
             if (donations[i] == 0) continue;
@@ -587,92 +530,46 @@ contract NounSeek is Ownable2Step, Pausable {
     @param trait The trait type requests should match (see Traits enum)
     @param traitId Specific trait Id
     @param nounId Specific Noun Id
-    @param max Maximum number of returned amounts
     @param donations Donations array to be mutated and returned
-    @param reimbursement Reimbursement amount to be mutated and returne
+    @param reimbursement Reimbursement amount to be mutated and return
     @return donations Mutated donations array
     @return reimbursement Mutated reimursement amount
-    @return max Maximum remaining after request lookup
      */
     function _getAmountsAndDeleteRequests(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint256[] memory donations,
-        uint256 reimbursement,
-        uint256 max
-    )
-        internal
-        returns (
-            uint256[] memory,
-            uint256,
-            uint256
-        )
-    {
-        if (max == 0) {
-            return (donations, reimbursement, max);
-        }
-
+        uint256 reimbursement
+    ) internal returns (uint256[] memory, uint256) {
         bytes32 hash = _traitPath(trait, traitId, nounId);
-        if (_totalAmounts[hash] == 0) return (donations, reimbursement, max);
+        bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
 
-        delete _totalAmounts[hash];
+        bytes32 anyIdHash;
+        if (processAnyId) anyIdHash = _traitPath(trait, traitId, ANY_ID);
+        // if (_totalAmounts[hash] == 0) return (donations, reimbursement);
+
+        // delete _totalAmounts[hash];
+
+        _nonces[hash]++;
+        if (processAnyId) _nonces[anyIdHash]++;
 
         uint16 doneesLength = uint16(_donees.length);
 
         for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-            uint256 amount = _amountsByDonee[hash][doneeId];
-            if (amount == 0) continue;
-            uint256 donation = (amount * (10000 - REIMBURSMENT_BPS)) / 10000;
+            uint256 anyIdAmount = processAnyId
+                ? _amountsByDonee[anyIdHash][doneeId]
+                : 0;
+            uint256 amount = _amountsByDonee[hash][doneeId] + anyIdAmount;
+            uint256 donation = (amount * (10000 - reimbursementBPS)) / 10000;
             reimbursement += amount - donation;
             donations[doneeId] += donation;
+
             delete _amountsByDonee[hash][doneeId];
+            if (processAnyId) delete _amountsByDonee[anyIdHash][doneeId];
         }
 
-        _nonces[hash]++;
-
-        return (donations, reimbursement, max);
-
-        // return _amountsByDonee[hash][nonce][doneeId];
-
-        // /// get non-empty Requests filtered by trait parameters, maximum along with the total length of all request ids including empty requests
-        // (
-        //     Request[] memory traitRequests,
-        //     uint256 traitRequestIdsLength
-        // ) = _requestsForTrait(trait, traitId, nounId, max);
-
-        // uint256 traitRequestsLength = traitRequests.length;
-
-        // if (traitRequestsLength == 0) {
-        //     return (donations, reimbursement, max);
-        // }
-
-        // bytes32 hash = _path(trait, traitId, nounId);
-
-        // /// When the maximum is less than the total number of requests, only a subset will be returned
-        // bool isSubset = max < traitRequestIdsLength;
-
-        // for (uint256 i; i < traitRequestsLength; i++) {
-        //     Request memory request;
-        //     request = traitRequests[i];
-
-        //     uint256 donation = (request.amount * (10000 - REIMBURSMENT_BPS)) /
-        //         10000;
-        //     reimbursement += request.amount - donation;
-        //     donations[request.doneeId] += donation;
-        //     // delete _requests[request.id];
-
-        //     /// delete specific request ids in the array if only a subset or requests will be returned
-        //     // ADD BACK IN??
-        //     /* if (isSubset) delete _requestsIdsForTraits[hash][request.seekIndex]; */
-        // }
-
-        // /// if all requests will be returned, delete all members of the array
-        // if (!isSubset) {
-        //     delete _requestsIdsForTraits[hash];
-        // }
-
-        // return (donations, reimbursement, max);
+        return (donations, reimbursement);
     }
 
     function _revertRemoveIfRequestParamsMatchNounParams(
@@ -689,45 +586,6 @@ contract NounSeek is Ownable2Step, Pausable {
                 nounId
             )
         ) revert MatchFound(requestTrait, requestTraitId, nounId);
-    }
-
-    function _requestsForTrait(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        uint256 max
-    ) internal view returns (Request[] memory, uint256) {
-        /// Get the complete array of request ids grouped by trait parameters
-        uint16[] memory requestIds = _requestsIdsForTraits[
-            _path(trait, traitId, nounId)
-        ];
-        uint256 requestIdsLength = requestIds.length;
-        uint256 subsetCount;
-
-        /// Create an array to potentially hold a subset of requestIds
-        uint16[] memory tempRequestIds = new uint16[](requestIdsLength);
-
-        /// Copy non-zero ids to the temporary array
-        for (uint256 i = 0; i < requestIdsLength && subsetCount < max; i++) {
-            if (requestIds[i] > 0) {
-                tempRequestIds[subsetCount] = requestIds[i];
-                subsetCount++;
-            }
-        }
-
-        /// If all ids exist in the temporary array, return the mapped Requests
-        if (subsetCount == requestIdsLength) {
-            return (requestIdsToRequests(requestIds), requestIdsLength);
-        }
-
-        /// Create a new array for the subset of request ids
-        uint16[] memory subsetRequestIds = new uint16[](subsetCount);
-        for (uint256 i = 0; i < subsetCount; i++) {
-            subsetRequestIds[i] = tempRequestIds[i];
-        }
-
-        // return the subset of Requests
-        return (requestIdsToRequests(subsetRequestIds), requestIdsLength);
     }
 
     /// @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
