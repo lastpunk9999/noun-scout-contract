@@ -9,11 +9,9 @@ import "forge-std/console2.sol";
 contract NounSeek is Ownable2Step, Pausable {
     error TooLate();
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
-    error DoneeNotFound();
+    error NoMatch();
     error InactiveDonee();
-    error NonExistentTraitId();
     error NotRequester();
-    error IneligibleNounId();
 
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
@@ -65,6 +63,9 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID
     uint16 public constant ANY_ID = 0;
 
+    /// @notice cheaper to store than calculate
+    uint16 private constant UINT16_MAX = type(uint16).max;
+
     uint16 public requestCount;
     uint16 public backgroundCount;
     uint16 public bodyCount;
@@ -82,7 +83,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     // mapping(bytes32 => uint256) internal _totalAmounts;
 
-    mapping(address => Request[]) internal _userRequests;
+    mapping(uint256 => Request) internal requests;
 
     constructor(
         INounsTokenLike _nouns,
@@ -118,7 +119,6 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @dev If the Done is not configured, a revert will be triggered
     function toggleDoneeActive(uint256 id) external onlyOwner {
         Donee memory donee = _donees[id];
-        if (donee.to == address(0)) revert DoneeNotFound();
         donee.active = !donee.active;
         _donees[id] = donee;
     }
@@ -149,10 +149,10 @@ contract NounSeek is Ownable2Step, Pausable {
         return _amountsByDonee[hash][doneeId];
     }
 
-    function donationForAllTraits(Traits trait, uint16 nounId)
+    function allDonationsForTrait(Traits trait, uint16 nounId)
         public
         view
-        returns (uint256[][] memory)
+        returns (uint256[][] memory donationsByTraitId)
     {
         uint16 traitCount;
         if (trait == Traits.BACKGROUND) {
@@ -168,30 +168,27 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         uint256 doneesLength = _donees.length;
-        uint256[][] memory donations = new uint256[][](traitCount);
+        donationsByTraitId = new uint256[][](traitCount);
 
         bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
 
         for (uint16 traitId; traitId < traitCount; traitId++) {
             bytes32 hash = _traitPath(trait, traitId, nounId);
-            bytes32 anyIdHash = processAnyId
-                ? _traitPath(trait, traitId, ANY_ID)
-                : bytes32("");
+            bytes32 anyIdHash;
+            if (processAnyId) anyIdHash = _traitPath(trait, traitId, ANY_ID);
             // if (_totalAmounts[hash] == 0) {
             //     continue;
             // }
-            donations[traitId] = new uint256[](doneesLength);
+            donationsByTraitId[traitId] = new uint256[](doneesLength);
             for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
                 uint256 anyIdAmount = processAnyId
                     ? _amountsByDonee[anyIdHash][doneeId]
                     : 0;
-                donations[traitId][doneeId] =
+                donationsByTraitId[traitId][doneeId] =
                     _amountsByDonee[hash][doneeId] +
                     anyIdAmount;
             }
         }
-
-        return donations;
     }
 
     function allDonationsForNextNoun(Traits trait)
@@ -205,33 +202,21 @@ contract NounSeek is Ownable2Step, Pausable {
         )
     {
         nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-        nextNonAuctionedId = type(uint16).max;
+        nextNonAuctionedId = UINT16_MAX;
 
         if (_isNonAuctionedNoun(nextAuctionedId)) {
             nextNonAuctionedId = nextAuctionedId;
             nextAuctionedId++;
         }
 
-        nextAuctionDonations = donationForAllTraits(trait, nextAuctionedId);
+        nextAuctionDonations = allDonationsForTrait(trait, nextAuctionedId);
 
-        if (nextNonAuctionedId < nextAuctionedId) {
-            nextNonAuctionDonations = donationForAllTraits(
+        if (nextNonAuctionedId < UINT16_MAX) {
+            nextNonAuctionDonations = allDonationsForTrait(
                 trait,
                 nextNonAuctionedId
             );
         }
-    }
-
-    /// @notice Fetches a request based on its ID (index within the requests set)
-    /// @dev Fetching a request based on its ID/index within the requests sets is zero indexed.
-    /// @param requester requester
-    /// @param requestId the ID to fetch based on its index within the requests sets
-    function requests(address requester, uint256 requestId)
-        public
-        view
-        returns (Request memory)
-    {
-        return _userRequests[requester][requestId];
     }
 
     /// @notice Fetch a Donee based on its ID (index within the donees set)
@@ -244,7 +229,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return _donees;
     }
 
-    /// @notice Evaluate if the provided request Noun Trait matches the specified Noun ID
+    /// @notice Evaluate if the provided Request parameters matches the specified Noun
     /// @param requestTrait The trait type to compare the given Noun ID with
     /// @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
     /// @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
@@ -256,30 +241,41 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 requestNounId,
         uint16 nounId
     ) public view returns (bool) {
+        return
+            requestMatchesNoun(
+                Request({
+                    nonce: 0,
+                    doneeId: 0,
+                    trait: requestTrait,
+                    traitId: requestTraitId,
+                    nounId: requestNounId,
+                    requester: address(0),
+                    amount: 0
+                }),
+                nounId
+            );
+    }
+
+    /// @notice Evaluate if the provided Request matches the specified Noun
+    /// @param request The Request to compare
+    /// @param nounId Noun ID to fetch the attributes of to compare against the given request properties
+    /// @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
+    function requestMatchesNoun(Request memory request, uint16 nounId)
+        public
+        view
+        returns (bool)
+    {
         // If a specific Noun Id is part of the request, but is not the target Noun id, can exit
-        if (requestNounId != ANY_ID && requestNounId != nounId) {
+        if (request.nounId != ANY_ID && request.nounId != nounId) {
             return false;
         }
 
         // No Preference Noun Id can only apply to auctioned Nouns
-        if (requestNounId == ANY_ID && _isNonAuctionedNoun(nounId)) {
+        if (request.nounId == ANY_ID && _isNonAuctionedNoun(nounId)) {
             return false;
         }
 
-        uint16 targetTraitId;
-        if (requestTrait == Traits.BACKGROUND) {
-            targetTraitId = uint16(nouns.seeds(nounId).background);
-        } else if (requestTrait == Traits.BODY) {
-            targetTraitId = uint16(nouns.seeds(nounId).body);
-        } else if (requestTrait == Traits.ACCESSORY) {
-            targetTraitId = uint16(nouns.seeds(nounId).accessory);
-        } else if (requestTrait == Traits.HEAD) {
-            targetTraitId = uint16(nouns.seeds(nounId).head);
-        } else if (requestTrait == Traits.GLASSES) {
-            targetTraitId = uint16(nouns.seeds(nounId).glasses);
-        }
-
-        return requestTraitId == targetTraitId;
+        return request.traitId == _fetchTraitId(request.trait, nounId);
     }
 
     /**
@@ -312,7 +308,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint256) {
-        if (msg.value == 0) {
+        if (msg.value < 1) {
             revert();
         }
 
@@ -325,21 +321,20 @@ contract NounSeek is Ownable2Step, Pausable {
 
         _amountsByDonee[hash][doneeId] += msg.value;
 
+        uint256 requestId = requestCount++;
         // _totalAmounts[hash] = msg.value;
 
-        _userRequests[msg.sender].push(
-            Request({
-                nonce: nonce,
-                doneeId: doneeId,
-                trait: trait,
-                traitId: traitId,
-                nounId: nounId,
-                requester: msg.sender,
-                amount: msg.value
-            })
-        );
+        requests[requestId] = Request({
+            nonce: nonce,
+            doneeId: doneeId,
+            trait: trait,
+            traitId: traitId,
+            nounId: nounId,
+            requester: msg.sender,
+            amount: msg.value
+        });
 
-        return _userRequests[msg.sender].length - 1;
+        return requestId;
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
@@ -352,45 +347,41 @@ contract NounSeek is Ownable2Step, Pausable {
             revert TooLate();
         }
 
-        Request memory request = _userRequests[msg.sender][requestId];
+        Request memory request = requests[requestId];
 
         if (request.requester != msg.sender) {
             revert NotRequester();
         }
 
-        if (request.amount == 0) {
-            revert();
-        }
+        /* @dev
+         * Cannot remove a request if:
+         * 1) The current Noun on auction has the requested traits
+         * 2) The previous Noun has the requested traits
+         * 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
+         * 3) A Non-Auctioned Noun which matches the request.nounId is the previous previous Noun
 
-        // Cannot remove a request if
-        // 1) The current Noun on auction has the requested traits
-        // 2) The previous Noun to the one on auction has the requested traits
-        // 3) A Non-Auctioned Noun which matches the request.nounId is the previous Noun
-
+         * Case # | Example | Ineligible
+         *        | Noun Id | Noun Id
+         * -------|---------|-------------------
+         *    1,3 |     101 | 101, 99 (*skips 100)
+         *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
+         *    1,2 |     103 | 103, 102
+        */
         uint16 nounId = uint16(auctionHouse.auction().nounId);
-        _revertRemoveIfRequestParamsMatchNounParams(
-            request.trait,
-            request.traitId,
-            request.nounId,
-            nounId
-        );
 
-        _revertRemoveIfRequestParamsMatchNounParams(
-            request.trait,
-            request.traitId,
-            request.nounId,
-            nounId - 1
-        );
+        // Case 1
+        _revertIfRequestMatchesNoun(request, nounId);
 
-        // If two auctioned Nouns aren't consecutive
-        // Check the previous, previous Noun
-        if (_isNonAuctionedNoun(nounId - 1)) {
-            _revertRemoveIfRequestParamsMatchNounParams(
-                request.trait,
-                request.traitId,
-                request.nounId,
-                nounId - 2
-            );
+        // Case 2
+        if (_isAuctionedNoun(nounId - 1)) {
+            _revertIfRequestMatchesNoun(request, nounId - 1);
+            // Case 2b
+            if (_isNonAuctionedNoun(nounId - 2)) {
+                _revertIfRequestMatchesNoun(request, nounId - 2);
+            }
+        } else {
+            // Case 3
+            _revertIfRequestMatchesNoun(request, nounId - 2);
         }
 
         bytes32 hash = _traitPath(
@@ -399,82 +390,61 @@ contract NounSeek is Ownable2Step, Pausable {
             request.nounId
         );
 
-        uint16 nonce = _nonces[hash];
+        delete requests[requestId];
 
         /// Funds can be returned if request has yet to be matched
-        if (nonce == request.nonce) {
+        if (_nonces[hash] == request.nonce) {
             _amountsByDonee[hash][request.doneeId] -= request.amount;
-            // _totalAmounts[hash] -= request.amount;
-        }
-
-        /// Delete the record regardless
-        delete _userRequests[msg.sender][requestId];
-
-        if (nonce == request.nonce) {
             _safeTransferETHWithFallback(request.requester, request.amount);
         }
     }
 
     /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
-    /// @param nounId The Noun ID to match requests against
     /// @param trait The Trait type to enumerate requests for (see Traits enum)
-    function matchAndDonate(uint16 nounId, Traits trait) public {
-        uint16 eligibleNounId = uint16(auctionHouse.auction().nounId) - 1;
-        uint16 prevEligibleNounId = eligibleNounId - 1;
+    function matchAndDonate(Traits trait) public {
+        uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
+        uint16 nonAuctionedNounId = UINT16_MAX;
 
-        if (nounId != eligibleNounId && nounId != prevEligibleNounId) {
-            revert IneligibleNounId();
+        if (_isNonAuctionedNoun(auctionedNounId)) {
+            auctionedNounId = auctionedNounId - 1;
         }
 
-        if (
-            _isAuctionedNoun(eligibleNounId) &&
-            _isAuctionedNoun(prevEligibleNounId) &&
-            nounId == prevEligibleNounId
-        ) {
-            revert IneligibleNounId();
+        if (_isNonAuctionedNoun(auctionedNounId - 1)) {
+            nonAuctionedNounId = auctionedNounId - 1;
+            // nonAuctionedNounId = 100;
         }
 
         uint256 reimbursement;
         uint256 doneesLength = _donees.length;
         uint256[] memory donations = new uint256[](doneesLength);
 
-        uint16 traitId;
-        if (trait == Traits.BACKGROUND) {
-            traitId = uint16(nouns.seeds(nounId).background);
-        } else if (trait == Traits.BODY) {
-            traitId = uint16(nouns.seeds(nounId).body);
-        } else if (trait == Traits.ACCESSORY) {
-            traitId = uint16(nouns.seeds(nounId).accessory);
-        } else if (trait == Traits.HEAD) {
-            traitId = uint16(nouns.seeds(nounId).head);
-        } else if (trait == Traits.GLASSES) {
-            traitId = uint16(nouns.seeds(nounId).glasses);
-        }
+        uint16 auctionedTraitId = _fetchTraitId(trait, auctionedNounId);
 
         // Match specify Noun Id requests
         (donations, reimbursement) = _getAmountsAndDeleteRequests(
             trait,
-            traitId,
-            nounId,
+            auctionedTraitId,
+            auctionedNounId,
             donations,
             reimbursement
         );
 
-        // If the Noun was auctioned, match open Noun ID requests by passing `ANY_ID` as `nounId`
-        // if (_isAuctionedNoun(nounId)) {
-        //     (donations, reimbursement) = _getAmountsAndDeleteRequests(
-        //         trait,
-        //         traitId,
-        //         ANY_ID,
-        //         donations,
-        //         reimbursement
-        //     );
-        // }
+        uint16 nonAuctionedTraitId;
+        if (nonAuctionedNounId < UINT16_MAX) {
+            nonAuctionedTraitId = _fetchTraitId(trait, nonAuctionedNounId);
+            (donations, reimbursement) = _getAmountsAndDeleteRequests(
+                trait,
+                nonAuctionedTraitId,
+                nonAuctionedNounId,
+                donations,
+                reimbursement
+            );
+        }
 
-        if (reimbursement == 0) revert();
+        if (reimbursement < 1) revert NoMatch();
 
         for (uint256 i; i < doneesLength; i++) {
-            if (donations[i] == 0) continue;
+            if (donations[i] < 1) continue;
             _safeTransferETHWithFallback(_donees[i].to, donations[i]);
         }
         _safeTransferETHWithFallback(msg.sender, reimbursement);
@@ -517,12 +487,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Was the specified Noun ID not auctioned
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {
-        return nounId % 10 == 0 && nounId <= 1820;
+        return nounId % 10 < 1 && nounId <= 1820;
     }
 
     /// @notice Was the specified Noun ID auctioned
     function _isAuctionedNoun(uint16 nounId) internal pure returns (bool) {
-        return nounId % 10 != 0 || nounId > 1820;
+        return nounId % 10 > 0 || nounId > 1820;
     }
 
     /**
@@ -543,7 +513,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint256 reimbursement
     ) internal returns (uint256[] memory, uint256) {
         bytes32 hash = _traitPath(trait, traitId, nounId);
-        bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
+        bool processAnyId = _isAuctionedNoun(nounId);
 
         bytes32 anyIdHash;
         if (processAnyId) anyIdHash = _traitPath(trait, traitId, ANY_ID);
@@ -572,20 +542,30 @@ contract NounSeek is Ownable2Step, Pausable {
         return (donations, reimbursement);
     }
 
-    function _revertRemoveIfRequestParamsMatchNounParams(
-        Traits requestTrait,
-        uint16 requestTraitId,
-        uint16 requestNounId,
-        uint16 nounId
-    ) internal view {
-        if (
-            requestParamsMatchNounParams(
-                requestTrait,
-                requestTraitId,
-                requestNounId,
-                nounId
-            )
-        ) revert MatchFound(requestTrait, requestTraitId, nounId);
+    function _revertIfRequestMatchesNoun(Request memory request, uint16 nounId)
+        internal
+        view
+    {
+        if (requestMatchesNoun(request, nounId))
+            revert MatchFound(request.trait, request.traitId, nounId);
+    }
+
+    function _fetchTraitId(Traits trait, uint16 nounId)
+        internal
+        view
+        returns (uint16 traitId)
+    {
+        if (trait == Traits.BACKGROUND) {
+            traitId = uint16(nouns.seeds(nounId).background);
+        } else if (trait == Traits.BODY) {
+            traitId = uint16(nouns.seeds(nounId).body);
+        } else if (trait == Traits.ACCESSORY) {
+            traitId = uint16(nouns.seeds(nounId).accessory);
+        } else if (trait == Traits.HEAD) {
+            traitId = uint16(nouns.seeds(nounId).head);
+        } else if (trait == Traits.GLASSES) {
+            traitId = uint16(nouns.seeds(nounId).glasses);
+        }
     }
 
     /// @notice Transfer ETH. If the ETH transfer fails, wrap the ETH and try send it as WETH.
