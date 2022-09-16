@@ -12,7 +12,7 @@ contract NounSeek is Ownable2Step, Pausable {
     error NoMatch();
     error InactiveDonee();
     error NotRequester();
-    error NoValueSent();
+    error ValueTooLow();
 
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
@@ -73,6 +73,8 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public accessoryCount;
     uint16 public headCount;
     uint16 public glassesCount;
+
+    uint256 public minValue = 0.02 ether;
 
     Donee[] public donees;
 
@@ -253,8 +255,8 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId,
         uint16 doneeId
     ) public payable whenNotPaused returns (uint256) {
-        if (msg.value < 1) {
-            revert NoValueSent();
+        if (msg.value < minValue) {
+            revert ValueTooLow();
         }
 
         if (!donees[doneeId].active) {
@@ -429,6 +431,16 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @dev If the Done is not configured, a revert will be triggered
     function toggleDoneeActive(uint256 id) external onlyOwner {
         donees[id].active = !donees[id].active;
+    }
+
+    function setMinValue(uint256 value) external onlyOwner {
+        minValue = value;
+    }
+
+    function setReimbursementBPS(uint16 newBPS) external onlyOwner {
+        /// BPS cannot be less than 0.1% or greater than 10%
+        if (newBPS < 10 || newBPS > 1000) revert();
+        reimbursementBPS = newBPS;
     }
 
     /// @notice Pauses the NounSeek contract. Pausing can be reversed by unpausing.
