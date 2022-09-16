@@ -122,36 +122,38 @@ contract NounSeek is Ownable2Step, Pausable {
         view
         returns (uint256[][] memory donationsByTraitId)
     {
-        uint16 traitCount;
-        if (trait == Traits.BACKGROUND) {
-            traitCount = backgroundCount;
-        } else if (trait == Traits.BODY) {
-            traitCount = bodyCount;
-        } else if (trait == Traits.ACCESSORY) {
-            traitCount = accessoryCount;
-        } else if (trait == Traits.HEAD) {
-            traitCount = headCount;
-        } else if (trait == Traits.GLASSES) {
-            traitCount = glassesCount;
-        }
+        unchecked {
+            uint16 traitCount;
+            if (trait == Traits.BACKGROUND) {
+                traitCount = backgroundCount;
+            } else if (trait == Traits.BODY) {
+                traitCount = bodyCount;
+            } else if (trait == Traits.ACCESSORY) {
+                traitCount = accessoryCount;
+            } else if (trait == Traits.HEAD) {
+                traitCount = headCount;
+            } else if (trait == Traits.GLASSES) {
+                traitCount = glassesCount;
+            }
 
-        uint256 doneesLength = donees.length;
-        donationsByTraitId = new uint256[][](traitCount);
+            uint256 doneesLength = donees.length;
+            donationsByTraitId = new uint256[][](traitCount);
 
-        bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
+            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
 
-        for (uint16 traitId; traitId < traitCount; traitId++) {
-            bytes32 hash = traitHash(trait, traitId, nounId);
-            bytes32 anyIdHash;
-            if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
-            donationsByTraitId[traitId] = new uint256[](doneesLength);
-            for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-                uint256 anyIdAmount = processAnyId
-                    ? amounts[anyIdHash][doneeId]
-                    : 0;
-                donationsByTraitId[traitId][doneeId] =
-                    amounts[hash][doneeId] +
-                    anyIdAmount;
+            for (uint16 traitId; traitId < traitCount; traitId++) {
+                bytes32 hash = traitHash(trait, traitId, nounId);
+                bytes32 anyIdHash;
+                if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
+                donationsByTraitId[traitId] = new uint256[](doneesLength);
+                for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
+                    uint256 anyIdAmount = processAnyId
+                        ? amounts[anyIdHash][doneeId]
+                        : 0;
+                    donationsByTraitId[traitId][doneeId] =
+                        amounts[hash][doneeId] +
+                        anyIdAmount;
+                }
             }
         }
     }
@@ -166,21 +168,23 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256[][] memory nextNonAuctionDonations
         )
     {
-        nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-        nextNonAuctionedId = UINT16_MAX;
+        unchecked {
+            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+            nextNonAuctionedId = UINT16_MAX;
 
-        if (_isNonAuctionedNoun(nextAuctionedId)) {
-            nextNonAuctionedId = nextAuctionedId;
-            nextAuctionedId++;
-        }
+            if (_isNonAuctionedNoun(nextAuctionedId)) {
+                nextNonAuctionedId = nextAuctionedId;
+                nextAuctionedId++;
+            }
 
-        nextAuctionDonations = allDonationsForTrait(trait, nextAuctionedId);
+            nextAuctionDonations = allDonationsForTrait(trait, nextAuctionedId);
 
-        if (nextNonAuctionedId < UINT16_MAX) {
-            nextNonAuctionDonations = allDonationsForTrait(
-                trait,
-                nextNonAuctionedId
-            );
+            if (nextNonAuctionedId < UINT16_MAX) {
+                nextNonAuctionDonations = allDonationsForTrait(
+                    trait,
+                    nextNonAuctionedId
+                );
+            }
         }
     }
 
