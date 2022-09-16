@@ -84,7 +84,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /// Incremented nonce for hash(trait, traitId, nounId)
     mapping(bytes32 => uint16) public nonces;
 
-    mapping(uint256 => Request) public requests;
+    mapping(address => Request[]) internal _requests;
 
     constructor(
         INounsTokenLike _nouns,
@@ -102,6 +102,10 @@ contract NounSeek is Ownable2Step, Pausable {
       VIEW FUNCTIONS
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
+
+    function requests(address owner) public view returns (Request[] memory) {
+        return _requests[owner];
+    }
 
     function amountForDoneeByTrait(
         Traits trait,
@@ -268,19 +272,19 @@ contract NounSeek is Ownable2Step, Pausable {
 
         amounts[hash][doneeId] += msg.value;
 
-        uint256 requestId = requestCount++;
+        _requests[msg.sender].push(
+            Request({
+                nonce: nonce,
+                doneeId: doneeId,
+                trait: trait,
+                traitId: traitId,
+                nounId: nounId,
+                requester: msg.sender,
+                amount: msg.value
+            })
+        );
 
-        requests[requestId] = Request({
-            nonce: nonce,
-            doneeId: doneeId,
-            trait: trait,
-            traitId: traitId,
-            nounId: nounId,
-            requester: msg.sender,
-            amount: msg.value
-        });
-
-        return requestId;
+        return _requests[msg.sender].length - 1;
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
@@ -293,11 +297,11 @@ contract NounSeek is Ownable2Step, Pausable {
             revert TooLate();
         }
 
-        Request memory request = requests[requestId];
+        Request memory request = _requests[msg.sender][requestId];
 
-        if (request.requester != msg.sender) {
-            revert NotRequester();
-        }
+        // if (request.requester != msg.sender) {
+        //     revert NotRequester();
+        // }
 
         /* @dev
          * Cannot remove a request if:
@@ -336,7 +340,7 @@ contract NounSeek is Ownable2Step, Pausable {
             request.nounId
         );
 
-        delete requests[requestId];
+        delete _requests[msg.sender][requestId];
 
         /// Funds can be returned if request has yet to be matched
         if (nonces[hash] == request.nonce) {
