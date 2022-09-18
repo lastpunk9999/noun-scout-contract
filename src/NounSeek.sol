@@ -55,6 +55,8 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
+    uint256 public constant MAX_REIMBURSEMENT = 0.2 ether;
+
     /// @notice Time limit before an auction ends
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
 
@@ -367,38 +369,50 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 reimbursement;
         uint256 doneesLength = donees.length;
-        uint256[] memory donations = new uint256[](doneesLength);
 
+        uint256 total;
+        uint256[] memory donations = new uint256[](doneesLength);
         uint16 auctionedTraitId = _fetchTraitId(trait, auctionedNounId);
 
         // Match specify Noun Id requests
-        (donations, reimbursement) = _getAmountsAndDeleteRequests(
+        (donations, total) = _combineAmountsAndDelete(
             trait,
             auctionedTraitId,
             auctionedNounId,
             donations,
-            reimbursement
+            total
         );
 
         uint16 nonAuctionedTraitId;
         if (nonAuctionedNounId < UINT16_MAX) {
             nonAuctionedTraitId = _fetchTraitId(trait, nonAuctionedNounId);
-            (donations, reimbursement) = _getAmountsAndDeleteRequests(
+            (donations, total) = _combineAmountsAndDelete(
                 trait,
                 nonAuctionedTraitId,
                 nonAuctionedNounId,
                 donations,
-                reimbursement
+                total
             );
         }
 
-        if (reimbursement < 1) revert NoMatch();
+        if (total < 1) revert NoMatch();
 
+        /// Add 2 digits more precision to better derive `effectiveBPS` from total
+        uint256 effectiveBPS = reimbursementBPS * 10**2;
+
+        if ((total * effectiveBPS) / 1_000_000 > MAX_REIMBURSEMENT) {
+            effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
+        }
+
+        uint256 reimbursement;
         for (uint256 i; i < doneesLength; i++) {
-            if (donations[i] < 1) continue;
-            _safeTransferETHWithFallback(donees[i].to, donations[i]);
+            uint256 amount = donations[i];
+            if (amount < 1) continue;
+            uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
+                1_000_000;
+            reimbursement += amount - donation;
+            _safeTransferETHWithFallback(donees[i].to, donation);
         }
         _safeTransferETHWithFallback(msg.sender, reimbursement);
     }
@@ -482,16 +496,16 @@ contract NounSeek is Ownable2Step, Pausable {
     @param traitId Specific trait Id
     @param nounId Specific Noun Id
     @param donations Donations array to be mutated and returned
-    @param reimbursement Reimbursement amount to be mutated and return
+    @param total total
     @return donations Mutated donations array
-    @return reimbursement Mutated reimursement amount
+    @return total total
      */
-    function _getAmountsAndDeleteRequests(
+    function _combineAmountsAndDelete(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint256[] memory donations,
-        uint256 reimbursement
+        uint256 total
     ) internal returns (uint256[] memory, uint256) {
         bytes32 hash = traitHash(trait, traitId, nounId);
         bool processAnyId = _isAuctionedNoun(nounId);
@@ -499,25 +513,23 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 anyIdHash;
         if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
 
-        nonces[hash]++;
-        if (processAnyId) nonces[anyIdHash]++;
-
         uint16 doneesLength = uint16(donees.length);
 
         for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-            uint256 anyIdAmount = processAnyId
-                ? amounts[anyIdHash][doneeId]
-                : 0;
+            uint256 anyIdAmount;
+            if (processAnyId) anyIdAmount = amounts[anyIdHash][doneeId];
             uint256 amount = amounts[hash][doneeId] + anyIdAmount;
-            uint256 donation = (amount * (10000 - reimbursementBPS)) / 10000;
-            reimbursement += amount - donation;
-            donations[doneeId] += donation;
+            total += amount;
+            donations[doneeId] += amount;
 
             delete amounts[hash][doneeId];
             if (processAnyId) delete amounts[anyIdHash][doneeId];
         }
 
-        return (donations, reimbursement);
+        nonces[hash]++;
+        if (processAnyId) nonces[anyIdHash]++;
+
+        return (donations, total);
     }
 
     function _revertIfRequestMatchesNoun(Request memory request, uint16 nounId)
