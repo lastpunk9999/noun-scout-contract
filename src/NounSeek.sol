@@ -14,6 +14,45 @@ contract NounSeek is Ownable2Step, Pausable {
     error NotRequester();
     error ValueTooLow();
 
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      EVENTS
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
+    event RequestAdded(
+        uint256 requestId,
+        address indexed requester,
+        Traits indexed trait,
+        uint16 traitId,
+        uint16 doneeId,
+        uint16 nounId,
+        uint256 amount,
+        uint16 nonce
+    );
+    event RequestRemoved(
+        uint256 requestId,
+        address indexed requester,
+        Traits indexed trait,
+        uint16 traitId,
+        uint16 doneeId,
+        uint16 nounId,
+        uint256 amounts
+    );
+    event DoneeAdded(
+        uint256 doneeId,
+        string name,
+        address to,
+        string description
+    );
+    event DoneeActiveStatusChanged(uint256 doneeId, bool active);
+    event Matched(Traits trait, uint16 traitId, uint16 nounId, uint16 newNonce);
+    // event Donated(uint256 doneeId, address to, uint256 amount);
+    event Donated(uint256[] donations);
+    event Reimbursed(address matcher, uint256 amount);
+    event MinValueChanged(uint256 newMinValue);
+    event ReimbursementBPSChanged(uint256 newReimbursementBPS);
+
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
         uint16 nonce;
@@ -65,8 +104,8 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice cheaper to store than calculate
     uint16 private constant UINT16_MAX = type(uint16).max;
 
-    /// @notice 1% of donated funds are sent to the address performing a match
-    uint16 public reimbursementBPS = 100;
+    /// @notice A portion of donated funds are sent to the address performing a match
+    uint16 public maxReimbursementBPS = 250;
 
     uint16 public requestCount;
     uint16 public backgroundCount;
@@ -209,7 +248,6 @@ contract NounSeek is Ownable2Step, Pausable {
                     trait: requestTrait,
                     traitId: requestTraitId,
                     nounId: requestNounId,
-                    requester: address(0),
                     amount: 0
                 }),
                 nounId
@@ -277,6 +315,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
         amounts[hash][doneeId] += msg.value;
 
+        uint256 requestId = _requests[msg.sender].length;
+
         _requests[msg.sender].push(
             Request({
                 nonce: nonce,
@@ -288,7 +328,18 @@ contract NounSeek is Ownable2Step, Pausable {
             })
         );
 
-        return _requests[msg.sender].length - 1;
+        emit RequestAdded(
+            requestId,
+            msg.sender,
+            trait,
+            traitId,
+            doneeId,
+            nounId,
+            msg.value,
+            nonce
+        );
+
+        return requestId;
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
@@ -303,9 +354,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
         Request memory request = _requests[msg.sender][requestId];
 
-        // if (request.requester != msg.sender) {
-        //     revert NotRequester();
-        // }
+        if (request.amount < 1) revert ValueTooLow();
 
         /* @dev
          * Cannot remove a request if:
@@ -338,19 +387,31 @@ contract NounSeek is Ownable2Step, Pausable {
             _revertIfRequestMatchesNoun(request, nounId - 2);
         }
 
+        delete _requests[msg.sender][requestId];
+
         bytes32 hash = traitHash(
             request.trait,
             request.traitId,
             request.nounId
         );
 
-        delete _requests[msg.sender][requestId];
-
         /// Funds can be returned if request has yet to be matched
-        if (nonces[hash] == request.nonce) {
-            amounts[hash][request.doneeId] -= request.amount;
-            _safeTransferETHWithFallback(request.requester, request.amount);
+        uint256 amount = nonces[hash] == request.nonce ? request.amount : 0;
+
+        if (amount < 1) {
+            amounts[hash][request.doneeId] -= amount;
+            _safeTransferETHWithFallback(msg.sender, amount);
         }
+
+        emit RequestRemoved(
+            requestId,
+            msg.sender,
+            request.trait,
+            request.traitId,
+            request.doneeId,
+            request.nounId,
+            amount
+        );
     }
 
     /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
@@ -396,8 +457,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         if (total < 1) revert NoMatch();
 
-        /// Add 2 digits more precision to better derive `effectiveBPS` from total
-        uint256 effectiveBPS = reimbursementBPS * 10**2;
+        /// Add 2 digits extra precision to better derive `effectiveBPS` from total
+        /// Extra precision basis point = 10_000 * 100 = 1_000_000
+        uint256 effectiveBPS = maxReimbursementBPS * 100;
 
         if ((total * effectiveBPS) / 1_000_000 > MAX_REIMBURSEMENT) {
             effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
@@ -410,9 +472,12 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
                 1_000_000;
             reimbursement += amount - donation;
+            donations[i] = donation;
             _safeTransferETHWithFallback(donees[i].to, donation);
         }
         _safeTransferETHWithFallback(msg.sender, reimbursement);
+        emit Donated(donations);
+        emit Reimbursed(msg.sender, reimbursement);
     }
 
     /// @notice Fetch the count of NounsDescriptor traits and update local counts
@@ -443,24 +508,33 @@ contract NounSeek is Ownable2Step, Pausable {
         address to,
         string calldata description
     ) external onlyOwner {
+        uint16 doneeId = uint16(donees.length);
         donees.push(Donee({name: name, to: to, active: true}));
+        emit DoneeAdded(doneeId, name, to, description);
     }
 
     /// @notice Toggles a Donee's active state by its index within the set, reverts if Donee is not configured
-    /// @param id Donee id based on its index within the donees set
+    /// @param doneeId Donee id based on its index within the donees set
     /// @dev If the Done is not configured, a revert will be triggered
-    function toggleDoneeActive(uint256 id) external onlyOwner {
-        donees[id].active = !donees[id].active;
+    function toggleDoneeActive(uint256 doneeId) external onlyOwner {
+        bool active = !donees[doneeId].active;
+        donees[doneeId].active = active;
+        emit DoneeActiveStatusChanged(doneeId, active);
     }
 
-    function setMinValue(uint256 value) external onlyOwner {
-        minValue = value;
+    function setMinValue(uint256 newMinValue) external onlyOwner {
+        minValue = newMinValue;
+        emit MinValueChanged(newMinValue);
     }
 
-    function setReimbursementBPS(uint16 newBPS) external onlyOwner {
+    function setReimbursementBPS(uint16 newReimbursementBPS)
+        external
+        onlyOwner
+    {
         /// BPS cannot be less than 0.1% or greater than 10%
-        if (newBPS < 10 || newBPS > 1000) revert();
-        reimbursementBPS = newBPS;
+        if (newReimbursementBPS < 10 || newReimbursementBPS > 1000) revert();
+        maxReimbursementBPS = newReimbursementBPS;
+        emit ReimbursementBPSChanged(newReimbursementBPS);
     }
 
     /// @notice Pauses the NounSeek contract. Pausing can be reversed by unpausing.
@@ -525,7 +599,13 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         nonces[hash]++;
-        if (processAnyId) nonces[anyIdHash]++;
+
+        emit Matched(trait, traitId, nounId, nonces[hash]);
+
+        if (processAnyId) {
+            nonces[anyIdHash]++;
+            emit Matched(trait, traitId, ANY_ID, nonces[anyIdHash]);
+        }
 
         return (donations, total);
     }
