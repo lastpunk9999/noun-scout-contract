@@ -21,8 +21,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId;
         uint16 doneeId;
         uint16 nounId;
-        address requester;
-        uint256 amount;
+        uint128 amount;
     }
 
     /// @notice Name, address, and active status where funds can be donated
@@ -285,8 +284,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 trait: trait,
                 traitId: traitId,
                 nounId: nounId,
-                requester: msg.sender,
-                amount: msg.value
+                amount: uint128(msg.value)
             })
         );
 
