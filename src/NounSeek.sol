@@ -7,6 +7,11 @@ import "./Interfaces.sol";
 import "forge-std/console2.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      ERROR
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
     error TooLate();
     error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
     error NoMatch();
@@ -53,6 +58,12 @@ contract NounSeek is Ownable2Step, Pausable {
     event MinValueChanged(uint256 newMinValue);
     event ReimbursementBPSChanged(uint256 newReimbursementBPS);
 
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      CUSTOM TYPES
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
     /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
     struct Request {
         uint16 nonce;
@@ -80,7 +91,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      STORAGE VARIABLES
+      CONSTANTS
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
@@ -103,6 +114,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice cheaper to store than calculate
     uint16 private constant UINT16_MAX = type(uint16).max;
+
+    /**
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+      STORAGE VARIABLES
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
 
     /// @notice A portion of donated funds are sent to the address performing a match
     uint16 public maxReimbursementBPS = 250;
