@@ -276,6 +276,26 @@ contract NounSeek is Ownable2Step, Pausable {
         return request.traitId == _fetchTraitId(request.trait, nounId);
     }
 
+    function nonceForTraits(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public view returns (uint16) {
+        return nonces[traitHash(trait, traitId, nounId)];
+    }
+
+    function noncesForTraits(
+        Traits[] calldata traits,
+        uint16[] calldata traitIds,
+        uint16[] calldata nounIds
+    ) public view returns (uint16[] memory noncesList) {
+        uint256 length = traits.length;
+        noncesList = new uint16[](length);
+        for (uint256 i; i < length; i++) {
+            noncesList[i] = nonceForTraits(traits[i], traitIds[i], nounIds[i]);
+        }
+    }
+
     /// @notice The canonical hash for requests that target the same `trait`, `traitId`, and `nounId`
     /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
     function traitHash(
