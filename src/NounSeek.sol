@@ -462,8 +462,8 @@ contract NounSeek is Ownable2Step, Pausable {
         );
     }
 
-    /// @notice Match all trait requests for the previous auctioned Noun, and the first preceeding non-auctioned Noun to the previous auction Noun and send donations
-    /// @dev Matches will made against the previously auctioned Noun using both requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
+    /// @notice Match all trait requests for the previous Noun(s).
+    /// @dev Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
     /// @param trait The Trait type to match with the previous Noun (see Traits enum)
     function matchAndDonate(Traits trait) public {
         /// The Noun ID of the previous Noun to the current Noun on auction
@@ -488,32 +488,29 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesLength = donees.length;
-
-        uint256 total;
-        uint256[] memory donations = new uint256[](doneesLength);
-        uint16 auctionedTraitId = _fetchTraitId(trait, auctionedNounId);
-
-        // Match specify Noun Id requests
-        (donations, total) = _combineAmountsAndDelete(
-            trait,
-            auctionedTraitId,
-            auctionedNounId,
-            donations,
-            total
+        uint16[] memory traitIds = new uint16[](
+            nonAuctionedNounId < UINT16_MAX ? 3 : 2
+        );
+        uint16[] memory nounIds = new uint16[](
+            nonAuctionedNounId < UINT16_MAX ? 3 : 2
         );
 
-        uint16 nonAuctionedTraitId;
+        nounIds[0] = auctionedNounId;
+        nounIds[1] = ANY_ID;
+        traitIds[0] = _fetchTraitId(trait, auctionedNounId);
+        traitIds[1] = traitIds[0];
+
         if (nonAuctionedNounId < UINT16_MAX) {
-            nonAuctionedTraitId = _fetchTraitId(trait, nonAuctionedNounId);
-            (donations, total) = _combineAmountsAndDelete(
-                trait,
-                nonAuctionedTraitId,
-                nonAuctionedNounId,
-                donations,
-                total
-            );
+            nounIds[2] = nonAuctionedNounId;
+            traitIds[2] = _fetchTraitId(trait, nonAuctionedNounId);
         }
+
+        // Match specify Noun Id requests
+        (uint256[] memory donations, uint256 total) = _combineAmountsAndDelete(
+            trait,
+            traitIds,
+            nounIds
+        );
 
         if (total < 1) revert NoMatch();
 
@@ -526,6 +523,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         uint256 reimbursement;
+        uint256 doneesLength = donees.length;
         for (uint256 i; i < doneesLength; i++) {
             uint256 amount = donations[i];
             if (amount < 1) continue;
@@ -625,49 +623,41 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
     @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
     @param trait The trait type requests should match (see Traits enum)
-    @param traitId Specific trait Id
-    @param nounId Specific Noun Id
-    @param donations Donations array to be mutated and returned
-    @param total total
+    @param traitIds Specific trait Id
+    @param nounIds Specific Noun Id
     @return donations Mutated donations array
     @return total total
      */
     function _combineAmountsAndDelete(
         Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        uint256[] memory donations,
-        uint256 total
-    ) internal returns (uint256[] memory, uint256) {
-        bytes32 hash = traitHash(trait, traitId, nounId);
-        bool processAnyId = _isAuctionedNoun(nounId);
-
-        bytes32 anyIdHash;
-        if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
-
+        uint16[] memory traitIds,
+        uint16[] memory nounIds
+    ) internal returns (uint256[] memory donations, uint256 total) {
         uint16 doneesLength = uint16(donees.length);
 
-        for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-            uint256 anyIdAmount;
-            if (processAnyId) anyIdAmount = amounts[anyIdHash][doneeId];
-            uint256 amount = amounts[hash][doneeId] + anyIdAmount;
-            total += amount;
-            donations[doneeId] += amount;
+        donations = new uint256[](doneesLength);
 
-            delete amounts[hash][doneeId];
-            if (processAnyId) delete amounts[anyIdHash][doneeId];
+        uint256 nounIdsLength = nounIds.length;
+
+        for (uint16 i; i < nounIdsLength; i++) {
+            bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
+            uint256 traitTotal;
+            for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
+                uint256 amount = amounts[hash][doneeId];
+                if (amount < 1) continue;
+                traitTotal += amount;
+                total += amount;
+                donations[doneeId] += amount;
+
+                delete amounts[hash][doneeId];
+            }
+
+            if (traitTotal < 1) continue;
+
+            nonces[hash]++;
+
+            emit Matched(trait, traitIds[i], nounIds[i], nonces[hash]);
         }
-
-        nonces[hash]++;
-
-        emit Matched(trait, traitId, nounId, nonces[hash]);
-
-        if (processAnyId) {
-            nonces[anyIdHash]++;
-            emit Matched(trait, traitId, ANY_ID, nonces[anyIdHash]);
-        }
-
-        return (donations, total);
     }
 
     function _revertIfRequestMatchesNoun(Request memory request, uint16 nounId)
