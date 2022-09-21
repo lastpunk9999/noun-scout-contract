@@ -13,10 +13,9 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
     error TooLate();
-    error MatchFound(Traits trait, uint16 traitId, uint16 nounId);
+    error MatchFound(uint16 nounId);
     error NoMatch();
     error InactiveDonee();
-    error NotRequester();
     error ValueTooLow();
 
     /**
@@ -160,8 +159,20 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    function requests(address owner) public view returns (Request[] memory) {
-        return _requests[owner];
+    function requestsByAddress(address requester)
+        public
+        view
+        returns (Request[] memory)
+    {
+        return _requests[requester];
+    }
+
+    function requestsById(address requester, uint256 requestId)
+        public
+        view
+        returns (Request memory)
+    {
+        return _requests[requester][requestId];
     }
 
     function amountForDoneeByTrait(
@@ -380,7 +391,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
-    function remove(uint256 requestId) public {
+    function remove(uint256 requestId) public returns (uint256 amount) {
         // Cannot executed within a time period from an auction's end
         if (
             block.timestamp + AUCTION_END_LIMIT >=
@@ -433,9 +444,9 @@ contract NounSeek is Ownable2Step, Pausable {
         );
 
         /// Funds can be returned if request has yet to be matched
-        uint256 amount = nonces[hash] == request.nonce ? request.amount : 0;
+        amount = nonces[hash] == request.nonce ? request.amount : 0;
 
-        if (amount < 1) {
+        if (amount > 0) {
             amounts[hash][request.doneeId] -= amount;
             _safeTransferETHWithFallback(msg.sender, amount);
         }
@@ -451,16 +462,28 @@ contract NounSeek is Ownable2Step, Pausable {
         );
     }
 
-    /// @notice Match up to the specified number of requests for the specified Noun ID and specific trait. Will send donation funds.
-    /// @param trait The Trait type to enumerate requests for (see Traits enum)
+    /// @notice Match all trait requests for the previous auctioned Noun, and the first preceeding non-auctioned Noun to the previous auction Noun and send donations
+    /// @dev Matches will made against the previously auctioned Noun using both requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
+    /// @param trait The Trait type to match with the previous Noun (see Traits enum)
     function matchAndDonate(Traits trait) public {
+        /// The Noun ID of the previous Noun to the current Noun on auction
         uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
+        /// Setup a parameter to detect if a non-auctioned Noun should  be matched
         uint16 nonAuctionedNounId = UINT16_MAX;
 
+        /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+        /// Example:
+        ///   Current Noun: 101
+        ///   Previous Noun: 100
+        ///   `auctionedNounId` should be 99
         if (_isNonAuctionedNoun(auctionedNounId)) {
             auctionedNounId = auctionedNounId - 1;
         }
-
+        // If the previous Noun to the previous auctioned Noun is non-auctioned, set the non-auctioned Noun ID to the preceeding Noun
+        /// Example:
+        ///   Current Noun: 102
+        ///   Previous Noun: 101
+        ///   `nonAuctionedNounId` should be 100
         if (_isNonAuctionedNoun(auctionedNounId - 1)) {
             nonAuctionedNounId = auctionedNounId - 1;
         }
@@ -651,8 +674,7 @@ contract NounSeek is Ownable2Step, Pausable {
         internal
         view
     {
-        if (requestMatchesNoun(request, nounId))
-            revert MatchFound(request.trait, request.traitId, nounId);
+        if (requestMatchesNoun(request, nounId)) revert MatchFound(nounId);
     }
 
     function _fetchTraitId(Traits trait, uint16 nounId)
