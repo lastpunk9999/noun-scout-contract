@@ -487,8 +487,8 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.prank(user2);
 
         // Sanity check match occured
-        vm.expectCall(address(donee0), 0.0195 ether, "");
-        vm.expectCall(address(user2), 0.0005 ether, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
         nounSeek.matchAndDonate(HEAD);
 
         mockAuctionHouse.setNounId(103);
