@@ -458,11 +458,6 @@ contract NounSeek is Ownable2Step, Pausable {
         /// Funds can be returned if request has yet to be matched
         amount = nonces[hash] == request.nonce ? request.amount : 0;
 
-        if (amount > 0) {
-            amounts[hash][request.doneeId] -= amount;
-            _safeTransferETHWithFallback(msg.sender, amount);
-        }
-
         emit RequestRemoved(
             requestId,
             msg.sender,
@@ -472,6 +467,11 @@ contract NounSeek is Ownable2Step, Pausable {
             request.nounId,
             amount
         );
+
+        if (amount > 0) {
+            amounts[hash][request.doneeId] -= amount;
+            _safeTransferETHWithFallback(msg.sender, amount);
+        }
     }
 
     /// @notice Match all trait requests for the previous Noun(s).
@@ -541,8 +541,9 @@ contract NounSeek is Ownable2Step, Pausable {
             donations[i] = donation;
             _safeTransferETHWithFallback(donees[i].to, donation);
         }
-        _safeTransferETHWithFallback(msg.sender, reimbursement);
         emit Donated(donations);
+
+        _safeTransferETHWithFallback(msg.sender, reimbursement);
         emit Reimbursed(msg.sender, reimbursement);
     }
 
