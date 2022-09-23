@@ -14,7 +14,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Auctioned is immediate previous
-    function test_MATCHANDDONATE_happyCase1() public {
+    function test_MATCHANDDONATE_happyMatchCase1() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -53,11 +53,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(103);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), minValueReimbursement * 2, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -77,7 +77,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Auctioned Noun matches with non-auctioned non-match immediately before
-    function test_MATCHANDDONATE_happyCase2() public {
+    function test_MATCHANDDONATE_happyMatchCase2() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -116,11 +116,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), minValueReimbursement * 2, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -140,7 +140,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Auctioned Noun matches with non-auctioned match immediately before
-    function test_MATCHANDDONATE_happyCase3() public {
+    function test_MATCHANDDONATE_happyMatchCase3() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -180,11 +180,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), minValueReimbursement * 2, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -204,7 +204,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Auctioned Noun non-match with non-auctioned match immediately before
-    function test_MATCHANDDONATE_happyCase4() public {
+    function test_MATCHANDDONATE_happyMatchCase4() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, 100, 0);
@@ -245,11 +245,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), minValueReimbursement * 2, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -269,7 +269,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Previous Noun is non-auctioned, previous auctioned matches
-    function test_MATCHANDDONATE_happyCase5() public {
+    function test_MATCHANDDONATE_happyMatchCase5() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -310,11 +310,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(101);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - minValueReimbursement, "");
+        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), minValueReimbursement * 2, "");
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -331,41 +331,6 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD);
-    }
-
-    // If the amount sent produces reimburesement less than `MAX_REIMBURSEMENT`
-    function test_MATCHANDDONATE_HappyAtMaxReimbursement() public {
-        // The maximum amount that can be sent before reimburesement bps drops
-        uint256 thresholdValue = (MAX_REIMBURSEMENT * 10_000) /
-            maxReimbursementBPS;
-
-        vm.prank(user1);
-        // Send half the value of the threshold (2 eth)
-        nounSeek.add{value: thresholdValue / 2}(HEAD, 9, ANY_ID, 0);
-
-        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
-            0,
-            0,
-            0,
-            9,
-            0
-        );
-
-        mockNouns.setSeed(seed, 102);
-        mockAuctionHouse.setNounId(103);
-
-        // Expect half the max reimburesement to be deducted from the donation
-        vm.expectCall(
-            address(donee0),
-            thresholdValue / 2 - MAX_REIMBURSEMENT / 2,
-            ""
-        );
-
-        // Expect half the maximum reimburesement to be sent to the matcher
-        vm.expectCall(address(user2), MAX_REIMBURSEMENT / 2, "");
-
-        vm.prank(user2);
         nounSeek.matchAndDonate(HEAD);
     }
 
@@ -399,6 +364,74 @@ contract MatchAndDonate is BaseNounSeekTest {
         );
         // Expect no more than the maximum reimbursement value to be sent to the matcher
         vm.expectCall(address(user2), MAX_REIMBURSEMENT, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    function test_MATCHANDDONATE_HappyBelowMinReimbursement() public {
+        // The minimum amount that can be sent before reimburesement bps is raised = 0.08 ETH
+        uint256 thresholdValue = (MIN_REIMBURSEMENT * 10_000) /
+            maxReimbursementBPS;
+
+        vm.prank(user1);
+        // Send half the value of the threshold (0.08-1 ETH)
+        nounSeek.add{value: thresholdValue - 1}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // Expect min reimburesement to be deducted from the donation
+        vm.expectCall(
+            address(donee0),
+            thresholdValue - 1 - MIN_REIMBURSEMENT,
+            ""
+        );
+
+        // Expect half the maximum reimburesement to be sent to the matcher
+        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    function test_MATCHANDDONATE_HappyAboveMinReimbursementBelowMaxReimbursement()
+        public
+    {
+        // above 0.08 ETH minimum total, below 4 ETH maximum total
+        uint256 thresholdValue = 1 ether;
+
+        vm.prank(user1);
+        // Send half the value of the threshold (2 eth)
+        nounSeek.add{value: thresholdValue}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // maxReimbursementBPS of 2.5% is applied to the total
+        uint256 reimbursement = (thresholdValue * maxReimbursementBPS) / 10_000;
+
+        // Expect reimbursement deducted from the total
+        vm.expectCall(address(donee0), thresholdValue - reimbursement, "");
+
+        // Expect reimburesement to be sent to the matcher
+        vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
         nounSeek.matchAndDonate(HEAD);

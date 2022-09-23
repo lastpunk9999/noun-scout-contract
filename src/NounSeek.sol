@@ -103,6 +103,10 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
+    /// @notice minimum reimbursement for matching; covers up to 150_000 gas at 13 Gwei/gas
+    uint256 public constant MIN_REIMBURSEMENT = 0.002 ether;
+
+    /// @notice maximum reimbursement for matching; with default value this is reached at 4 ETH total donations
     uint256 public constant MAX_REIMBURSEMENT = 0.1 ether;
 
     /// @notice Time limit before an auction ends
@@ -130,7 +134,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public headCount;
     uint16 public glassesCount;
 
-    uint256 public minValue = 0.02 ether;
+    uint256 public minValue = 0.01 ether;
 
     Donee[] public donees;
 
@@ -254,6 +258,14 @@ contract NounSeek is Ownable2Step, Pausable {
                 );
             }
         }
+    }
+
+    function effectiveBPSForDonationTotal(uint256 total)
+        public
+        view
+        returns (uint256 effectiveBPS)
+    {
+        effectiveBPS = _effectiveHighPrecisionBPSForDonationTotal(total) / 100;
     }
 
     /// @notice Evaluate if the provided Request parameters matches the specified Noun
@@ -514,13 +526,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         if (total < 1) revert NoMatch();
 
-        /// Add 2 digits extra precision to better derive `effectiveBPS` from total
-        /// Extra precision basis point = 10_000 * 100 = 1_000_000
-        uint256 effectiveBPS = maxReimbursementBPS * 100;
-
-        if ((total * effectiveBPS) / 1_000_000 > MAX_REIMBURSEMENT) {
-            effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
-        }
+        uint256 effectiveBPS = _effectiveHighPrecisionBPSForDonationTotal(
+            total
+        );
 
         uint256 reimbursement;
         uint256 doneesLength = donees.length;
@@ -682,6 +690,23 @@ contract NounSeek is Ownable2Step, Pausable {
             traitId = uint16(nouns.seeds(nounId).head);
         } else if (trait == Traits.GLASSES) {
             traitId = uint16(nouns.seeds(nounId).glasses);
+        }
+    }
+
+    function _effectiveHighPrecisionBPSForDonationTotal(uint256 total)
+        internal
+        view
+        returns (uint256 effectiveBPS)
+    {
+        /// Add 2 digits extra precision to better derive `effectiveBPS` from total
+        /// Extra precision basis point = 10_000 * 100 = 1_000_000
+        effectiveBPS = maxReimbursementBPS * 100;
+        uint256 projectedReimbursement = (total * effectiveBPS) / 1_000_000;
+
+        if (projectedReimbursement > MAX_REIMBURSEMENT) {
+            effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
+        } else if (projectedReimbursement < MIN_REIMBURSEMENT) {
+            effectiveBPS = (MIN_REIMBURSEMENT * 1_000_000) / total;
         }
     }
 
