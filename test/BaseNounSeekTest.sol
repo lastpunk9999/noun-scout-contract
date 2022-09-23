@@ -36,6 +36,7 @@ contract BaseNounSeekTest is EnhancedTest {
     uint256 minValue;
     uint256 maxReimbursementBPS;
     uint256 minValueReimbursement;
+    uint256 MAX_REIMBURSEMENT;
     NounSeek.Traits HEAD = NounSeek.Traits.HEAD;
     NounSeek.Traits GLASSES = NounSeek.Traits.GLASSES;
 
@@ -49,6 +50,8 @@ contract BaseNounSeekTest is EnhancedTest {
         ANY_ID = nounSeek.ANY_ID();
         minValue = nounSeek.minValue();
         maxReimbursementBPS = nounSeek.maxReimbursementBPS();
+        MAX_REIMBURSEMENT = nounSeek.MAX_REIMBURSEMENT();
+
         minValueReimbursement = (minValue * maxReimbursementBPS) / 10_000;
 
         nounSeek.addDonee("donee0", donee0, "donee0");

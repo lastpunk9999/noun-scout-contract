@@ -333,4 +333,74 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectRevert(NounSeek.NoMatch.selector);
         nounSeek.matchAndDonate(HEAD);
     }
+
+    // If the amount sent produces reimburesement less than `MAX_REIMBURSEMENT`
+    function test_MATCHANDDONATE_HappyAtMaxReimbursement() public {
+        // The maximum amount that can be sent before reimburesement bps drops
+        uint256 thresholdValue = (MAX_REIMBURSEMENT * 10_000) /
+            maxReimbursementBPS;
+
+        vm.prank(user1);
+        // Send half the value of the threshold (2 eth)
+        nounSeek.add{value: thresholdValue / 2}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // Expect half the max reimburesement to be deducted from the donation
+        vm.expectCall(
+            address(donee0),
+            thresholdValue / 2 - MAX_REIMBURSEMENT / 2,
+            ""
+        );
+
+        // Expect half the maximum reimburesement to be sent to the matcher
+        vm.expectCall(address(user2), MAX_REIMBURSEMENT / 2, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    // If the amount sent produces reimburesement greater than `MAX_REIMBURSEMENT`
+    function test_MATCHANDDONATE_HappyAboveMaxReimbursement() public {
+        // The maximum amount that can be sent before reimburesement bps drops
+        uint256 thresholdValue = (MAX_REIMBURSEMENT * 10_000) /
+            maxReimbursementBPS;
+
+        vm.prank(user1);
+
+        // Send twice the value of the threshold (8 eth)
+        nounSeek.add{value: thresholdValue * 2}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // Expect no more than the maximum reimbursement value to be deducted from the donation
+        vm.expectCall(
+            address(donee0),
+            (thresholdValue * 2) - MAX_REIMBURSEMENT,
+            ""
+        );
+        // Expect no more than the maximum reimbursement value to be sent to the matcher
+        vm.expectCall(address(user2), MAX_REIMBURSEMENT, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
 }
