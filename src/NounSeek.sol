@@ -103,8 +103,8 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
-    /// @notice minimum reimbursement for matching; covers up to 150_000 gas at 13 Gwei/gas
-    uint256 public constant MIN_REIMBURSEMENT = 0.002 ether;
+    /// @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas
+    uint256 public constant MIN_REIMBURSEMENT = 0.003 ether;
 
     /// @notice maximum reimbursement for matching; with default value this is reached at 4 ETH total donations
     uint256 public constant MAX_REIMBURSEMENT = 0.1 ether;
