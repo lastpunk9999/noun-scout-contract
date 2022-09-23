@@ -103,7 +103,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
-    uint256 public constant MAX_REIMBURSEMENT = 0.2 ether;
+    uint256 public constant MAX_REIMBURSEMENT = 0.1 ether;
 
     /// @notice Time limit before an auction ends
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
