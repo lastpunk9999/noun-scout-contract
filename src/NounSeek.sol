@@ -361,7 +361,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 nounId,
         uint16 doneeId
-    ) public payable whenNotPaused returns (uint256) {
+    ) public payable whenNotPaused returns (uint256 requestId) {
         if (msg.value < minValue) {
             revert ValueTooLow();
         }
@@ -375,7 +375,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
         amounts[hash][doneeId] += msg.value;
 
-        uint256 requestId = _requests[msg.sender].length;
+        requestId = _requests[msg.sender].length;
 
         _requests[msg.sender].push(
             Request({
@@ -398,8 +398,6 @@ contract NounSeek is Ownable2Step, Pausable {
             msg.value,
             nonce
         );
-
-        return requestId;
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
@@ -477,7 +475,10 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Match all trait requests for the previous Noun(s).
     /// @dev Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
     /// @param trait The Trait type to match with the previous Noun (see Traits enum)
-    function matchAndDonate(Traits trait) public {
+    function matchAndDonate(Traits trait)
+        public
+        returns (uint256 total, uint256 reimbursement)
+    {
         /// The Noun ID of the previous Noun to the current Noun on auction
         uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
         /// Setup a parameter to detect if a non-auctioned Noun should  be matched
@@ -517,12 +518,8 @@ contract NounSeek is Ownable2Step, Pausable {
             traitIds[2] = _fetchTraitId(trait, nonAuctionedNounId);
         }
 
-        // Match specify Noun Id requests
-        (uint256[] memory donations, uint256 total) = _combineAmountsAndDelete(
-            trait,
-            traitIds,
-            nounIds
-        );
+        uint256[] memory donations;
+        (donations, total) = _combineAmountsAndDelete(trait, traitIds, nounIds);
 
         if (total < 1) revert NoMatch();
 
@@ -530,7 +527,6 @@ contract NounSeek is Ownable2Step, Pausable {
             total
         );
 
-        uint256 reimbursement;
         uint256 doneesLength = donees.length;
         for (uint256 i; i < doneesLength; i++) {
             uint256 amount = donations[i];
