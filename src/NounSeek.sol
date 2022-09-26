@@ -263,6 +263,38 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    function donationsForCurrentNounByTrait(Traits trait)
+        public
+        view
+        returns (
+            uint16 currentAuctionedId,
+            uint16 prevNonAuctionedId,
+            uint256[][] memory currentAuctionDonations,
+            uint256[][] memory prevNonAuctionDonations
+        )
+    {
+        unchecked {
+            currentAuctionedId = uint16(auctionHouse.auction().nounId);
+            prevNonAuctionedId = UINT16_MAX;
+
+            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
+                prevNonAuctionedId = currentAuctionedId - 1;
+            }
+
+            currentAuctionDonations = donationsForNounByTrait(
+                trait,
+                currentAuctionedId
+            );
+
+            if (prevNonAuctionedId < UINT16_MAX) {
+                prevNonAuctionDonations = donationsForNounByTrait(
+                    trait,
+                    prevNonAuctionedId
+                );
+            }
+        }
+    }
+
     function effectiveBPSForDonationTotal(uint256 total)
         public
         view
