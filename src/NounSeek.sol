@@ -189,7 +189,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return amounts[hash][doneeId];
     }
 
-    function allDonationsForTrait(Traits trait, uint16 nounId)
+    function donationsForNounByTrait(Traits trait, uint16 nounId)
         public
         view
         returns (uint256[][] memory donationsByTraitId)
@@ -230,7 +230,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function allDonationsForNextNoun(Traits trait)
+    function donationsForNextNounByTrait(Traits trait)
         public
         view
         returns (
@@ -249,10 +249,13 @@ contract NounSeek is Ownable2Step, Pausable {
                 nextAuctionedId++;
             }
 
-            nextAuctionDonations = allDonationsForTrait(trait, nextAuctionedId);
+            nextAuctionDonations = donationsForNounByTrait(
+                trait,
+                nextAuctionedId
+            );
 
             if (nextNonAuctionedId < UINT16_MAX) {
-                nextNonAuctionDonations = allDonationsForTrait(
+                nextNonAuctionDonations = donationsForNounByTrait(
                     trait,
                     nextNonAuctionedId
                 );

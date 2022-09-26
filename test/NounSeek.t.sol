@@ -111,10 +111,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request2.nonce, nonce2);
 
         // Should include user1 and user2 requests
-        uint256[][] memory donationsByTraitId = nounSeek.allDonationsForTrait(
-            HEAD,
-            99
-        );
+        uint256[][] memory donationsByTraitId = nounSeek
+            .donationsForNounByTrait(HEAD, 99);
 
         // USER1 ANY_Id requested 2 times
         assertEq(donationsByTraitId[9][1], minValue * 2);
@@ -136,7 +134,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][] memory nextAuctionDonations,
 
-        ) = nounSeek.allDonationsForNextNoun(HEAD);
+        ) = nounSeek.donationsForNextNounByTrait(HEAD);
 
         assertEq(nextAuctionedId, 101);
         assertEq(nextNonAuctionedId, 100);
@@ -174,10 +172,8 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.startPrank(user1);
         uint256 requestId1 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
         uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
-        uint256[][] memory donationsByTraitId = nounSeek.allDonationsForTrait(
-            HEAD,
-            ANY_ID
-        );
+        uint256[][] memory donationsByTraitId = nounSeek
+            .donationsForNounByTrait(HEAD, ANY_ID);
         NounSeek.Request[] memory requestsUser1 = nounSeek.requestsByAddress(
             address(user1)
         );
@@ -196,7 +192,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, minValue);
 
-        donationsByTraitId = nounSeek.allDonationsForTrait(HEAD, ANY_ID);
+        donationsByTraitId = nounSeek.donationsForNounByTrait(HEAD, ANY_ID);
         assertEq(donationsByTraitId[9][1], minValue);
 
         // Remove second request
@@ -207,7 +203,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
 
-        donationsByTraitId = nounSeek.allDonationsForTrait(HEAD, ANY_ID);
+        donationsByTraitId = nounSeek.donationsForNounByTrait(HEAD, ANY_ID);
         assertEq(donationsByTraitId[9][1], 0);
     }
 
@@ -218,10 +214,8 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.startPrank(user1);
         uint256 requestId1 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
         uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
-        uint256[][] memory donationsByTraitId = nounSeek.allDonationsForTrait(
-            HEAD,
-            ANY_ID
-        );
+        uint256[][] memory donationsByTraitId = nounSeek
+            .donationsForNounByTrait(HEAD, ANY_ID);
         NounSeek.Request[] memory requestsUser1 = nounSeek.requestsByAddress(
             address(user1)
         );
@@ -240,7 +234,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requestsUser1[0].amount, minValue);
         assertEq(requestsUser1[1].amount, 0);
 
-        donationsByTraitId = nounSeek.allDonationsForTrait(HEAD, ANY_ID);
+        donationsByTraitId = nounSeek.donationsForNounByTrait(HEAD, ANY_ID);
         assertEq(donationsByTraitId[9][1], minValue);
 
         // Remove second request
@@ -251,7 +245,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
 
-        donationsByTraitId = nounSeek.allDonationsForTrait(HEAD, ANY_ID);
+        donationsByTraitId = nounSeek.donationsForNounByTrait(HEAD, ANY_ID);
         assertEq(donationsByTraitId[9][1], 0);
     }
 
