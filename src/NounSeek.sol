@@ -852,7 +852,14 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         uint256[] memory donations;
-        (donations, total) = _combineAmountsAndDelete(trait, traitIds, nounIds);
+        uint256 doneesCount_ = donees.length;
+
+        (donations, total) = _combineAmountsAndDelete(
+            trait,
+            traitIds,
+            nounIds,
+            uint16(doneesCount_)
+        );
 
         if (total < 1) revert NoMatch();
 
@@ -860,7 +867,6 @@ contract NounSeek is Ownable2Step, Pausable {
             total
         );
 
-        uint256 doneesCount_ = donees.length;
         for (uint256 i; i < doneesCount_; i++) {
             uint256 amount = donations[i];
             if (amount < 1) continue;
@@ -969,10 +975,9 @@ contract NounSeek is Ownable2Step, Pausable {
     function _combineAmountsAndDelete(
         Traits trait,
         uint16[] memory traitIds,
-        uint16[] memory nounIds
+        uint16[] memory nounIds,
+        uint16 doneesCount_
     ) internal returns (uint256[] memory donations, uint256 total) {
-        uint16 doneesCount_ = uint16(donees.length);
-
         donations = new uint256[](doneesCount_);
 
         uint256 nounIdsLength = nounIds.length;
