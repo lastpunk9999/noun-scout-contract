@@ -587,6 +587,88 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    function donationsAndReimbursementForPreviousNounByTrait(Traits trait)
+        public
+        view
+        returns (
+            uint16 auctionedNounId,
+            uint16 nonAuctionedNounId,
+            uint256[] memory auctionedNounDonations,
+            uint256[] memory nonAuctionedNounDonations,
+            uint256 totalDonations,
+            uint256 reimbursement
+        )
+    {
+        /*
+         * Cases for eligible matched Nouns:
+         *
+         * Current | Eligible
+         * Noun Id | Noun Id
+         * --------|-------------------
+         *     101 | 99 (*skips 100)
+         *     102 | 101, 100 (*includes 100)
+         *     103 | 102
+         */
+
+        /// The Noun ID of the previous to the current Noun on auction
+        auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
+        /// Setup a parameter to detect if a non-auctioned Noun should  be matched
+        nonAuctionedNounId = UINT16_MAX;
+
+        /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+        /// Example:
+        ///   Current Noun: 101
+        ///   Previous Noun: 100
+        ///   `auctionedNounId` should be 99
+        if (_isNonAuctionedNoun(auctionedNounId)) {
+            auctionedNounId = auctionedNounId - 1;
+        }
+        // If the previous Noun to the previous auctioned Noun is non-auctioned, set the non-auctioned Noun ID to the preceeding Noun
+        /// Example:
+        ///   Current Noun: 102
+        ///   Previous Noun: 101
+        ///   `nonAuctionedNounId` should be 100
+        if (_isNonAuctionedNoun(auctionedNounId - 1)) {
+            nonAuctionedNounId = auctionedNounId - 1;
+        }
+
+        uint256 doneesCount_ = donees.length;
+
+        auctionedNounDonations = _donationsForNounIdWithTraitId({
+            trait: trait,
+            traitId: _fetchTraitId(trait, auctionedNounId),
+            nounId: auctionedNounId,
+            processAnyId: true,
+            doneesCount_: doneesCount_
+        });
+
+        bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
+
+        if (includeNonAuctionedNoun) {
+            nonAuctionedNounDonations = _donationsForNounIdWithTraitId({
+                trait: trait,
+                traitId: _fetchTraitId(trait, nonAuctionedNounId),
+                nounId: nonAuctionedNounId,
+                processAnyId: false,
+                doneesCount_: doneesCount_
+            });
+        }
+
+        for (uint256 doneeId; doneeId < doneesCount_; doneeId++) {
+            uint256 nonAuctionedNounDonation;
+            if (includeNonAuctionedNoun) {
+                nonAuctionedNounDonation = nonAuctionedNounDonations[doneeId];
+            }
+            totalDonations +=
+                auctionedNounDonations[doneeId] +
+                nonAuctionedNounDonation;
+        }
+        (, reimbursement) = _effectiveHighPrecisionBPSForDonationTotal(
+            totalDonations
+        );
+        totalDonations -= reimbursement;
+    }
+
     /**
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
       WRITE FUNCTIONS
