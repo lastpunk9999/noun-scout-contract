@@ -163,144 +163,84 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    //----------------//
+    //-----Getters----//
+    //----------------//
+
     function requestsByAddress(address requester)
         public
         view
-        returns (Request[] memory)
+        returns (Request[] memory requests)
     {
-        return _requests[requester];
+        requests = _requests[requester];
     }
 
     function requestsById(address requester, uint256 requestId)
         public
         view
-        returns (Request memory)
+        returns (Request memory request)
     {
-        return _requests[requester][requestId];
+        request = _requests[requester][requestId];
     }
+
+    function nonceForTraits(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public view returns (uint16) {
+        return nonces[traitHash(trait, traitId, nounId)];
+    }
+
+    function noncesForTraits(
+        Traits[] calldata traits,
+        uint16[] calldata traitIds,
+        uint16[] calldata nounIds
+    ) public view returns (uint16[] memory noncesList) {
+        uint256 length = traits.length;
+        noncesList = new uint16[](length);
+        for (uint256 i; i < length; i++) {
+            noncesList[i] = nonceForTraits(traits[i], traitIds[i], nounIds[i]);
+        }
+    }
+
+    /// @notice The canonical hash for requests that target the same `trait`, `traitId`, and `nounId`
+    /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
+    function traitHash(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public pure returns (bytes32 hash) {
+        hash = keccak256(abi.encodePacked(trait, traitId, nounId));
+    }
+
+    function doneesCount() public view returns (uint256 length) {
+        length = donees.length;
+    }
+
+    //----------------//
+    //----Utilities---//
+    //----------------//
 
     function amountForDoneeByTrait(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 doneeId
-    ) public view returns (uint256) {
+    ) public view returns (uint256 amount) {
         bytes32 hash = traitHash(trait, traitId, nounId);
-        return amounts[hash][doneeId];
+        amount = amounts[hash][doneeId];
     }
 
-    function donationsForNounByTrait(Traits trait, uint16 nounId)
+    function effectiveBPSAndReimbursementForDonationTotal(uint256 total)
         public
         view
-        returns (uint256[][] memory donationsByTraitId)
+        returns (uint256 effectiveBPS, uint256 reimbursement)
     {
-        unchecked {
-            uint16 traitCount;
-            if (trait == Traits.BACKGROUND) {
-                traitCount = backgroundCount;
-            } else if (trait == Traits.BODY) {
-                traitCount = bodyCount;
-            } else if (trait == Traits.ACCESSORY) {
-                traitCount = accessoryCount;
-            } else if (trait == Traits.HEAD) {
-                traitCount = headCount;
-            } else if (trait == Traits.GLASSES) {
-                traitCount = glassesCount;
-            }
-
-            uint256 doneesLength = donees.length;
-            donationsByTraitId = new uint256[][](traitCount);
-
-            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
-
-            for (uint16 traitId; traitId < traitCount; traitId++) {
-                bytes32 hash = traitHash(trait, traitId, nounId);
-                bytes32 anyIdHash;
-                if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
-                donationsByTraitId[traitId] = new uint256[](doneesLength);
-                for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
-                    uint256 anyIdAmount = processAnyId
-                        ? amounts[anyIdHash][doneeId]
-                        : 0;
-                    donationsByTraitId[traitId][doneeId] =
-                        amounts[hash][doneeId] +
-                        anyIdAmount;
-                }
-            }
-        }
-    }
-
-    function donationsForNextNounByTrait(Traits trait)
-        public
-        view
-        returns (
-            uint16 nextAuctionedId,
-            uint16 nextNonAuctionedId,
-            uint256[][] memory nextAuctionDonations,
-            uint256[][] memory nextNonAuctionDonations
-        )
-    {
-        unchecked {
-            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-            nextNonAuctionedId = UINT16_MAX;
-
-            if (_isNonAuctionedNoun(nextAuctionedId)) {
-                nextNonAuctionedId = nextAuctionedId;
-                nextAuctionedId++;
-            }
-
-            nextAuctionDonations = donationsForNounByTrait(
-                trait,
-                nextAuctionedId
-            );
-
-            if (nextNonAuctionedId < UINT16_MAX) {
-                nextNonAuctionDonations = donationsForNounByTrait(
-                    trait,
-                    nextNonAuctionedId
-                );
-            }
-        }
-    }
-
-    function donationsForCurrentNounByTrait(Traits trait)
-        public
-        view
-        returns (
-            uint16 currentAuctionedId,
-            uint16 prevNonAuctionedId,
-            uint256[][] memory currentAuctionDonations,
-            uint256[][] memory prevNonAuctionDonations
-        )
-    {
-        unchecked {
-            currentAuctionedId = uint16(auctionHouse.auction().nounId);
-            prevNonAuctionedId = UINT16_MAX;
-
-            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
-                prevNonAuctionedId = currentAuctionedId - 1;
-            }
-
-            currentAuctionDonations = donationsForNounByTrait(
-                trait,
-                currentAuctionedId
-            );
-
-            if (prevNonAuctionedId < UINT16_MAX) {
-                prevNonAuctionDonations = donationsForNounByTrait(
-                    trait,
-                    prevNonAuctionedId
-                );
-            }
-        }
-    }
-
-    function effectiveBPSForDonationTotal(uint256 total)
-        public
-        view
-        returns (uint256 effectiveBPS)
-    {
-        effectiveBPS = _effectiveHighPrecisionBPSForDonationTotal(total) / 100;
+        (
+            effectiveBPS,
+            reimbursement
+        ) = _effectiveHighPrecisionBPSForDonationTotal(total);
+        effectiveBPS = effectiveBPS / 100;
     }
 
     /// @notice Evaluate if the provided Request parameters matches the specified Noun
@@ -351,34 +291,300 @@ contract NounSeek is Ownable2Step, Pausable {
         return request.traitId == _fetchTraitId(request.trait, nounId);
     }
 
-    function nonceForTraits(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId
-    ) public view returns (uint16) {
-        return nonces[traitHash(trait, traitId, nounId)];
-    }
+    //-----------------------------------------//
+    //---Combine donations across all traits---//
+    //-----------------------------------------//
 
-    function noncesForTraits(
-        Traits[] calldata traits,
-        uint16[] calldata traitIds,
-        uint16[] calldata nounIds
-    ) public view returns (uint16[] memory noncesList) {
-        uint256 length = traits.length;
-        noncesList = new uint16[](length);
-        for (uint256 i; i < length; i++) {
-            noncesList[i] = nonceForTraits(traits[i], traitIds[i], nounIds[i]);
+    /// @return donations Total donations for a given Noun as an array keyed by trait, traitId, and doneeId.
+    /// Example: donationsForNounId(ANY_ID) -> donations[3][5][2] is in the total donations for Donee #3 if any Noun had Head #5, donations[3][5][3] is in the total donations for Donee #4 if any Noun had Head #5
+    function donationsForNounId(uint16 nounId)
+        public
+        view
+        returns (uint256[][][5] memory donations)
+    {
+        for (uint256 trait; trait < 5; trait++) {
+            uint256 traitCount;
+            Traits traitEnum = Traits(trait);
+            if (traitEnum == Traits.BACKGROUND) {
+                traitCount = backgroundCount;
+            } else if (traitEnum == Traits.BODY) {
+                traitCount = bodyCount;
+            } else if (traitEnum == Traits.ACCESSORY) {
+                traitCount = accessoryCount;
+            } else if (traitEnum == Traits.HEAD) {
+                traitCount = headCount;
+            } else if (traitEnum == Traits.GLASSES) {
+                traitCount = glassesCount;
+            }
+
+            donations[trait] = new uint256[][](traitCount);
+            donations[trait] = donationsForNounIdByTrait(traitEnum, nounId);
         }
     }
 
-    /// @notice The canonical hash for requests that target the same `trait`, `traitId`, and `nounId`
-    /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
-    function traitHash(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(trait, traitId, nounId));
+    function donationsForNextNoun()
+        public
+        view
+        returns (
+            uint16 nextAuctionedId,
+            uint16 nextNonAuctionedId,
+            uint256[][][5] memory nextAuctionDonations,
+            uint256[][][5] memory nextNonAuctionDonations
+        )
+    {
+        unchecked {
+            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+            nextNonAuctionedId = UINT16_MAX;
+
+            if (_isNonAuctionedNoun(nextAuctionedId)) {
+                nextNonAuctionedId = nextAuctionedId;
+                nextAuctionedId++;
+            }
+
+            nextAuctionDonations = donationsForNounId(nextAuctionedId);
+
+            if (nextNonAuctionedId < UINT16_MAX) {
+                nextNonAuctionDonations = donationsForNounId(
+                    nextNonAuctionedId
+                );
+            }
+        }
+    }
+
+    function donationsForCurrentNoun()
+        public
+        view
+        returns (
+            uint16 currentAuctionedId,
+            uint16 prevNonAuctionedId,
+            uint256[][5] memory currentAuctionDonations,
+            uint256[][5] memory prevNonAuctionDonations
+        )
+    {
+        unchecked {
+            currentAuctionedId = uint16(auctionHouse.auction().nounId);
+            prevNonAuctionedId = UINT16_MAX;
+
+            uint256 doneesCount_ = donees.length;
+
+            currentAuctionDonations = _donationsForOnChainNoun({
+                nounId: currentAuctionedId,
+                processAnyId: true,
+                doneesCount_: doneesCount_
+            });
+
+            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
+                prevNonAuctionedId = currentAuctionedId - 1;
+
+                prevNonAuctionDonations = _donationsForOnChainNoun({
+                    nounId: prevNonAuctionedId,
+                    processAnyId: false,
+                    doneesCount_: doneesCount_
+                });
+            }
+        }
+    }
+
+    function donationsAndReimbursementForPreviousNoun()
+        public
+        view
+        returns (
+            uint16 auctionedNounId,
+            uint16 nonAuctionedNounId,
+            uint256[][5] memory auctionedNounDonations,
+            uint256[][5] memory nonAuctionedNounDonations,
+            uint256[5] memory totalDonationsPerTrait,
+            uint256[5] memory reimbursementPerTrait
+        )
+    {
+        /*
+         * Cases for eligible matched Nouns:
+         *
+         * Current | Eligible
+         * Noun Id | Noun Id
+         * --------|-------------------
+         *     101 | 99 (*skips 100)
+         *     102 | 101, 100 (*includes 100)
+         *     103 | 102
+         */
+
+        /// The Noun ID of the previous to the current Noun on auction
+        auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
+        /// Setup a parameter to detect if a non-auctioned Noun should  be matched
+        nonAuctionedNounId = UINT16_MAX;
+
+        /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+        /// Example:
+        ///   Current Noun: 101
+        ///   Previous Noun: 100
+        ///   `auctionedNounId` should be 99
+        if (_isNonAuctionedNoun(auctionedNounId)) {
+            auctionedNounId = auctionedNounId - 1;
+        }
+        // If the previous Noun to the previous auctioned Noun is non-auctioned, set the non-auctioned Noun ID to the preceeding Noun
+        /// Example:
+        ///   Current Noun: 102
+        ///   Previous Noun: 101
+        ///   `nonAuctionedNounId` should be 100
+        if (_isNonAuctionedNoun(auctionedNounId - 1)) {
+            nonAuctionedNounId = auctionedNounId - 1;
+        }
+
+        uint256 doneesCount_ = donees.length;
+
+        auctionedNounDonations = _donationsForOnChainNoun({
+            nounId: auctionedNounId,
+            processAnyId: true,
+            doneesCount_: doneesCount_
+        });
+
+        bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
+
+        if (includeNonAuctionedNoun) {
+            nonAuctionedNounDonations = _donationsForOnChainNoun({
+                nounId: nonAuctionedNounId,
+                processAnyId: false,
+                doneesCount_: doneesCount_
+            });
+        }
+
+        for (uint256 trait; trait < 5; trait++) {
+            for (uint256 doneeId; doneeId < doneesCount_; doneeId++) {
+                uint256 nonAuctionedNounDonation;
+                if (includeNonAuctionedNoun) {
+                    nonAuctionedNounDonation = nonAuctionedNounDonations[trait][
+                        doneeId
+                    ];
+                }
+                totalDonationsPerTrait[trait] +=
+                    auctionedNounDonations[trait][doneeId] +
+                    nonAuctionedNounDonation;
+            }
+            (
+                ,
+                reimbursementPerTrait[trait]
+            ) = _effectiveHighPrecisionBPSForDonationTotal(
+                totalDonationsPerTrait[trait]
+            );
+            totalDonationsPerTrait[trait] -= reimbursementPerTrait[trait];
+        }
+    }
+
+    //------------------------------------------//
+    //---Combine Donations for specific trait--//
+    //------------------------------------------//
+
+    /// @return donationsByTraitId Total donations for a given Noun and trait keyed by traitId and doneeId. Example: `donationsForNounIdByTrait(3, 25) `queries for all requests that are seeking Head #5 for Noun #25. The value in `donations[5][2]` is the total donations for Donee #3 if Noun #25 had Head #5
+    function donationsForNounIdByTrait(Traits trait, uint16 nounId)
+        public
+        view
+        returns (uint256[][] memory donationsByTraitId)
+    {
+        unchecked {
+            uint16 traitCount;
+            if (trait == Traits.BACKGROUND) {
+                traitCount = backgroundCount;
+            } else if (trait == Traits.BODY) {
+                traitCount = bodyCount;
+            } else if (trait == Traits.ACCESSORY) {
+                traitCount = accessoryCount;
+            } else if (trait == Traits.HEAD) {
+                traitCount = headCount;
+            } else if (trait == Traits.GLASSES) {
+                traitCount = glassesCount;
+            }
+
+            uint256 doneesCount_ = donees.length;
+            donationsByTraitId = new uint256[][](traitCount);
+
+            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
+
+            for (uint16 traitId; traitId < traitCount; traitId++) {
+                donationsByTraitId[traitId] = _donationsForNounIdWithTraitId(
+                    trait,
+                    traitId,
+                    nounId,
+                    processAnyId,
+                    doneesCount_
+                );
+            }
+        }
+    }
+
+    function donationsForNextNounByTrait(Traits trait)
+        public
+        view
+        returns (
+            uint16 nextAuctionedId,
+            uint16 nextNonAuctionedId,
+            uint256[][] memory nextAuctionDonations,
+            uint256[][] memory nextNonAuctionDonations
+        )
+    {
+        unchecked {
+            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
+            nextNonAuctionedId = UINT16_MAX;
+
+            if (_isNonAuctionedNoun(nextAuctionedId)) {
+                nextNonAuctionedId = nextAuctionedId;
+                nextAuctionedId++;
+            }
+
+            nextAuctionDonations = donationsForNounIdByTrait(
+                trait,
+                nextAuctionedId
+            );
+
+            if (nextNonAuctionedId < UINT16_MAX) {
+                nextNonAuctionDonations = donationsForNounIdByTrait(
+                    trait,
+                    nextNonAuctionedId
+                );
+            }
+        }
+    }
+
+    function donationsForCurrentNounByTrait(Traits trait)
+        public
+        view
+        returns (
+            uint16 currentAuctionedId,
+            uint16 prevNonAuctionedId,
+            uint256[] memory currentAuctionDonations,
+            uint256[] memory prevNonAuctionDonations
+        )
+    {
+        unchecked {
+            currentAuctionedId = uint16(auctionHouse.auction().nounId);
+            prevNonAuctionedId = UINT16_MAX;
+
+            uint16 currentTraitId;
+            uint16 prevTraitId;
+
+            currentTraitId = _fetchTraitId(trait, currentAuctionedId);
+
+            uint256 doneesCount_ = donees.length;
+
+            currentAuctionDonations = _donationsForNounIdWithTraitId(
+                trait,
+                currentTraitId,
+                currentAuctionedId,
+                true,
+                doneesCount_
+            );
+
+            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
+                prevNonAuctionedId = currentAuctionedId - 1;
+                prevTraitId = _fetchTraitId(trait, prevNonAuctionedId);
+                prevNonAuctionDonations = _donationsForNounIdWithTraitId(
+                    trait,
+                    prevTraitId,
+                    prevNonAuctionedId,
+                    false,
+                    doneesCount_
+                );
+            }
+        }
     }
 
     /**
@@ -514,7 +720,17 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         returns (uint256 total, uint256 reimbursement)
     {
-        /// The Noun ID of the previous Noun to the current Noun on auction
+        /*
+         * Cases for eligible matched Nouns:
+         *
+         * Current | Eligible
+         * Noun Id | Noun Id
+         * --------|-------------------
+         *     101 | 99 (*skips 100)
+         *     102 | 101, 100 (*includes 100)
+         *     103 | 102
+         */
+        /// The Noun ID of the previous to the current Noun on auction
         uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
         /// Setup a parameter to detect if a non-auctioned Noun should  be matched
         uint16 nonAuctionedNounId = UINT16_MAX;
@@ -558,12 +774,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
         if (total < 1) revert NoMatch();
 
-        uint256 effectiveBPS = _effectiveHighPrecisionBPSForDonationTotal(
+        (uint256 effectiveBPS, ) = _effectiveHighPrecisionBPSForDonationTotal(
             total
         );
 
-        uint256 doneesLength = donees.length;
-        for (uint256 i; i < doneesLength; i++) {
+        uint256 doneesCount_ = donees.length;
+        for (uint256 i; i < doneesCount_; i++) {
             uint256 amount = donations[i];
             if (amount < 1) continue;
             uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
@@ -673,16 +889,16 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16[] memory traitIds,
         uint16[] memory nounIds
     ) internal returns (uint256[] memory donations, uint256 total) {
-        uint16 doneesLength = uint16(donees.length);
+        uint16 doneesCount_ = uint16(donees.length);
 
-        donations = new uint256[](doneesLength);
+        donations = new uint256[](doneesCount_);
 
         uint256 nounIdsLength = nounIds.length;
 
         for (uint16 i; i < nounIdsLength; i++) {
             bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
             uint256 traitTotal;
-            for (uint16 doneeId; doneeId < doneesLength; doneeId++) {
+            for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
                 uint256 amount = amounts[hash][doneeId];
                 if (amount < 1) continue;
                 traitTotal += amount;
@@ -728,17 +944,73 @@ contract NounSeek is Ownable2Step, Pausable {
     function _effectiveHighPrecisionBPSForDonationTotal(uint256 total)
         internal
         view
-        returns (uint256 effectiveBPS)
+        returns (uint256 effectiveBPS, uint256 reimbursement)
     {
+        if (total < 1) return (effectiveBPS, reimbursement);
+
         /// Add 2 digits extra precision to better derive `effectiveBPS` from total
         /// Extra precision basis point = 10_000 * 100 = 1_000_000
         effectiveBPS = maxReimbursementBPS * 100;
-        uint256 projectedReimbursement = (total * effectiveBPS) / 1_000_000;
+        reimbursement = (total * effectiveBPS) / 1_000_000;
 
-        if (projectedReimbursement > MAX_REIMBURSEMENT) {
+        if (reimbursement > MAX_REIMBURSEMENT) {
             effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
-        } else if (projectedReimbursement < MIN_REIMBURSEMENT) {
+            reimbursement = MAX_REIMBURSEMENT;
+        } else if (reimbursement < MIN_REIMBURSEMENT) {
             effectiveBPS = (MIN_REIMBURSEMENT * 1_000_000) / total;
+            reimbursement = MIN_REIMBURSEMENT;
+        }
+    }
+
+    function _donationsForNounIdWithTraitId(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        bool processAnyId,
+        uint256 doneesCount_
+    ) internal view returns (uint256[] memory donations) {
+        unchecked {
+            bytes32 hash = traitHash(trait, traitId, nounId);
+            bytes32 anyIdHash;
+            if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
+            donations = new uint256[](doneesCount_);
+            for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
+                uint256 anyIdAmount = processAnyId
+                    ? amounts[anyIdHash][doneeId]
+                    : 0;
+                donations[doneeId] = amounts[hash][doneeId] + anyIdAmount;
+            }
+        }
+    }
+
+    function _donationsForOnChainNoun(
+        uint16 nounId,
+        bool processAnyId,
+        uint256 doneesCount_
+    ) internal view returns (uint256[][5] memory donations) {
+        INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
+        for (uint256 trait; trait < 5; trait++) {
+            Traits traitEnum = Traits(trait);
+            uint16 traitId;
+            if (traitEnum == Traits.BACKGROUND) {
+                traitId = uint16(seed.background);
+            } else if (traitEnum == Traits.BODY) {
+                traitId = uint16(seed.body);
+            } else if (traitEnum == Traits.ACCESSORY) {
+                traitId = uint16(seed.accessory);
+            } else if (traitEnum == Traits.HEAD) {
+                traitId = uint16(seed.head);
+            } else if (traitEnum == Traits.GLASSES) {
+                traitId = uint16(seed.glasses);
+            }
+
+            donations[trait] = _donationsForNounIdWithTraitId(
+                traitEnum,
+                traitId,
+                nounId,
+                processAnyId,
+                doneesCount_
+            );
         }
     }
 
