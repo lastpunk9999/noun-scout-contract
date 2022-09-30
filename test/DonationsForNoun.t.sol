@@ -48,7 +48,7 @@ contract NounSeekTest is BaseNounSeekTest {
     function test_DONATIONSFORNOUN() public {
         vm.startPrank(user1);
 
-        // 100 times
+        // 100 HEAD Ids
         for (uint16 i; i < 100; i++) {
             // For donees 0 - 14
             for (uint16 j; j < 15; j++) {
@@ -59,7 +59,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        // 100 times
+        // 20 GLASSES Ids
         for (uint16 i; i < 20; i++) {
             // Add a request for each glasses, for any id, going to donee 0 - 4
             for (uint16 j; j < 15; j++) {
@@ -68,12 +68,17 @@ contract NounSeekTest is BaseNounSeekTest {
             }
 
             for (uint16 j; j < 15; j++) {
-                // Add a request for each head, with any 101, going to donee 0 - 14
+                // Add a request for each glasses, with any 101, going to donee 0 - 14
                 nounSeek.add{value: minValue}(GLASSES, i, 101, j);
+            }
+
+            for (uint16 j; j < 15; j++) {
+                // Add a request for each glasses, with any 100, going to donee 0 - 14
+                nounSeek.add{value: minValue}(GLASSES, i, 100, j);
             }
         }
 
-        mockAuctionHouse.setNounId(99);
+        // ANY_ID and specific Id = 101
         uint256[][][5] memory donations = nounSeek.donationsForNounId(101);
 
         // For all donee slots for next auctioned Noun
@@ -91,6 +96,20 @@ contract NounSeekTest is BaseNounSeekTest {
             assertEq(donations[4][0][i], i < 15 ? minValue * 2 : 0);
             // For Glasses 19, the first 5 donees were requested with ANY_ID and specific
             assertEq(donations[4][19][i], i < 15 ? minValue * 2 : 0);
+            // For Glasses 20, no requests were made
+            assertEq(donations[4][20][i], 0);
+        }
+
+        // Only specific Id = 100
+        donations = nounSeek.donationsForNounId(100);
+        for (uint256 i = 0; i < 20; i++) {
+            // No HEAD requests
+            assertEq(donations[3][0][i], 0);
+
+            // For Glasses 0, the first 5 donees were requested with specific Id
+            assertEq(donations[4][0][i], i < 15 ? minValue : 0);
+            // For Glasses 19, the first 5 donees were requested with specific Id
+            assertEq(donations[4][19][i], i < 15 ? minValue : 0);
             // For Glasses 20, no requests were made
             assertEq(donations[4][20][i], 0);
         }
