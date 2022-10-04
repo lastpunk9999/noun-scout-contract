@@ -51,7 +51,6 @@ contract NounSeek is Ownable2Step, Pausable {
     );
     event DoneeActiveStatusChanged(uint256 doneeId, bool active);
     event Matched(Traits trait, uint16 traitId, uint16 nounId, uint16 newNonce);
-    // event Donated(uint256 doneeId, address to, uint256 amount);
     event Donated(uint256[] donations);
     event Reimbursed(address matcher, uint256 amount);
     event MinValueChanged(uint256 newMinValue);
@@ -63,7 +62,7 @@ contract NounSeek is Ownable2Step, Pausable {
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    /// @notice Stores deposited value, requested traits, donation target with the addresses that sent it
+    /// @notice Stores deposited value, requested traits, donation target, and a nonce for marking stale requests
     struct Request {
         uint16 nonce;
         Traits trait;
@@ -79,7 +78,7 @@ contract NounSeek is Ownable2Step, Pausable {
         address to;
         bool active;
     }
-
+    /// @notice Noun traits in the order they appear on the NounSeeder.Seed struct
     enum Traits {
         BACKGROUND,
         BODY,
@@ -106,13 +105,13 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas
     uint256 public constant MIN_REIMBURSEMENT = 0.003 ether;
 
-    /// @notice maximum reimbursement for matching; with default value this is reached at 4 ETH total donations
+    /// @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
     uint256 public constant MAX_REIMBURSEMENT = 0.1 ether;
 
-    /// @notice Time limit before an auction ends
+    /// @notice Time limit before an auction ends; requests cannot be removed during this time
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
 
-    /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID
+    /// @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID except non-auctioned Nouns
     uint16 public constant ANY_ID = 0;
 
     /// @notice cheaper to store than calculate
@@ -127,23 +126,26 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice A portion of donated funds are sent to the address performing a match
     uint16 public maxReimbursementBPS = 250;
 
-    uint16 public requestCount;
+    /// @notice cached values for Noun trait counts via the Nouns Descriptor
     uint16 public backgroundCount;
     uint16 public bodyCount;
     uint16 public accessoryCount;
     uint16 public headCount;
     uint16 public glassesCount;
 
+    /// @notice The minimum donation value; owner can update
     uint256 public minValue = 0.01 ether;
 
+    /// @notice Array of donee details
     Donee[] public donees;
 
-    /// Cumulative amount for hash(trait traitId nounId) doneeId
+    /// @notice Cumulative funds for trait parameters send to a specific donee. The first mapping key is the hash of trait enum, traitId, nounId, and the second is doneeId
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
 
-    /// Incremented nonce for hash(trait, traitId, nounId)
+    /// @notice Keep track of matched trait parameters using a nonce. When a match is made the nonce is incremented nonce to invalidate request removal. The key is the hash of trait enum, traitId, nounId
     mapping(bytes32 => uint16) public nonces;
 
+    /// @notice Array of requests against the address that created the request
     mapping(address => Request[]) internal _requests;
 
     constructor(
@@ -167,6 +169,9 @@ contract NounSeek is Ownable2Step, Pausable {
     //-----Getters----//
     //----------------//
 
+    /// @notice Get all requests made by an address
+    /// @param requester The address of the requester
+    /// @return requests An array of Request structs
     function requestsByAddress(address requester)
         public
         view
@@ -175,7 +180,11 @@ contract NounSeek is Ownable2Step, Pausable {
         requests = _requests[requester];
     }
 
-    function requestsById(address requester, uint256 requestId)
+    /// @notice Get a specific request by an address
+    /// @param request The address of the requester
+    /// @param requestId The ID of the request
+    /// @return request The Request struct
+    function requestById(address requester, uint256 requestId)
         public
         view
         returns (Request memory request)
@@ -183,14 +192,25 @@ contract NounSeek is Ownable2Step, Pausable {
         request = _requests[requester][requestId];
     }
 
+    /// @notice Get the current nonce for a set of request parameters
+    /// @param trait The trait enum
+    /// @param traitId The ID of the trait
+    /// @param nounId The Noun ID
+    /// @return nonce The current nonce
     function nonceForTraits(
         Traits trait,
         uint16 traitId,
         uint16 nounId
-    ) public view returns (uint16) {
-        return nonces[traitHash(trait, traitId, nounId)];
+    ) public view returns (uint16 nonce) {
+        nonce = nonces[traitHash(trait, traitId, nounId)];
     }
 
+    /// @notice Get a set of nonces for request parameters
+    /// @dev The length of the `traits` array is used as the returned array length
+    /// @param traits Array of trait Enums
+    /// @param traitIds Array of trait IDs
+    /// @param nounIds Array of Noun IDs
+    /// @return noncesList Array of corresponding nonces
     function noncesForTraits(
         Traits[] calldata traits,
         uint16[] calldata traitIds,
@@ -203,8 +223,12 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    /// @notice The canonical hash for requests that target the same `trait`, `traitId`, and `nounId`
-    /// @dev Used to group requests by their parameters in the `_requestsIdsForTraits` mapping
+    /// @notice The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
+    /// @dev Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
+    /// @param trait The trait enum
+    /// @param traitId The ID of the trait
+    /// @param nounId The Noun ID
+    /// @return hash The hashed value
     function traitHash(
         Traits trait,
         uint16 traitId,
@@ -213,6 +237,7 @@ contract NounSeek is Ownable2Step, Pausable {
         hash = keccak256(abi.encodePacked(trait, traitId, nounId));
     }
 
+    /// @notice The number of donees
     function doneesCount() public view returns (uint256 length) {
         length = donees.length;
     }
@@ -221,6 +246,12 @@ contract NounSeek is Ownable2Step, Pausable {
     //----Utilities---//
     //----------------//
 
+    /// @notice The amount a given donee will receive (before fees) if a Noun with specific trait parameters is minted
+    /// @param trait The trait enum
+    /// @param traitId The ID of the trait
+    /// @param nounId The Noun ID
+    /// @param doneeId The donee ID
+    /// @return amount The amount before fees
     function amountForDoneeByTrait(
         Traits trait,
         uint16 traitId,
@@ -231,6 +262,10 @@ contract NounSeek is Ownable2Step, Pausable {
         amount = amounts[hash][doneeId];
     }
 
+    /// @notice Given a donation total, derive the reimbursement fee and basis points used to calculate it
+    /// @param total A donation amount
+    /// @return effectiveBPS The basis point used to cacluate the reimbursement fee
+    /// @return reimbursement The reimbursement amount
     function effectiveBPSAndReimbursementForDonationTotal(uint256 total)
         public
         view
@@ -295,8 +330,16 @@ contract NounSeek is Ownable2Step, Pausable {
     //---Combine donations across all traits---//
     //-----------------------------------------//
 
-    /// @return donations Total donations for a given Noun as an array keyed by trait, traitId, and doneeId.
-    /// Example: donationsForNounId(ANY_ID) -> donations[3][5][2] is in the total donations for Donee #3 if any Noun had Head #5, donations[3][5][3] is in the total donations for Donee #4 if any Noun had Head #5
+    /// @notice Returns all donations for all traits for a given Noun ID
+    /// @dev When passing in a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+    /// @param nounId The ID of the Noun requests should match
+    /// @return donations Total donations for a given Noun ID as a nested arrays in the order trait, traitId, and doneeId.
+    /** Example:
+     * `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
+     * It returns a nested array where:
+     *  - `donations[3][5][2]` is in the total donations for Donee ID 2 if any Noun is minted with a banana head (Trait 3, traitId 5)
+     *  - `donations[4][3][1]` is in the total donations for Donee ID 1 if any Noun is minted with black glasses (Trait 4, traitId 3)
+     */
     function donationsForNounId(uint16 nounId)
         public
         view

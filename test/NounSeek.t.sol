@@ -46,7 +46,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
 
-        NounSeek.Request memory request1 = nounSeek.requestsById(
+        NounSeek.Request memory request1 = nounSeek.requestById(
             address(user1),
             requestIdUser1
         );
@@ -87,7 +87,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(amount, minValue * 2);
 
         assertEq(
-            nounSeek.requestsById(address(user1), requestIdUser1 + 1).nonce,
+            nounSeek.requestById(address(user1), requestIdUser1 + 1).nonce,
             nonce1
         );
 
@@ -98,7 +98,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         uint16 nonce2 = nounSeek.nonceForTraits(HEAD, 8, 99);
 
-        NounSeek.Request memory request2 = nounSeek.requestsById(
+        NounSeek.Request memory request2 = nounSeek.requestById(
             address(user2),
             requestIdUser2
         );
