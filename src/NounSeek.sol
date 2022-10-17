@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 import "./Interfaces.sol";
-import "forge-std/console2.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
     /**
