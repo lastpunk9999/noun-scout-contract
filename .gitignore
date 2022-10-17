@@ -10,3 +10,4 @@ out/
 .gas-report
 .gas-snapshot
 .scratchpad
+.env
