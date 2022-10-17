@@ -490,4 +490,76 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256 amount = nounSeek.remove(requestId1);
         assertEq(amount, 0);
     }
+
+    function test_REQUESTSBYACTIVEADDRESS_happyCase() public {
+        vm.startPrank(user1);
+        // 1 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        // 2 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
+        // 3-4 Should not match
+        nounSeek.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounSeek.add{value: minValue}(HEAD, 8, 102, 1);
+
+        vm.stopPrank();
+
+        NounSeek.Request[] memory requests = nounSeek.requestsActiveByAddress(
+            user1
+        );
+
+        assertEq(requests.length, 4);
+
+        // Sanity check first request
+        assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].traitId, 9);
+        assertEq(requests[0].nounId, ANY_ID);
+        assertEq(requests[0].doneeId, 0);
+
+        // Match Noun
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+
+        // Requests shoud be unmatched only
+        requests = nounSeek.requestsActiveByAddress(user1);
+
+        assertEq(requests.length, 2);
+
+        assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].traitId, 8);
+        assertEq(requests[0].nounId, ANY_ID);
+        assertEq(requests[0].doneeId, 0);
+
+        assertEq(uint8(requests[1].trait), uint8(HEAD));
+        assertEq(requests[1].traitId, 8);
+        assertEq(requests[1].nounId, 102);
+        assertEq(requests[1].doneeId, 1);
+
+        // Delete active request
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+
+        vm.prank(user1);
+        nounSeek.remove(2);
+
+        // Requests should be only unmatched and not deleted
+        requests = nounSeek.requestsActiveByAddress(user1);
+
+        assertEq(requests.length, 1);
+
+        assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].traitId, 8);
+        assertEq(requests[0].nounId, 102);
+        assertEq(requests[0].doneeId, 1);
+    }
 }

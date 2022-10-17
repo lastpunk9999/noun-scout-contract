@@ -196,6 +196,41 @@ contract NounSeek is Ownable2Step, Pausable {
         request = _requests[requester][requestId];
     }
 
+    /// @notice Get requests that have not been matched to a Noun or deleted by an address
+    /// @param request The address of the requester
+    /// @return requests An array of Requests that have yet to be fulfilled
+    function requestsActiveByAddress(address requester)
+        public
+        view
+        returns (Request[] memory requests)
+    {
+        unchecked {
+            uint256 activeRequestCount;
+            uint256 requestCount = _requests[requester].length;
+            uint256[] memory activeRequestIds = new uint256[](requestCount);
+
+            for (uint256 i; i < requestCount; i++) {
+                Request memory request = _requests[requester][i];
+                // Request has been deleted
+                if (request.amount < 1) continue;
+                uint16 nonce = nonceForTraits(
+                    request.trait,
+                    request.traitId,
+                    request.nounId
+                );
+                // Request has been matched
+                if (nonce > request.nonce) continue;
+                activeRequestIds[activeRequestCount] = i;
+                activeRequestCount++;
+            }
+
+            requests = new Request[](activeRequestCount);
+            for (uint256 i; i < activeRequestCount; i++) {
+                requests[i] = _requests[requester][activeRequestIds[i]];
+            }
+        }
+    }
+
     /// @notice Get the current nonce for a set of request parameters
     /// @param trait The trait enum
     /// @param traitId The ID of the trait
