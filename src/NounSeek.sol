@@ -197,7 +197,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Get requests that have not been matched to a Noun or deleted by an address
-    /// @param request The address of the requester
+    /// @param requester The address of the requester
     /// @return requests An array of Requests that have yet to be fulfilled
     function requestsActiveByAddress(address requester)
         public
