@@ -137,7 +137,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public minValue = 0.01 ether;
 
     /// @notice Array of donee details
-    Donee[] public donees;
+    Donee[] public _donees;
 
     /// @notice Cumulative funds for trait parameters send to a specific donee. The first mapping key is the hash of trait enum, traitId, nounId, and the second is doneeId
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
@@ -168,6 +168,10 @@ contract NounSeek is Ownable2Step, Pausable {
     //----------------//
     //-----Getters----//
     //----------------//
+
+    function donees() public view returns (Donee[] memory) {
+        return _donees;
+    }
 
     /// @notice Get all requests made by an address
     /// @param requester The address of the requester
@@ -239,7 +243,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice The number of donees
     function doneesCount() public view returns (uint256 length) {
-        length = donees.length;
+        length = _donees.length;
     }
 
     //----------------//
@@ -408,7 +412,7 @@ contract NounSeek is Ownable2Step, Pausable {
             currentAuctionedId = uint16(auctionHouse.auction().nounId);
             prevNonAuctionedId = UINT16_MAX;
 
-            uint256 doneesCount_ = donees.length;
+            uint256 doneesCount_ = _donees.length;
 
             currentAuctionDonations = _donationsForOnChainNoun({
                 nounId: currentAuctionedId,
@@ -473,7 +477,7 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount_ = donees.length;
+        uint256 doneesCount_ = _donees.length;
 
         auctionedNounDonations = _donationsForOnChainNoun({
             nounId: auctionedNounId,
@@ -537,7 +541,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitCount = glassesCount;
             }
 
-            uint256 doneesCount_ = donees.length;
+            uint256 doneesCount_ = _donees.length;
             donationsByTraitId = new uint256[][](traitCount);
 
             bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
@@ -606,7 +610,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
             currentTraitId = _fetchTraitId(trait, currentAuctionedId);
 
-            uint256 doneesCount_ = donees.length;
+            uint256 doneesCount_ = _donees.length;
 
             currentAuctionDonations = _donationsForNounIdWithTraitId(
                 trait,
@@ -675,7 +679,7 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount_ = donees.length;
+        uint256 doneesCount_ = _donees.length;
 
         auctionedNounDonations = _donationsForNounIdWithTraitId({
             trait: trait,
@@ -732,7 +736,7 @@ contract NounSeek is Ownable2Step, Pausable {
             revert ValueTooLow();
         }
 
-        if (!donees[doneeId].active) {
+        if (!_donees[doneeId].active) {
             revert InactiveDonee();
         }
 
@@ -895,7 +899,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         uint256[] memory donations;
-        uint256 doneesCount_ = donees.length;
+        uint256 doneesCount_ = _donees.length;
 
         (donations, total) = _combineAmountsAndDelete(
             trait,
@@ -917,7 +921,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 1_000_000;
             reimbursement += amount - donation;
             donations[i] = donation;
-            _safeTransferETHWithFallback(donees[i].to, donation);
+            _safeTransferETHWithFallback(_donees[i].to, donation);
         }
         emit Donated(donations);
 
@@ -953,8 +957,8 @@ contract NounSeek is Ownable2Step, Pausable {
         address to,
         string calldata description
     ) external onlyOwner {
-        uint16 doneeId = uint16(donees.length);
-        donees.push(Donee({name: name, to: to, active: true}));
+        uint16 doneeId = uint16(_donees.length);
+        _donees.push(Donee({name: name, to: to, active: true}));
         emit DoneeAdded(doneeId, name, to, description);
     }
 
@@ -962,8 +966,8 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @param doneeId Donee id based on its index within the donees set
     /// @dev If the Done is not configured, a revert will be triggered
     function toggleDoneeActive(uint256 doneeId) external onlyOwner {
-        bool active = !donees[doneeId].active;
-        donees[doneeId].active = active;
+        bool active = !_donees[doneeId].active;
+        _donees[doneeId].active = active;
         emit DoneeActiveStatusChanged(doneeId, active);
     }
 
