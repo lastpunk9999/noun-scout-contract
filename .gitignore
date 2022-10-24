@@ -9,3 +9,5 @@ out/
 *.log
 .gas-report
 .gas-snapshot
+.scratchpad
+.env
