@@ -431,27 +431,25 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         view
         returns (
-            uint16 nextAuctionedId,
-            uint16 nextNonAuctionedId,
+            uint16 nextAuctionId,
+            uint16 nextNonAuctionId,
             uint256[][][5] memory nextAuctionDonations,
             uint256[][][5] memory nextNonAuctionDonations
         )
     {
         unchecked {
-            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-            nextNonAuctionedId = UINT16_MAX;
+            nextAuctionId = uint16(auctionHouse.auction().nounId) + 1;
+            nextNonAuctionId = UINT16_MAX;
 
-            if (_isNonAuctionedNoun(nextAuctionedId)) {
-                nextNonAuctionedId = nextAuctionedId;
-                nextAuctionedId++;
+            if (_isNonAuctionedNoun(nextAuctionId)) {
+                nextNonAuctionId = nextAuctionId;
+                nextAuctionId++;
             }
 
-            nextAuctionDonations = donationsForNounId(nextAuctionedId);
+            nextAuctionDonations = donationsForNounId(nextAuctionId);
 
-            if (nextNonAuctionedId < UINT16_MAX) {
-                nextNonAuctionDonations = donationsForNounId(
-                    nextNonAuctionedId
-                );
+            if (nextNonAuctionId < UINT16_MAX) {
+                nextNonAuctionDonations = donationsForNounId(nextNonAuctionId);
             }
         }
     }
@@ -460,29 +458,29 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         view
         returns (
-            uint16 currentAuctionedId,
-            uint16 prevNonAuctionedId,
+            uint16 currentAuctionId,
+            uint16 prevNonAuctionId,
             uint256[][5] memory currentAuctionDonations,
             uint256[][5] memory prevNonAuctionDonations
         )
     {
         unchecked {
-            currentAuctionedId = uint16(auctionHouse.auction().nounId);
-            prevNonAuctionedId = UINT16_MAX;
+            currentAuctionId = uint16(auctionHouse.auction().nounId);
+            prevNonAuctionId = UINT16_MAX;
 
             uint256 doneesCount_ = _donees.length;
 
             currentAuctionDonations = _donationsForOnChainNoun({
-                nounId: currentAuctionedId,
+                nounId: currentAuctionId,
                 processAnyId: true,
                 doneesCount_: doneesCount_
             });
 
-            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
-                prevNonAuctionedId = currentAuctionedId - 1;
+            if (_isNonAuctionedNoun(currentAuctionId - 1)) {
+                prevNonAuctionId = currentAuctionId - 1;
 
                 prevNonAuctionDonations = _donationsForOnChainNoun({
-                    nounId: prevNonAuctionedId,
+                    nounId: prevNonAuctionId,
                     processAnyId: false,
                     doneesCount_: doneesCount_
                 });
@@ -620,30 +618,30 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         view
         returns (
-            uint16 nextAuctionedId,
-            uint16 nextNonAuctionedId,
+            uint16 nextAuctionId,
+            uint16 nextNonAuctionId,
             uint256[][] memory nextAuctionDonations,
             uint256[][] memory nextNonAuctionDonations
         )
     {
         unchecked {
-            nextAuctionedId = uint16(auctionHouse.auction().nounId) + 1;
-            nextNonAuctionedId = UINT16_MAX;
+            nextAuctionId = uint16(auctionHouse.auction().nounId) + 1;
+            nextNonAuctionId = UINT16_MAX;
 
-            if (_isNonAuctionedNoun(nextAuctionedId)) {
-                nextNonAuctionedId = nextAuctionedId;
-                nextAuctionedId++;
+            if (_isNonAuctionedNoun(nextAuctionId)) {
+                nextNonAuctionId = nextAuctionId;
+                nextAuctionId++;
             }
 
             nextAuctionDonations = donationsForNounIdByTrait(
                 trait,
-                nextAuctionedId
+                nextAuctionId
             );
 
-            if (nextNonAuctionedId < UINT16_MAX) {
+            if (nextNonAuctionId < UINT16_MAX) {
                 nextNonAuctionDonations = donationsForNounIdByTrait(
                     trait,
-                    nextNonAuctionedId
+                    nextNonAuctionId
                 );
             }
         }
@@ -653,38 +651,38 @@ contract NounSeek is Ownable2Step, Pausable {
         public
         view
         returns (
-            uint16 currentAuctionedId,
-            uint16 prevNonAuctionedId,
+            uint16 currentAuctionId,
+            uint16 prevNonAuctionId,
             uint256[] memory currentAuctionDonations,
             uint256[] memory prevNonAuctionDonations
         )
     {
         unchecked {
-            currentAuctionedId = uint16(auctionHouse.auction().nounId);
-            prevNonAuctionedId = UINT16_MAX;
+            currentAuctionId = uint16(auctionHouse.auction().nounId);
+            prevNonAuctionId = UINT16_MAX;
 
             uint16 currentTraitId;
             uint16 prevTraitId;
 
-            currentTraitId = _fetchTraitId(trait, currentAuctionedId);
+            currentTraitId = _fetchTraitId(trait, currentAuctionId);
 
             uint256 doneesCount_ = _donees.length;
 
             currentAuctionDonations = _donationsForNounIdWithTraitId(
                 trait,
                 currentTraitId,
-                currentAuctionedId,
+                currentAuctionId,
                 true,
                 doneesCount_
             );
 
-            if (_isNonAuctionedNoun(currentAuctionedId - 1)) {
-                prevNonAuctionedId = currentAuctionedId - 1;
-                prevTraitId = _fetchTraitId(trait, prevNonAuctionedId);
+            if (_isNonAuctionedNoun(currentAuctionId - 1)) {
+                prevNonAuctionId = currentAuctionId - 1;
+                prevTraitId = _fetchTraitId(trait, prevNonAuctionId);
                 prevNonAuctionDonations = _donationsForNounIdWithTraitId(
                     trait,
                     prevTraitId,
-                    prevNonAuctionedId,
+                    prevNonAuctionId,
                     false,
                     doneesCount_
                 );

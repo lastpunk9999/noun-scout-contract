@@ -130,14 +130,14 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // Should include user1 and user2 requests
         (
-            uint16 nextAuctionedId,
-            uint16 nextNonAuctionedId,
+            uint16 nextAuctionId,
+            uint16 nextNonAuctionId,
             uint256[][] memory nextAuctionDonations,
 
         ) = nounSeek.donationsForNextNounByTrait(HEAD);
 
-        assertEq(nextAuctionedId, 101);
-        assertEq(nextNonAuctionedId, 100);
+        assertEq(nextAuctionId, 101);
+        assertEq(nextNonAuctionId, 100);
         // USER1 ANY_Id requested 2 times + USER3 Noun Id 101 requested 1 times
         assertEq(
             nextAuctionDonations[9][1],
