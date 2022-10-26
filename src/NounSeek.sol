@@ -71,6 +71,18 @@ contract NounSeek is Ownable2Step, Pausable {
         uint128 amount;
     }
 
+    /// @notice Request with additional `id` and `doneeName` parameters; Returned by `requestsActiveByAddress()`
+    struct ActiveRequest {
+        uint256 id;
+        uint16 nonce;
+        Traits trait;
+        uint16 traitId;
+        uint16 doneeId;
+        string doneeName;
+        uint16 nounId;
+        uint128 amount;
+    }
+
     /// @notice Name, address, and active status where funds can be donated
     struct Donee {
         string name;
@@ -201,7 +213,7 @@ contract NounSeek is Ownable2Step, Pausable {
     function requestsActiveByAddress(address requester)
         public
         view
-        returns (Request[] memory requests)
+        returns (ActiveRequest[] memory requests)
     {
         unchecked {
             uint256 activeRequestCount;
@@ -223,9 +235,21 @@ contract NounSeek is Ownable2Step, Pausable {
                 activeRequestCount++;
             }
 
-            requests = new Request[](activeRequestCount);
+            requests = new ActiveRequest[](activeRequestCount);
             for (uint256 i; i < activeRequestCount; i++) {
-                requests[i] = _requests[requester][activeRequestIds[i]];
+                Request memory request = _requests[requester][
+                    activeRequestIds[i]
+                ];
+                requests[i] = ActiveRequest({
+                    id: activeRequestIds[i],
+                    nonce: request.nonce,
+                    trait: request.trait,
+                    traitId: request.traitId,
+                    doneeName: _donees[request.doneeId].name,
+                    doneeId: request.doneeId,
+                    nounId: request.nounId,
+                    amount: request.amount
+                });
             }
         }
     }

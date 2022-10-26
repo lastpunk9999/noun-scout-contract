@@ -503,14 +503,14 @@ contract NounSeekTest is BaseNounSeekTest {
 
         vm.stopPrank();
 
-        NounSeek.Request[] memory requests = nounSeek.requestsActiveByAddress(
-            user1
-        );
+        NounSeek.ActiveRequest[] memory requests = nounSeek
+            .requestsActiveByAddress(user1);
 
         assertEq(requests.length, 4);
 
         // Sanity check first request
         assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].id, 0);
         assertEq(requests[0].traitId, 9);
         assertEq(requests[0].nounId, ANY_ID);
         assertEq(requests[0].doneeId, 0);
@@ -535,11 +535,13 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests.length, 2);
 
         assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].id, 2);
         assertEq(requests[0].traitId, 8);
         assertEq(requests[0].nounId, ANY_ID);
         assertEq(requests[0].doneeId, 0);
 
         assertEq(uint8(requests[1].trait), uint8(HEAD));
+        assertEq(requests[1].id, 3);
         assertEq(requests[1].traitId, 8);
         assertEq(requests[1].nounId, 102);
         assertEq(requests[1].doneeId, 1);
@@ -550,7 +552,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.warp(timestamp);
 
         vm.prank(user1);
-        nounSeek.remove(2);
+        nounSeek.remove(3);
 
         // Requests should be only unmatched and not deleted
         requests = nounSeek.requestsActiveByAddress(user1);
@@ -558,8 +560,9 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests.length, 1);
 
         assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].id, 2);
         assertEq(requests[0].traitId, 8);
-        assertEq(requests[0].nounId, 102);
-        assertEq(requests[0].doneeId, 1);
+        assertEq(requests[0].nounId, 0);
+        assertEq(requests[0].doneeId, 0);
     }
 }
