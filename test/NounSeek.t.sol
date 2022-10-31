@@ -539,12 +539,14 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[0].traitId, 8);
         assertEq(requests[0].nounId, ANY_ID);
         assertEq(requests[0].doneeId, 0);
+        assertEq(requests[0].doneeName, "donee0");
 
         assertEq(uint8(requests[1].trait), uint8(HEAD));
         assertEq(requests[1].id, 3);
         assertEq(requests[1].traitId, 8);
         assertEq(requests[1].nounId, 102);
         assertEq(requests[1].doneeId, 1);
+        assertEq(requests[1].doneeName, "donee1");
 
         // Delete active request
         uint256 timestamp = 1_000_000;
@@ -564,5 +566,6 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[0].traitId, 8);
         assertEq(requests[0].nounId, 0);
         assertEq(requests[0].doneeId, 0);
+        assertEq(requests[0].doneeName, "donee0");
     }
 }
