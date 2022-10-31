@@ -24,54 +24,54 @@ contract TestnetDeploy is Script {
 
         // Add Donees
         nounSeek.addDonee(
-            "donee1",
+            "Morris Animal Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Morris Animal Foundation is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee2",
+            "Leukemia & Lymphoma Society",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Leukemia & Lymphoma Society is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee3",
+            "Center for Biological Diversity",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Center for Biological Diversity is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee4",
+            "African Wildlife Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "African Wildlife Foundation is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee5",
+            "Michael J. Fox Foundation for Parkinson's Research",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Michael J. Fox Foundation for Parkinson's Research is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee6",
+            "Marine Mammal Center",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Marine Mammal Center is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee7",
+            "Alzheimer's Association",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Alzheimer's Association is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee8",
+            "Breast Cancer Research Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Breast Cancer Research Foundation is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee9",
+            "National Kidney Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "National Kidney Foundation is a non-profit organization."
         );
         nounSeek.addDonee(
-            "donee10",
+            "Freedom Of The Press Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            ""
+            "Freedom Of The Press Foundation is a non-profit organization."
         );
 
         // setup Traits
