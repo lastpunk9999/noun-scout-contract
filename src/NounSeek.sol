@@ -32,7 +32,8 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 indexed nounId,
         bytes32 indexed traitsHash,
         uint256 amount,
-        uint16 nonce
+        uint16 nonce,
+        string message
     );
     event RequestRemoved(
         uint256 requestId,
@@ -790,6 +791,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @param traitId ID of the specified Trait that the request is for
     /// @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
     /// @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
+    /// @return requestId The ID of this requests for msg.sender's address
     function add(
         Traits trait,
         uint16 traitId,
@@ -800,39 +802,37 @@ contract NounSeek is Ownable2Step, Pausable {
             revert ValueTooLow();
         }
 
-        if (!_donees[doneeId].active) {
-            revert InactiveDonee();
+        requestId = _add(trait, traitId, nounId, doneeId, msg.value, "");
+    }
+
+    /// @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee. The message cost is subtracted from the value sent and transfered immediately to the specified Donee. The remaining value is stored with the request.
+    /// @param trait Trait type the request is for (see Traits enum)
+    /// @param traitId ID of the specified Trait that the request is for
+    /// @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
+    /// @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
+    /// @param message The message to log
+    /// @return requestId The ID of this requests for msg.sender's address
+    function addWithMessage(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint16 doneeId,
+        string memory message
+    ) public payable whenNotPaused returns (uint256 requestId) {
+        if (msg.value < minValue * 2) {
+            revert ValueTooLow();
         }
 
-        bytes32 hash = traitHash(trait, traitId, nounId);
-        uint16 nonce = nonces[hash];
-
-        amounts[hash][doneeId] += msg.value;
-
-        requestId = _requests[msg.sender].length;
-
-        _requests[msg.sender].push(
-            Request({
-                nonce: nonce,
-                doneeId: doneeId,
-                trait: trait,
-                traitId: traitId,
-                nounId: nounId,
-                amount: uint128(msg.value)
-            })
+        requestId = _add(
+            trait,
+            traitId,
+            nounId,
+            doneeId,
+            msg.value - minValue,
+            message
         );
 
-        emit RequestAdded({
-            requestId: requestId,
-            requester: msg.sender,
-            trait: trait,
-            traitId: traitId,
-            doneeId: doneeId,
-            nounId: nounId,
-            traitsHash: hash,
-            amount: msg.value,
-            nonce: nonce
-        });
+        _safeTransferETHWithFallback(_donees[doneeId].to, minValue);
     }
 
     /// @notice Remove the specified request and return the associated ETH. Must be called by the requester and before AuctionEndWindow
@@ -1072,6 +1072,52 @@ contract NounSeek is Ownable2Step, Pausable {
      INTERNAL FUNCTIONS
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
+
+    /// @notice Creates a Request and logs `RequestAdded`
+    function _add(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint16 doneeId,
+        uint256 amount,
+        string memory message
+    ) internal returns (uint256 requestId) {
+        if (!_donees[doneeId].active) {
+            revert InactiveDonee();
+        }
+
+        bytes32 hash = traitHash(trait, traitId, nounId);
+        uint16 nonce = nonces[hash];
+
+        amounts[hash][doneeId] += amount;
+
+        requestId = _requests[msg.sender].length;
+
+        _requests[msg.sender].push(
+            Request({
+                nonce: nonce,
+                doneeId: doneeId,
+                trait: trait,
+                traitId: traitId,
+                nounId: nounId,
+                amount: uint128(amount)
+            })
+        );
+
+        emit RequestAdded({
+            requestId: requestId,
+            requester: msg.sender,
+            trait: trait,
+            traitId: traitId,
+            doneeId: doneeId,
+            nounId: nounId,
+            traitsHash: hash,
+            amount: amount,
+            nonce: nonce,
+            message: message
+        });
+    }
+
     /// @notice Was the specified Noun ID not auctioned
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {
         return nounId % 10 < 1 && nounId <= 1820;

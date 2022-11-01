@@ -9,6 +9,29 @@ import "../src/Interfaces.sol";
 import "./BaseNounSeekTest.sol";
 
 contract NounSeekTest is BaseNounSeekTest {
+    event RequestAdded(
+        uint256 requestId,
+        address indexed requester,
+        NounSeek.Traits trait,
+        uint16 traitId,
+        uint16 doneeId,
+        uint16 indexed nounId,
+        bytes32 indexed traitsHash,
+        uint256 amount,
+        uint16 nonce,
+        string message
+    );
+    event RequestRemoved(
+        uint256 requestId,
+        address indexed requester,
+        NounSeek.Traits trait,
+        uint16 traitId,
+        uint16 doneeId,
+        uint16 indexed nounId,
+        bytes32 indexed traitsHash,
+        uint256 amount
+    );
+
     function setUp() public override {
         BaseNounSeekTest.setUp();
     }
@@ -33,6 +56,23 @@ contract NounSeekTest is BaseNounSeekTest {
     function test_TOGGLEDONNEACTIVE() public {}
 
     function test_ADD_happyCase() public {
+        uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
+
+        vm.expectEmit(true, true, true, true);
+        // expect the event to have the an empty message and the correct donation value
+        emit RequestAdded(
+            0,
+            address(user1),
+            HEAD,
+            9,
+            1,
+            ANY_ID,
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            minValue,
+            nonce1,
+            ""
+        );
+
         // USER 1
         // - adds a request
         vm.prank(user1);
@@ -43,8 +83,6 @@ contract NounSeekTest is BaseNounSeekTest {
             ANY_ID,
             1
         );
-
-        uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
 
         NounSeek.Request memory request1 = nounSeek.requestById(
             address(user1),
@@ -93,10 +131,26 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // USER 2
         // - adds additional request for different HEAD, specific noun Id, different donee
-        vm.prank(user2);
-        uint256 requestIdUser2 = nounSeek.add{value: minValue}(HEAD, 8, 99, 2);
+        vm.expectEmit(true, true, true, true);
 
         uint16 nonce2 = nounSeek.nonceForTraits(HEAD, 8, 99);
+
+        // expect the event to have the an empty message and the correct donation value
+        emit RequestAdded(
+            0,
+            address(user2),
+            HEAD,
+            8,
+            2,
+            99,
+            nounSeek.traitHash(HEAD, 8, 99),
+            minValue,
+            nonce2,
+            ""
+        );
+
+        vm.prank(user2);
+        uint256 requestIdUser2 = nounSeek.add{value: minValue}(HEAD, 8, 99, 2);
 
         NounSeek.Request memory request2 = nounSeek.requestById(
             address(user2),
@@ -163,6 +217,142 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.prank(user1);
         vm.expectRevert(NounSeek.InactiveDonee.selector);
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+    }
+
+    function test_ADDWITHMESSAGE_happyCase() public {
+        uint256 donation = 1 ether;
+        uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
+        vm.expectEmit(true, true, true, true);
+        // expect the event to have the "hello" message and the correct donation value
+        emit RequestAdded(
+            0,
+            address(user1),
+            HEAD,
+            9,
+            1,
+            ANY_ID,
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            donation,
+            nonce1,
+            "hello"
+        );
+
+        // expect the minValue to pay for the message to be transferred to the donnee
+        vm.expectCall(address(donee1), minValue, "");
+
+        vm.prank(user1);
+
+        uint256 requestIdUser1 = nounSeek.addWithMessage{
+            value: donation + minValue
+        }(HEAD, 9, ANY_ID, 1, "hello");
+
+        NounSeek.Request memory request1 = nounSeek.requestById(
+            address(user1),
+            requestIdUser1
+        );
+
+        assertEq(uint8(request1.trait), uint8(HEAD));
+        assertEq(request1.traitId, 9);
+        assertEq(request1.doneeId, 1);
+        assertEq(request1.nounId, ANY_ID);
+        assertEq(request1.amount, donation);
+        assertEq(request1.nonce, nonce1);
+
+        NounSeek.Request[] memory requestsUser1 = nounSeek.requestsByAddress(
+            address(user1)
+        );
+
+        assertEq(requestsUser1.length, 1);
+
+        uint256 amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            1
+        );
+
+        assertEq(amount, donation);
+    }
+
+    function test_ADDWITHMESSAGE_failsWhenValueTooLow() public {
+        vm.expectRevert(NounSeek.ValueTooLow.selector);
+        vm.prank(user1);
+
+        nounSeek.addWithMessage{value: minValue}(HEAD, 9, ANY_ID, 1, "hello");
+    }
+
+    function test_REMOVE_after_addWithMessage_happyCaseFIFO() public {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+        // addWithMessage()
+        uint256 requestId1 = nounSeek.addWithMessage{value: minValue * 2}(
+            HEAD,
+            9,
+            ANY_ID,
+            1,
+            "hello"
+        );
+
+        // add()
+        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+
+        uint256[][] memory donationsByTraitId = nounSeek
+            .donationsForNounIdByTrait(HEAD, ANY_ID);
+        NounSeek.Request[] memory requestsUser1 = nounSeek.requestsByAddress(
+            address(user1)
+        );
+
+        // Sanity check
+        assertEq(requestsUser1.length, 2);
+        assertEq(requestsUser1[0].amount, minValue);
+
+        assertEq(donationsByTraitId[9][1], minValue * 2);
+
+        // Remove first request
+        vm.expectEmit(true, true, true, true);
+        emit RequestRemoved(
+            requestId1,
+            address(user1),
+            HEAD,
+            9,
+            1,
+            ANY_ID,
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            minValue
+        );
+
+        vm.expectCall(address(user1), minValue, "");
+
+        nounSeek.remove(requestId1);
+        requestsUser1 = nounSeek.requestsByAddress(address(user1));
+        assertEq(requestsUser1.length, 2);
+        assertEq(requestsUser1[0].amount, 0);
+        assertEq(requestsUser1[1].amount, minValue);
+
+        donationsByTraitId = nounSeek.donationsForNounIdByTrait(HEAD, ANY_ID);
+        assertEq(donationsByTraitId[9][1], minValue);
+
+        // Remove second request
+        vm.expectEmit(true, true, true, true);
+        emit RequestRemoved(
+            requestId2,
+            address(user1),
+            HEAD,
+            9,
+            1,
+            ANY_ID,
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            minValue
+        );
+        vm.expectCall(address(user1), minValue, "");
+        nounSeek.remove(requestId2);
+        requestsUser1 = nounSeek.requestsByAddress(address(user1));
+        assertEq(requestsUser1.length, 2);
+        assertEq(requestsUser1[0].amount, 0);
+        assertEq(requestsUser1[1].amount, 0);
+
+        donationsByTraitId = nounSeek.donationsForNounIdByTrait(HEAD, ANY_ID);
+        assertEq(donationsByTraitId[9][1], 0);
     }
 
     function test_REMOVE_happyCaseFIFO() public {
