@@ -7,9 +7,9 @@ import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 
 contract NounSeek is Ownable2Step, Pausable {
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      ERROR
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ERROR
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
     error TooLate();
     error MatchFound(uint16 nounId);
@@ -18,9 +18,9 @@ contract NounSeek is Ownable2Step, Pausable {
     error ValueTooLow();
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      EVENTS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * EVENTS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     event RequestAdded(
@@ -65,9 +65,9 @@ contract NounSeek is Ownable2Step, Pausable {
     event ReimbursementBPSChanged(uint256 newReimbursementBPS);
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      CUSTOM TYPES
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * CUSTOM TYPES
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     /// @notice Stores deposited value, requested traits, donation target, and a nonce for marking stale requests
@@ -99,6 +99,7 @@ contract NounSeek is Ownable2Step, Pausable {
         bool active;
     }
     /// @notice Noun traits in the order they appear on the NounSeeder.Seed struct
+
     enum Traits {
         BACKGROUND,
         BODY,
@@ -108,9 +109,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      CONSTANTS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * CONSTANTS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     /// @notice Retreives historical mapping of Noun ID -> seed
@@ -138,9 +139,9 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 private constant UINT16_MAX = type(uint16).max;
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      STORAGE VARIABLES
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * STORAGE VARIABLES
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     /// @notice A portion of donated funds are sent to the address performing a match
@@ -180,9 +181,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      VIEW FUNCTIONS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * VIEW FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     //----------------//
@@ -232,14 +233,18 @@ contract NounSeek is Ownable2Step, Pausable {
             for (uint256 i; i < requestCount; i++) {
                 Request memory request = _requests[requester][i];
                 // Request has been deleted
-                if (request.amount < 1) continue;
+                if (request.amount < 1) {
+                    continue;
+                }
                 uint16 nonce = nonceForTraits(
                     request.trait,
                     request.traitId,
                     request.nounId
                 );
                 // Request has been matched
-                if (nonce > request.nonce) continue;
+                if (nonce > request.nonce) {
+                    continue;
+                }
                 activeRequestIds[activeRequestCount] = i;
                 activeRequestCount++;
             }
@@ -405,11 +410,12 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @dev When passing in a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
     /// @param nounId The ID of the Noun requests should match
     /// @return donations Total donations for a given Noun ID as a nested arrays in the order trait, traitId, and doneeId.
-    /** Example:
+    /**
+     * Example:
      * `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
      * It returns a nested array where:
-     *  - `donations[3][5][2]` is in the total donations for Donee ID 2 if any Noun is minted with a banana head (Trait 3, traitId 5)
-     *  - `donations[4][3][1]` is in the total donations for Donee ID 1 if any Noun is minted with black glasses (Trait 4, traitId 3)
+     * - `donations[3][5][2]` is in the total donations for Donee ID 2 if any Noun is minted with a banana head (Trait 3, traitId 5)
+     * - `donations[4][3][1]` is in the total donations for Donee ID 1 if any Noun is minted with black glasses (Trait 4, traitId 3)
      */
     function donationsForNounId(uint16 nounId)
         public
@@ -782,9 +788,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      WRITE FUNCTIONS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * WRITE FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
     /// @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Donee. Request amount is tied to the sent value.
     /// @param trait Trait type the request is for (see Traits enum)
@@ -847,7 +853,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         Request memory request = _requests[msg.sender][requestId];
 
-        if (request.amount < 1) revert ValueTooLow();
+        if (request.amount < 1) {
+            revert ValueTooLow();
+        }
 
         /* @dev
          * Cannot remove a request if:
@@ -974,7 +982,9 @@ contract NounSeek is Ownable2Step, Pausable {
             uint16(doneesCount_)
         );
 
-        if (total < 1) revert NoMatch();
+        if (total < 1) {
+            revert NoMatch();
+        }
 
         (uint256 effectiveBPS, ) = _effectiveHighPrecisionBPSForDonationTotal(
             total
@@ -982,7 +992,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
         for (uint256 i; i < doneesCount_; i++) {
             uint256 amount = donations[i];
-            if (amount < 1) continue;
+            if (amount < 1) {
+                continue;
+            }
             uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
                 1_000_000;
             reimbursement += amount - donation;
@@ -1009,9 +1021,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-      OWNER FUNCTIONS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * OWNER FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     /// @notice Add a Donee by specifying the name and address funds should be sent to
@@ -1052,7 +1064,9 @@ contract NounSeek is Ownable2Step, Pausable {
         onlyOwner
     {
         /// BPS cannot be less than 0.1% or greater than 10%
-        if (newReimbursementBPS < 10 || newReimbursementBPS > 1000) revert();
+        if (newReimbursementBPS < 10 || newReimbursementBPS > 1000) {
+            revert();
+        }
         maxReimbursementBPS = newReimbursementBPS;
         emit ReimbursementBPSChanged(newReimbursementBPS);
     }
@@ -1068,9 +1082,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-     INTERNAL FUNCTIONS
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * INTERNAL FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
     /// @notice Creates a Request and logs `RequestAdded`
@@ -1129,12 +1143,12 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-    @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
-    @param trait The trait type requests should match (see Traits enum)
-    @param traitIds Specific trait Id
-    @param nounIds Specific Noun Id
-    @return donations Mutated donations array
-    @return total total
+     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
+     * @param trait The trait type requests should match (see Traits enum)
+     * @param traitIds Specific trait Id
+     * @param nounIds Specific Noun Id
+     * @return donations Mutated donations array
+     * @return total total
      */
     function _combineAmountsAndDelete(
         Traits trait,
@@ -1151,7 +1165,9 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256 traitTotal;
             for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
                 uint256 amount = amounts[hash][doneeId];
-                if (amount < 1) continue;
+                if (amount < 1) {
+                    continue;
+                }
                 traitTotal += amount;
                 total += amount;
                 donations[doneeId] += amount;
@@ -1159,7 +1175,9 @@ contract NounSeek is Ownable2Step, Pausable {
                 delete amounts[hash][doneeId];
             }
 
-            if (traitTotal < 1) continue;
+            if (traitTotal < 1) {
+                continue;
+            }
 
             uint16 newNonce = nonces[hash] + 1;
             nonces[hash] = newNonce;
@@ -1178,7 +1196,9 @@ contract NounSeek is Ownable2Step, Pausable {
         internal
         view
     {
-        if (requestMatchesNoun(request, nounId)) revert MatchFound(nounId);
+        if (requestMatchesNoun(request, nounId)) {
+            revert MatchFound(nounId);
+        }
     }
 
     function _fetchTraitId(Traits trait, uint16 nounId)
@@ -1204,7 +1224,9 @@ contract NounSeek is Ownable2Step, Pausable {
         view
         returns (uint256 effectiveBPS, uint256 reimbursement)
     {
-        if (total < 1) return (effectiveBPS, reimbursement);
+        if (total < 1) {
+            return (effectiveBPS, reimbursement);
+        }
 
         /// Add 2 digits extra precision to better derive `effectiveBPS` from total
         /// Extra precision basis point = 10_000 * 100 = 1_000_000
@@ -1230,7 +1252,9 @@ contract NounSeek is Ownable2Step, Pausable {
         unchecked {
             bytes32 hash = traitHash(trait, traitId, nounId);
             bytes32 anyIdHash;
-            if (processAnyId) anyIdHash = traitHash(trait, traitId, ANY_ID);
+            if (processAnyId) {
+                anyIdHash = traitHash(trait, traitId, ANY_ID);
+            }
             donations = new uint256[](doneesCount_);
             for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
                 uint256 anyIdAmount = processAnyId
