@@ -78,6 +78,9 @@ contract TestnetDeploy is Script {
         mockDescriptor.setHeadCount(242);
         nounSeek.updateTraitCounts();
         mockAuctionHouse.setNounId(99);
+        mockAuctionHouse.setEndTime(9999999999);
+        uint256 minValue = 1 gwei;
+        nounSeek.setMinValue(minValue);
 
         for (uint16 i; i < 10; i++) {
             /*
@@ -85,7 +88,13 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
-            nounSeek.add{value: 10}(NounSeek.Traits.HEAD, i, 0, i % 10);
+            nounSeek.addWithMessage{value: minValue * 2}(
+                NounSeek.Traits.HEAD,
+                i,
+                0,
+                i % 10,
+                "Bowsprit crimp pillage weigh anchor rigging chantey quarter lee jack pirate"
+            );
         }
 
         for (uint16 i; i < 10; i++) {
@@ -94,7 +103,13 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
-            nounSeek.add{value: 10}(NounSeek.Traits.HEAD, i + 10, 100, i % 10);
+            nounSeek.addWithMessage{value: minValue * 2}(
+                NounSeek.Traits.HEAD,
+                i + 10,
+                100,
+                i % 10,
+                "Stern ballast rope's end ahoy lookout scourge of the seven seas aye jolly boat log piracy"
+            );
         }
 
         for (uint16 i; i < 10; i++) {
@@ -103,7 +118,13 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
-            nounSeek.add{value: 10}(NounSeek.Traits.HEAD, i + 20, 101, i % 10);
+            nounSeek.addWithMessage{value: minValue * 2}(
+                NounSeek.Traits.HEAD,
+                i + 20,
+                101,
+                i % 10,
+                "Coxswain fore starboard weigh anchor rope's end sutler hang the jib execution dock marooned yo-ho-ho"
+            );
         }
 
         for (uint16 i; i < 10; i++) {
@@ -112,7 +133,13 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
-            nounSeek.add{value: 10}(NounSeek.Traits.HEAD, 0, 0, i % 10);
+            nounSeek.addWithMessage{value: minValue * 2}(
+                NounSeek.Traits.HEAD,
+                0,
+                0,
+                i % 10,
+                "Chase Yellow Jack fathom pirate quarterdeck crow's nest heave to salmagundi piracy draught"
+            );
         }
 
         vm.stopBroadcast();
