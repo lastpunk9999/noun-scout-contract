@@ -79,39 +79,40 @@ contract NounSeekTest is BaseNounSeekTest {
         }
 
         // ANY_ID and specific Id = 101
-        uint256[][][5] memory donations = nounSeek.donationsForNounId(101);
+        NounSeek.UnmatchedDonationsByTrait memory donations = nounSeek
+            .donationsForNounId(101);
 
         // For all donee slots for next auctioned Noun
         for (uint256 i = 0; i < 20; i++) {
             // For Head 0, the first 5 donees were requested with ANY_ID and specific
-            assertEq(donations[3][0][i], i < 15 ? minValue * 2 : 0);
+            assertEq(donations.head[0][i], i < 15 ? minValue * 2 : 0);
             // For Head 99, the first 5 donees were requested with ANY_ID and specific
-            assertEq(donations[3][99][i], i < 15 ? minValue * 2 : 0);
+            assertEq(donations.head[99][i], i < 15 ? minValue * 2 : 0);
             // For Head 100, no requests were made
-            assertEq(donations[3][100][i], 0);
+            assertEq(donations.head[100][i], 0);
         }
 
         for (uint256 i = 0; i < 20; i++) {
             // For Glasses 0, the first 5 donees were requested with ANY_ID and specific
-            assertEq(donations[4][0][i], i < 15 ? minValue * 2 : 0);
+            assertEq(donations.glasses[0][i], i < 15 ? minValue * 2 : 0);
             // For Glasses 19, the first 5 donees were requested with ANY_ID and specific
-            assertEq(donations[4][19][i], i < 15 ? minValue * 2 : 0);
+            assertEq(donations.glasses[19][i], i < 15 ? minValue * 2 : 0);
             // For Glasses 20, no requests were made
-            assertEq(donations[4][20][i], 0);
+            assertEq(donations.glasses[20][i], 0);
         }
 
         // Only specific Id = 100
         donations = nounSeek.donationsForNounId(100);
         for (uint256 i = 0; i < 20; i++) {
             // No HEAD requests
-            assertEq(donations[3][0][i], 0);
+            assertEq(donations.head[0][i], 0);
 
             // For Glasses 0, the first 5 donees were requested with specific Id
-            assertEq(donations[4][0][i], i < 15 ? minValue : 0);
+            assertEq(donations.glasses[0][i], i < 15 ? minValue : 0);
             // For Glasses 19, the first 5 donees were requested with specific Id
-            assertEq(donations[4][19][i], i < 15 ? minValue : 0);
+            assertEq(donations.glasses[19][i], i < 15 ? minValue : 0);
             // For Glasses 20, no requests were made
-            assertEq(donations[4][20][i], 0);
+            assertEq(donations.glasses[20][i], 0);
         }
     }
 
@@ -153,37 +154,71 @@ contract NounSeekTest is BaseNounSeekTest {
         (
             uint16 nextAuctionedId,
             uint16 nextNonAuctionedId,
-            uint256[][][5] memory nextAuctionDonations,
-            uint256[][][5] memory nextNonAuctionDonations
+            NounSeek.UnmatchedDonationsByTrait memory nextAuctionDonations,
+            NounSeek.UnmatchedDonationsByTrait memory nextNonAuctionDonations
         ) = nounSeek.donationsForNextNoun();
         assertEq(nextAuctionedId, 99);
         assertEq(nextNonAuctionedId, type(uint16).max);
 
-        assertEq(nextAuctionDonations[0].length, nounSeek.backgroundCount());
-        assertEq(nextAuctionDonations[1].length, nounSeek.bodyCount());
-        assertEq(nextAuctionDonations[2].length, nounSeek.accessoryCount());
-        assertEq(nextAuctionDonations[3].length, nounSeek.headCount());
-        assertEq(nextAuctionDonations[4].length, nounSeek.glassesCount());
+        assertEq(
+            nextAuctionDonations.background.length,
+            nounSeek.backgroundCount()
+        );
+        assertEq(nextAuctionDonations.body.length, nounSeek.bodyCount());
+        assertEq(
+            nextAuctionDonations.accessory.length,
+            nounSeek.accessoryCount()
+        );
+        assertEq(nextAuctionDonations.head.length, nounSeek.headCount());
+        assertEq(nextAuctionDonations.glasses.length, nounSeek.glassesCount());
 
         // There is no non-auction Noun, so no slots for traits or donees
-        assertEq(nextNonAuctionDonations[0].length, 0);
-        assertEq(nextNonAuctionDonations[1].length, 0);
-        assertEq(nextNonAuctionDonations[2].length, 0);
-        assertEq(nextNonAuctionDonations[3].length, 0);
-        assertEq(nextNonAuctionDonations[4].length, 0);
+        assertEq(nextNonAuctionDonations.background.length, 0);
+        assertEq(nextNonAuctionDonations.body.length, 0);
+        assertEq(nextNonAuctionDonations.accessory.length, 0);
+        assertEq(nextNonAuctionDonations.head.length, 0);
+        assertEq(nextNonAuctionDonations.glasses.length, 0);
 
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
-            assertEq(nextAuctionDonations[trait][trait].length, doneesCount);
+            assertEq(
+                nextAuctionDonations.background[trait % 2].length,
+                doneesCount
+            );
+            assertEq(nextAuctionDonations.body[trait].length, doneesCount);
+            assertEq(nextAuctionDonations.accessory[trait].length, doneesCount);
+            assertEq(nextAuctionDonations.head[trait].length, doneesCount);
+            assertEq(nextAuctionDonations.glasses[trait].length, doneesCount);
         }
-        for (uint256 trait = 1; trait < 5; trait++) {
-            for (uint256 traitId; traitId < 10; traitId++) {
-                // Check that donee#1 and donnee#2 are zero
-                assertEq(nextAuctionDonations[trait][traitId][1], 0);
-                assertEq(nextAuctionDonations[trait][traitId][2], 0);
-                // Check that donee#0 is minValue because of ANY_ID request
-                assertEq(nextAuctionDonations[trait][traitId][0], minValue);
-            }
+
+        for (uint256 traitId; traitId < 10; traitId++) {
+            // BODY
+            // Check that donee#1 and donnee#2 are zero
+            assertEq(nextAuctionDonations.body[traitId][1], 0);
+            assertEq(nextAuctionDonations.body[traitId][2], 0);
+            // Check that donee#0 is minValue because of ANY_ID request
+            assertEq(nextAuctionDonations.body[traitId][0], minValue);
+
+            // ACCESSORY
+            // Check that donee#1 and donnee#2 are zero
+            assertEq(nextAuctionDonations.accessory[traitId][1], 0);
+            assertEq(nextAuctionDonations.accessory[traitId][2], 0);
+            // Check that donee#0 is minValue because of ANY_ID request
+            assertEq(nextAuctionDonations.accessory[traitId][0], minValue);
+
+            // HEAD
+            // Check that donee#1 and donnee#2 are zero
+            assertEq(nextAuctionDonations.head[traitId][1], 0);
+            assertEq(nextAuctionDonations.head[traitId][2], 0);
+            // Check that donee#0 is minValue because of ANY_ID request
+            assertEq(nextAuctionDonations.head[traitId][0], minValue);
+
+            // GLASSES
+            // Check that donee#1 and donnee#2 are zero
+            assertEq(nextAuctionDonations.glasses[traitId][1], 0);
+            assertEq(nextAuctionDonations.glasses[traitId][2], 0);
+            // Check that donee#0 is minValue because of ANY_ID request
+            assertEq(nextAuctionDonations.glasses[traitId][0], minValue);
         }
     }
 
@@ -231,46 +266,126 @@ contract NounSeekTest is BaseNounSeekTest {
         (
             uint16 nextAuctionedId,
             uint16 nextNonAuctionedId,
-            uint256[][][5] memory nextAuctionDonations,
-            uint256[][][5] memory nextNonAuctionDonations
+            NounSeek.UnmatchedDonationsByTrait memory nextAuctionDonations,
+            NounSeek.UnmatchedDonationsByTrait memory nextNonAuctionDonations
         ) = nounSeek.donationsForNextNoun();
         assertEq(nextAuctionedId, 101);
         assertEq(nextNonAuctionedId, 100);
 
-        assertEq(nextAuctionDonations[0].length, nounSeek.backgroundCount());
-        assertEq(nextAuctionDonations[1].length, nounSeek.bodyCount());
-        assertEq(nextAuctionDonations[2].length, nounSeek.accessoryCount());
-        assertEq(nextAuctionDonations[3].length, nounSeek.headCount());
-        assertEq(nextAuctionDonations[4].length, nounSeek.glassesCount());
+        assertEq(
+            nextAuctionDonations.background.length,
+            nounSeek.backgroundCount()
+        );
+        assertEq(nextAuctionDonations.body.length, nounSeek.bodyCount());
+        assertEq(
+            nextAuctionDonations.accessory.length,
+            nounSeek.accessoryCount()
+        );
+        assertEq(nextAuctionDonations.head.length, nounSeek.headCount());
+        assertEq(nextAuctionDonations.glasses.length, nounSeek.glassesCount());
 
         // There is no non-auction Noun, so no slots for traits or donees
-        assertEq(nextNonAuctionDonations[0].length, nounSeek.backgroundCount());
-        assertEq(nextNonAuctionDonations[1].length, nounSeek.bodyCount());
-        assertEq(nextNonAuctionDonations[2].length, nounSeek.accessoryCount());
-        assertEq(nextNonAuctionDonations[3].length, nounSeek.headCount());
-        assertEq(nextNonAuctionDonations[4].length, nounSeek.glassesCount());
+        assertEq(
+            nextNonAuctionDonations.background.length,
+            nounSeek.backgroundCount()
+        );
+        assertEq(nextNonAuctionDonations.body.length, nounSeek.bodyCount());
+        assertEq(
+            nextNonAuctionDonations.accessory.length,
+            nounSeek.accessoryCount()
+        );
+        assertEq(nextNonAuctionDonations.head.length, nounSeek.headCount());
+        assertEq(
+            nextNonAuctionDonations.glasses.length,
+            nounSeek.glassesCount()
+        );
 
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
-            assertEq(nextAuctionDonations[trait][trait].length, doneesCount);
-            assertEq(nextNonAuctionDonations[trait][trait].length, doneesCount);
-        }
-        for (uint256 trait = 1; trait < 5; trait++) {
-            for (uint256 traitId; traitId < 10; traitId++) {
-                // donee#0 only had ANY_ID requests
-                assertEq(nextAuctionDonations[trait][traitId][0], minValue);
-                // donee#1 had specific ID and ANY_ID requests
-                assertEq(nextAuctionDonations[trait][traitId][1], minValue * 2);
-                // donee#2 had no requests for ANY_ID or Noun 101
-                assertEq(nextAuctionDonations[trait][traitId][2], 0);
+            assertEq(
+                nextAuctionDonations.background[trait].length,
+                doneesCount
+            );
+            assertEq(
+                nextNonAuctionDonations.background[trait].length,
+                doneesCount
+            );
 
-                // donee#0 had no requests for Noun 100
-                assertEq(nextNonAuctionDonations[trait][traitId][0], 0);
-                // donee#1 had no requests for Noun 100
-                assertEq(nextNonAuctionDonations[trait][traitId][1], 0);
-                // donee#2 had requests for Noun 100
-                assertEq(nextNonAuctionDonations[trait][traitId][2], minValue);
-            }
+            assertEq(nextAuctionDonations.body[trait].length, doneesCount);
+            assertEq(nextNonAuctionDonations.body[trait].length, doneesCount);
+
+            assertEq(nextAuctionDonations.accessory[trait].length, doneesCount);
+            assertEq(
+                nextNonAuctionDonations.accessory[trait].length,
+                doneesCount
+            );
+
+            assertEq(nextAuctionDonations.head[trait].length, doneesCount);
+            assertEq(nextNonAuctionDonations.head[trait].length, doneesCount);
+
+            assertEq(nextAuctionDonations.glasses[trait].length, doneesCount);
+            assertEq(
+                nextNonAuctionDonations.glasses[trait].length,
+                doneesCount
+            );
+        }
+
+        for (uint256 traitId; traitId < 10; traitId++) {
+            // donee#0 only had ANY_ID requests
+            assertEq(nextAuctionDonations.body[traitId][0], minValue);
+            // donee#1 had specific ID and ANY_ID requests
+            assertEq(nextAuctionDonations.body[traitId][1], minValue * 2);
+            // donee#2 had no requests for ANY_ID or Noun 101
+            assertEq(nextAuctionDonations.body[traitId][2], 0);
+
+            // donee#0 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.body[traitId][0], 0);
+            // donee#1 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.body[traitId][1], 0);
+            // donee#2 had requests for Noun 100
+            assertEq(nextNonAuctionDonations.body[traitId][2], minValue);
+
+            // donee#0 only had ANY_ID requests
+            assertEq(nextAuctionDonations.accessory[traitId][0], minValue);
+            // donee#1 had specific ID and ANY_ID requests
+            assertEq(nextAuctionDonations.accessory[traitId][1], minValue * 2);
+            // donee#2 had no requests for ANY_ID or Noun 101
+            assertEq(nextAuctionDonations.accessory[traitId][2], 0);
+
+            // donee#0 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.accessory[traitId][0], 0);
+            // donee#1 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.accessory[traitId][1], 0);
+            // donee#2 had requests for Noun 100
+            assertEq(nextNonAuctionDonations.accessory[traitId][2], minValue);
+
+            // donee#0 only had ANY_ID requests
+            assertEq(nextAuctionDonations.head[traitId][0], minValue);
+            // donee#1 had specific ID and ANY_ID requests
+            assertEq(nextAuctionDonations.head[traitId][1], minValue * 2);
+            // donee#2 had no requests for ANY_ID or Noun 101
+            assertEq(nextAuctionDonations.head[traitId][2], 0);
+
+            // donee#0 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.head[traitId][0], 0);
+            // donee#1 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.head[traitId][1], 0);
+            // donee#2 had requests for Noun 100
+            assertEq(nextNonAuctionDonations.head[traitId][2], minValue);
+
+            // donee#0 only had ANY_ID requests
+            assertEq(nextAuctionDonations.glasses[traitId][0], minValue);
+            // donee#1 had specific ID and ANY_ID requests
+            assertEq(nextAuctionDonations.glasses[traitId][1], minValue * 2);
+            // donee#2 had no requests for ANY_ID or Noun 101
+            assertEq(nextAuctionDonations.glasses[traitId][2], 0);
+
+            // donee#0 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.glasses[traitId][0], 0);
+            // donee#1 had no requests for Noun 100
+            assertEq(nextNonAuctionDonations.glasses[traitId][1], 0);
+            // donee#2 had requests for Noun 100
+            assertEq(nextNonAuctionDonations.glasses[traitId][2], minValue);
         }
     }
 

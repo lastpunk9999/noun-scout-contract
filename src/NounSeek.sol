@@ -91,6 +91,15 @@ contract NounSeek is Ownable2Step, Pausable {
         uint128 amount;
     }
 
+    /// @notice view struct
+    struct UnmatchedDonationsByTrait {
+        uint256[][] background;
+        uint256[][] body;
+        uint256[][] accessory;
+        uint256[][] head;
+        uint256[][] glasses;
+    }
+
     /// @notice Name, address, and active status where funds can be donated
     struct Donee {
         string name;
@@ -413,26 +422,15 @@ contract NounSeek is Ownable2Step, Pausable {
     function donationsForNounId(uint16 nounId)
         public
         view
-        returns (uint256[][][5] memory donations)
+        returns (UnmatchedDonationsByTrait memory donations)
     {
-        for (uint256 trait; trait < 5; trait++) {
-            uint256 traitCount;
-            Traits traitEnum = Traits(trait);
-            if (traitEnum == Traits.BACKGROUND) {
-                traitCount = backgroundCount;
-            } else if (traitEnum == Traits.BODY) {
-                traitCount = bodyCount;
-            } else if (traitEnum == Traits.ACCESSORY) {
-                traitCount = accessoryCount;
-            } else if (traitEnum == Traits.HEAD) {
-                traitCount = headCount;
-            } else if (traitEnum == Traits.GLASSES) {
-                traitCount = glassesCount;
-            }
-
-            donations[trait] = new uint256[][](traitCount);
-            donations[trait] = donationsForNounIdByTrait(traitEnum, nounId);
-        }
+        donations = UnmatchedDonationsByTrait({
+            background: donationsForNounIdByTrait(Traits.BACKGROUND, nounId),
+            body: donationsForNounIdByTrait(Traits.BODY, nounId),
+            accessory: donationsForNounIdByTrait(Traits.ACCESSORY, nounId),
+            head: donationsForNounIdByTrait(Traits.HEAD, nounId),
+            glasses: donationsForNounIdByTrait(Traits.GLASSES, nounId)
+        });
     }
 
     function donationsForNextNoun()
@@ -441,8 +439,8 @@ contract NounSeek is Ownable2Step, Pausable {
         returns (
             uint16 nextAuctionId,
             uint16 nextNonAuctionId,
-            uint256[][][5] memory nextAuctionDonations,
-            uint256[][][5] memory nextNonAuctionDonations
+            UnmatchedDonationsByTrait memory nextAuctionDonations,
+            UnmatchedDonationsByTrait memory nextNonAuctionDonations
         )
     {
         unchecked {
