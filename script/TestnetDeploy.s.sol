@@ -9,19 +9,20 @@ import "../src/Interfaces.sol";
 
 contract TestnetDeploy is Script {
     NounSeek nounSeek;
-    MockNouns mockNouns;
-    MockAuctionHouse mockAuctionHouse;
+    MockNouns mockNouns = MockNouns(0xE4573d025Ee6d53734D0492b93B56E24F03D6a93);
+    MockAuctionHouse mockAuctionHouse =
+        MockAuctionHouse(0x6BEC3f14743529b22FF4c79534f7771288B91572);
     MockDescriptor mockDescriptor;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
-        mockAuctionHouse = new MockAuctionHouse();
-        mockDescriptor = new MockDescriptor();
-        mockNouns = new MockNouns(address(mockDescriptor));
+        // mockAuctionHouse = new MockAuctionHouse();
+        // mockDescriptor = new MockDescriptor();
+        // mockNouns = new MockNouns(address(mockDescriptor));
+        // nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
-
         // Add Donees
         nounSeek.addDonee(
             "Morris Animal Foundation",
@@ -75,11 +76,22 @@ contract TestnetDeploy is Script {
         );
 
         // setup Traits
-        mockDescriptor.setHeadCount(242);
-        nounSeek.updateTraitCounts();
-        mockAuctionHouse.setNounId(99);
-        mockAuctionHouse.setEndTime(9999999999);
-        uint256 minValue = 1 gwei;
+        // mockDescriptor.setHeadCount(242);
+        // nounSeek.updateTraitCounts();
+        // mockAuctionHouse.setNounId(99);
+        // mockAuctionHouse.setEndTime(9999999999);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            1,
+            2,
+            9,
+            3
+        );
+
+        mockNouns.setSeed(seed, 98);
+
+        uint256 minValue = 0.0001 ether;
         nounSeek.setMinValue(minValue);
 
         for (uint16 i; i < 10; i++) {
@@ -127,15 +139,19 @@ contract TestnetDeploy is Script {
             );
         }
 
-        for (uint16 i; i < 10; i++) {
+        // Add other Trait Requests
+        for (uint16 i; i < 20; i++) {
             /*
             Traits trait,
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
+            uint16 trait = 1 + (i % 4);
+            if (trait == 3) trait = 4;
+            NounSeek.Traits traitEnum = NounSeek.Traits(trait);
             nounSeek.addWithMessage{value: minValue * 2}(
-                NounSeek.Traits.HEAD,
-                0,
+                traitEnum,
+                i % 5,
                 0,
                 i % 10,
                 "Chase Yellow Jack fathom pirate quarterdeck crow's nest heave to salmagundi piracy draught"
