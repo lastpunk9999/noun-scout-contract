@@ -213,7 +213,7 @@ contract NounSeekTest is BaseNounSeekTest {
     }
 
     function test_ADD_failsInactiveDonee() public {
-        nounSeek.toggleDoneeActive(1);
+        nounSeek.setDoneeActive(1, false);
         vm.prank(user1);
         vm.expectRevert(NounSeek.InactiveDonee.selector);
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);

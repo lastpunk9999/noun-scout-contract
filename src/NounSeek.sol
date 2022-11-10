@@ -1044,9 +1044,10 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Toggles a Donee's active state by its index within the set, reverts if Donee is not configured
     /// @param doneeId Donee id based on its index within the donees set
+    /// @param active Active state
     /// @dev If the Done is not configured, a revert will be triggered
-    function toggleDoneeActive(uint256 doneeId) external onlyOwner {
-        bool active = !_donees[doneeId].active;
+    function setDoneeActive(uint256 doneeId, bool active) external onlyOwner {
+        if (active == _donees[doneeId].active) return;
         _donees[doneeId].active = active;
         emit DoneeActiveStatusChanged({doneeId: doneeId, active: active});
     }
