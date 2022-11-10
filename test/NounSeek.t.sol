@@ -26,8 +26,8 @@ contract NounSeekTest is BaseNounSeekTest {
         address indexed requester,
         NounSeek.Traits trait,
         uint16 traitId,
-        uint16 doneeId,
         uint16 indexed nounId,
+        uint16 doneeId,
         bytes32 indexed traitsHash,
         uint256 amount
     );
@@ -315,8 +315,8 @@ contract NounSeekTest is BaseNounSeekTest {
             address(user1),
             HEAD,
             9,
-            1,
             ANY_ID,
+            1,
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             minValue
         );
@@ -339,8 +339,8 @@ contract NounSeekTest is BaseNounSeekTest {
             address(user1),
             HEAD,
             9,
-            1,
             ANY_ID,
+            1,
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             minValue
         );

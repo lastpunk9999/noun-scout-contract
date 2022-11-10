@@ -40,8 +40,8 @@ contract NounSeek is Ownable2Step, Pausable {
         address indexed requester,
         Traits trait,
         uint16 traitId,
-        uint16 doneeId,
         uint16 indexed nounId,
+        uint16 doneeId,
         bytes32 indexed traitsHash,
         uint256 amount
     );
@@ -901,8 +901,8 @@ contract NounSeek is Ownable2Step, Pausable {
             requester: msg.sender,
             trait: request.trait,
             traitId: request.traitId,
-            doneeId: request.doneeId,
             nounId: request.nounId,
+            doneeId: request.doneeId,
             traitsHash: hash,
             amount: amount
         });
