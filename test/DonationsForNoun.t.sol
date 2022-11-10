@@ -571,12 +571,12 @@ contract NounSeekTest is BaseNounSeekTest {
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
-                : MIN_REIMBURSEMENT;
+                : minReimbursement;
             assertEq(reimbursementPerTrait[trait], expectedReimbursement);
 
             uint256 expectedPerTraitDonation = (trait == 1 || trait == 3)
                 ? 0
-                : (minValue * 3) - MIN_REIMBURSEMENT;
+                : (minValue * 3) - minReimbursement;
             assertEq(totalDonationsPerTrait[trait], expectedPerTraitDonation);
         }
     }
@@ -684,12 +684,12 @@ contract NounSeekTest is BaseNounSeekTest {
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
-                : MIN_REIMBURSEMENT;
+                : minReimbursement;
             assertEq(reimbursementPerTrait[trait], expectedReimbursement);
 
             uint256 expectedPerTraitDonation = (trait == 1 || trait == 3)
                 ? 0
-                : (minValue * 3) - MIN_REIMBURSEMENT;
+                : (minValue * 3) - minReimbursement;
             assertEq(totalDonationsPerTrait[trait], expectedPerTraitDonation);
         }
     }
@@ -802,14 +802,14 @@ contract NounSeekTest is BaseNounSeekTest {
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
-                : MIN_REIMBURSEMENT;
+                : minReimbursement;
             assertEq(reimbursementPerTrait[trait], expectedReimbursement);
 
             // 4 requests total for the trait
             // (1) ANY ID (2) ANY ID (3) 101 specific Id (4) 101 specific id
             uint256 expectedPerTraitDonation = (trait == 1 || trait == 3)
                 ? 0
-                : (minValue * 4) - MIN_REIMBURSEMENT;
+                : (minValue * 4) - minReimbursement;
             assertEq(totalDonationsPerTrait[trait], expectedPerTraitDonation);
         }
     }

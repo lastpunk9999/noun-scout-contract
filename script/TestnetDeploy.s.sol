@@ -93,6 +93,7 @@ contract TestnetDeploy is Script {
 
         uint256 minValue = 0.0001 ether;
         nounSeek.setMinValue(minValue);
+        nounSeek.setMinReimbursement(minValue / 10);
 
         for (uint16 i; i < 10; i++) {
             /*

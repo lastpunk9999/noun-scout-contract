@@ -63,6 +63,8 @@ contract NounSeek is Ownable2Step, Pausable {
     event Reimbursed(address indexed matcher, uint256 amount);
     event MinValueChanged(uint256 newMinValue);
     event ReimbursementBPSChanged(uint256 newReimbursementBPS);
+    event MinReimbursementChanged(uint256 newMinReimbursement);
+    event MaxReimbursementChanged(uint256 newMaxReimbursement);
 
     /**
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -123,12 +125,6 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice The address of the WETH contract
     IWETH public immutable weth;
 
-    /// @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas
-    uint256 public constant MIN_REIMBURSEMENT = 0.003 ether;
-
-    /// @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
-    uint256 public constant MAX_REIMBURSEMENT = 0.1 ether;
-
     /// @notice Time limit before an auction ends; requests cannot be removed during this time
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
 
@@ -146,6 +142,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice A portion of donated funds are sent to the address performing a match
     uint16 public maxReimbursementBPS = 250;
+
+    /// @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas
+    uint256 public minReimbursement = 0.003 ether;
+
+    /// @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
+    uint256 public maxReimbursement = 0.1 ether;
 
     /// @notice cached values for Noun trait counts via the Nouns Descriptor
     uint16 public backgroundCount;
@@ -1071,6 +1073,22 @@ contract NounSeek is Ownable2Step, Pausable {
         emit ReimbursementBPSChanged(newReimbursementBPS);
     }
 
+    function setMinReimbursement(uint256 newMinReimbursement)
+        external
+        onlyOwner
+    {
+        minReimbursement = newMinReimbursement;
+        emit MinReimbursementChanged(newMinReimbursement);
+    }
+
+    function setMaxReimbursement(uint256 newMaxReimbursement)
+        external
+        onlyOwner
+    {
+        maxReimbursement = newMaxReimbursement;
+        emit MaxReimbursementChanged(newMaxReimbursement);
+    }
+
     /// @notice Pauses the NounSeek contract. Pausing can be reversed by unpausing.
     function pause() external onlyOwner {
         _pause();
@@ -1233,12 +1251,12 @@ contract NounSeek is Ownable2Step, Pausable {
         effectiveBPS = maxReimbursementBPS * 100;
         reimbursement = (total * effectiveBPS) / 1_000_000;
 
-        if (reimbursement > MAX_REIMBURSEMENT) {
-            effectiveBPS = (MAX_REIMBURSEMENT * 1_000_000) / total;
-            reimbursement = MAX_REIMBURSEMENT;
-        } else if (reimbursement < MIN_REIMBURSEMENT) {
-            effectiveBPS = (MIN_REIMBURSEMENT * 1_000_000) / total;
-            reimbursement = MIN_REIMBURSEMENT;
+        if (reimbursement > maxReimbursement) {
+            effectiveBPS = (maxReimbursement * 1_000_000) / total;
+            reimbursement = maxReimbursement;
+        } else if (reimbursement < minReimbursement) {
+            effectiveBPS = (minReimbursement * 1_000_000) / total;
+            reimbursement = minReimbursement;
         }
     }
 

@@ -53,11 +53,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(103);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee1), minValue - minReimbursement / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -116,11 +116,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee1), minValue - minReimbursement / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -180,11 +180,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee1), minValue - minReimbursement / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -245,11 +245,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(102);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee1), minValue - minReimbursement / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -310,11 +310,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockAuctionHouse.setNounId(101);
 
         // reqeust 1
-        vm.expectCall(address(donee0), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
         // request 2
-        vm.expectCall(address(donee1), minValue - MIN_REIMBURSEMENT / 2, "");
+        vm.expectCall(address(donee1), minValue - minReimbursement / 2, "");
         // request 1 + 2
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD);
 
@@ -334,10 +334,10 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
     }
 
-    // If the amount sent produces reimburesement greater than `MAX_REIMBURSEMENT`
+    // If the amount sent produces reimburesement greater than `maxReimbursement`
     function test_MATCHANDDONATE_HappyAboveMaxReimbursement() public {
         // The maximum amount that can be sent before reimburesement bps drops
-        uint256 thresholdValue = (MAX_REIMBURSEMENT * 10_000) /
+        uint256 thresholdValue = (maxReimbursement * 10_000) /
             maxReimbursementBPS;
 
         vm.prank(user1);
@@ -359,11 +359,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         // Expect no more than the maximum reimbursement value to be deducted from the donation
         vm.expectCall(
             address(donee0),
-            (thresholdValue * 2) - MAX_REIMBURSEMENT,
+            (thresholdValue * 2) - maxReimbursement,
             ""
         );
         // Expect no more than the maximum reimbursement value to be sent to the matcher
-        vm.expectCall(address(user2), MAX_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), maxReimbursement, "");
 
         vm.prank(user2);
         nounSeek.matchAndDonate(HEAD);
@@ -371,7 +371,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
     function test_MATCHANDDONATE_HappyBelowMinReimbursement() public {
         // The minimum amount that can be sent before reimburesement bps is raised = 0.08 ETH
-        uint256 thresholdValue = (MIN_REIMBURSEMENT * 10_000) /
+        uint256 thresholdValue = (minReimbursement * 10_000) /
             maxReimbursementBPS;
 
         vm.prank(user1);
@@ -392,12 +392,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         // Expect min reimburesement to be deducted from the donation
         vm.expectCall(
             address(donee0),
-            thresholdValue - 1 - MIN_REIMBURSEMENT,
+            thresholdValue - 1 - minReimbursement,
             ""
         );
 
         // Expect half the maximum reimburesement to be sent to the matcher
-        vm.expectCall(address(user2), MIN_REIMBURSEMENT, "");
+        vm.expectCall(address(user2), minReimbursement, "");
 
         vm.prank(user2);
         nounSeek.matchAndDonate(HEAD);

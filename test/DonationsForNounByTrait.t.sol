@@ -504,10 +504,10 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(auctionedNounDonations[3], 0);
 
         // Minimum value was sent, so minimum reimbursement is applied
-        uint256 expectedReimbursement = MIN_REIMBURSEMENT;
+        uint256 expectedReimbursement = minReimbursement;
         assertEq(reimbursement, expectedReimbursement);
 
-        uint256 expectedTotal = (minValue * 3) - MIN_REIMBURSEMENT;
+        uint256 expectedTotal = (minValue * 3) - minReimbursement;
         assertEq(totalDonations, expectedTotal);
 
         // No requests for match current HEAD
@@ -623,10 +623,10 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(auctionedNounDonations[3], 0);
 
         // Minimum value was sent, so minimum reimbursement is applied
-        uint256 expectedReimbursement = MIN_REIMBURSEMENT;
+        uint256 expectedReimbursement = minReimbursement;
         assertEq(reimbursement, expectedReimbursement);
 
-        uint256 expectedTotalDonation = (minValue * 3) - MIN_REIMBURSEMENT;
+        uint256 expectedTotalDonation = (minValue * 3) - minReimbursement;
         assertEq(totalDonations, expectedTotalDonation);
 
         // No requests for match current HEAD
@@ -747,12 +747,12 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(nonAuctionedNounDonations[3], 0);
 
         // Minimum value was sent, so minimum reimbursement is applied
-        uint256 expectedReimbursement = MIN_REIMBURSEMENT;
+        uint256 expectedReimbursement = minReimbursement;
         assertEq(reimbursement, expectedReimbursement);
 
         // 4 requests total for the trait
         // (1) ANY ID (2) ANY ID (3) 101 specific Id (4) 101 specific id
-        uint256 expectedTotalDonation = (minValue * 4) - MIN_REIMBURSEMENT;
+        uint256 expectedTotalDonation = (minValue * 4) - minReimbursement;
         assertEq(totalDonations, expectedTotalDonation);
 
         // No requests for match current HEAD
