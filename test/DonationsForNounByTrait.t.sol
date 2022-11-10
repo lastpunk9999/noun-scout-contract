@@ -138,7 +138,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nounSeek.add{value: minValue}(HEAD, traitId, 100, 2);
         }
 
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         // Next Noun has No Requests
         mockAuctionHouse.setNounId(98);
@@ -184,7 +184,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nounSeek.add{value: minValue}(HEAD, traitId, 100, 2);
         }
 
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         // Next Noun has Non-Auctioned Noun and Specific Id Requests
         mockAuctionHouse.setNounId(99);
@@ -270,7 +270,7 @@ contract NounSeekTest is BaseNounSeekTest {
                 );
             }
         }
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -361,7 +361,7 @@ contract NounSeekTest is BaseNounSeekTest {
                 );
             }
         }
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -468,7 +468,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -585,7 +585,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -705,7 +705,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 doneesCount = nounSeek.doneesCount();
+        uint256 doneesCount = nounSeek.donees().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,

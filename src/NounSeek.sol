@@ -160,7 +160,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public minValue = 0.01 ether;
 
     /// @notice Array of donee details
-    Donee[] public _donees;
+    Donee[] internal _donees;
 
     /// @notice Cumulative funds for trait parameters send to a specific donee. The first mapping key is the hash of trait enum, traitId, nounId, and the second is doneeId
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
@@ -313,11 +313,6 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nounId
     ) public pure returns (bytes32 hash) {
         hash = keccak256(abi.encodePacked(trait, traitId, nounId));
-    }
-
-    /// @notice The number of donees
-    function doneesCount() public view returns (uint256 length) {
-        length = _donees.length;
     }
 
     //----------------//
@@ -485,12 +480,12 @@ contract NounSeek is Ownable2Step, Pausable {
             currentAuctionId = uint16(auctionHouse.auction().nounId);
             prevNonAuctionId = UINT16_MAX;
 
-            uint256 doneesCount_ = _donees.length;
+            uint256 doneesCount = _donees.length;
 
             currentAuctionDonations = _donationsForOnChainNoun({
                 nounId: currentAuctionId,
                 processAnyId: true,
-                doneesCount_: doneesCount_
+                doneesCount: doneesCount
             });
 
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
@@ -499,7 +494,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 prevNonAuctionDonations = _donationsForOnChainNoun({
                     nounId: prevNonAuctionId,
                     processAnyId: false,
-                    doneesCount_: doneesCount_
+                    doneesCount: doneesCount
                 });
             }
         }
@@ -550,12 +545,12 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount_ = _donees.length;
+        uint256 doneesCount = _donees.length;
 
         auctionedNounDonations = _donationsForOnChainNoun({
             nounId: auctionedNounId,
             processAnyId: true,
-            doneesCount_: doneesCount_
+            doneesCount: doneesCount
         });
 
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
@@ -564,12 +559,12 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounDonations = _donationsForOnChainNoun({
                 nounId: nonAuctionedNounId,
                 processAnyId: false,
-                doneesCount_: doneesCount_
+                doneesCount: doneesCount
             });
         }
 
         for (uint256 trait; trait < 5; trait++) {
-            for (uint256 doneeId; doneeId < doneesCount_; doneeId++) {
+            for (uint256 doneeId; doneeId < doneesCount; doneeId++) {
                 uint256 nonAuctionedNounDonation;
                 if (includeNonAuctionedNoun) {
                     nonAuctionedNounDonation = nonAuctionedNounDonations[trait][
@@ -614,7 +609,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitCount = glassesCount;
             }
 
-            uint256 doneesCount_ = _donees.length;
+            uint256 doneesCount = _donees.length;
             donationsByTraitId = new uint256[][](traitCount);
 
             bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
@@ -625,7 +620,7 @@ contract NounSeek is Ownable2Step, Pausable {
                     traitId,
                     nounId,
                     processAnyId,
-                    doneesCount_
+                    doneesCount
                 );
             }
         }
@@ -683,14 +678,14 @@ contract NounSeek is Ownable2Step, Pausable {
 
             currentTraitId = _fetchTraitId(trait, currentAuctionId);
 
-            uint256 doneesCount_ = _donees.length;
+            uint256 doneesCount = _donees.length;
 
             currentAuctionDonations = _donationsForNounIdWithTraitId(
                 trait,
                 currentTraitId,
                 currentAuctionId,
                 true,
-                doneesCount_
+                doneesCount
             );
 
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
@@ -701,7 +696,7 @@ contract NounSeek is Ownable2Step, Pausable {
                     prevTraitId,
                     prevNonAuctionId,
                     false,
-                    doneesCount_
+                    doneesCount
                 );
             }
         }
@@ -752,14 +747,14 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount_ = _donees.length;
+        uint256 doneesCount = _donees.length;
 
         auctionedNounDonations = _donationsForNounIdWithTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
             nounId: auctionedNounId,
             processAnyId: true,
-            doneesCount_: doneesCount_
+            doneesCount: doneesCount
         });
 
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
@@ -770,11 +765,11 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitId: _fetchTraitId(trait, nonAuctionedNounId),
                 nounId: nonAuctionedNounId,
                 processAnyId: false,
-                doneesCount_: doneesCount_
+                doneesCount: doneesCount
             });
         }
 
-        for (uint256 doneeId; doneeId < doneesCount_; doneeId++) {
+        for (uint256 doneeId; doneeId < doneesCount; doneeId++) {
             uint256 nonAuctionedNounDonation;
             if (includeNonAuctionedNoun) {
                 nonAuctionedNounDonation = nonAuctionedNounDonations[doneeId];
@@ -975,13 +970,13 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         uint256[] memory donations;
-        uint256 doneesCount_ = _donees.length;
+        uint256 doneesCount = _donees.length;
 
         (donations, total) = _combineAmountsAndDelete(
             trait,
             traitIds,
             nounIds,
-            uint16(doneesCount_)
+            uint16(doneesCount)
         );
 
         if (total < 1) {
@@ -992,7 +987,7 @@ contract NounSeek is Ownable2Step, Pausable {
             total
         );
 
-        for (uint256 i; i < doneesCount_; i++) {
+        for (uint256 i; i < doneesCount; i++) {
             uint256 amount = donations[i];
             if (amount < 1) {
                 continue;
@@ -1172,16 +1167,16 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16[] memory traitIds,
         uint16[] memory nounIds,
-        uint16 doneesCount_
+        uint16 doneesCount
     ) internal returns (uint256[] memory donations, uint256 total) {
-        donations = new uint256[](doneesCount_);
+        donations = new uint256[](doneesCount);
 
         uint256 nounIdsLength = nounIds.length;
 
         for (uint16 i; i < nounIdsLength; i++) {
             bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
             uint256 traitTotal;
-            for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
+            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
                 uint256 amount = amounts[hash][doneeId];
                 if (amount < 1) {
                     continue;
@@ -1265,7 +1260,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 nounId,
         bool processAnyId,
-        uint256 doneesCount_
+        uint256 doneesCount
     ) internal view returns (uint256[] memory donations) {
         unchecked {
             bytes32 hash = traitHash(trait, traitId, nounId);
@@ -1273,8 +1268,8 @@ contract NounSeek is Ownable2Step, Pausable {
             if (processAnyId) {
                 anyIdHash = traitHash(trait, traitId, ANY_ID);
             }
-            donations = new uint256[](doneesCount_);
-            for (uint16 doneeId; doneeId < doneesCount_; doneeId++) {
+            donations = new uint256[](doneesCount);
+            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
                 uint256 anyIdAmount = processAnyId
                     ? amounts[anyIdHash][doneeId]
                     : 0;
@@ -1286,7 +1281,7 @@ contract NounSeek is Ownable2Step, Pausable {
     function _donationsForOnChainNoun(
         uint16 nounId,
         bool processAnyId,
-        uint256 doneesCount_
+        uint256 doneesCount
     ) internal view returns (uint256[][5] memory donations) {
         INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
         for (uint256 trait; trait < 5; trait++) {
@@ -1309,7 +1304,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitId,
                 nounId,
                 processAnyId,
-                doneesCount_
+                doneesCount
             );
         }
     }
