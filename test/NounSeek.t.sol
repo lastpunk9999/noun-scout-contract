@@ -676,8 +676,178 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         mockAuctionHouse.setNounId(103);
-        vm.prank(user1);
+
+        vm.startPrank(user1);
+        vm.expectEmit(true, true, true, true);
+        emit RequestRemoved(
+            requestId1,
+            address(user1),
+            HEAD,
+            9,
+            100,
+            0,
+            nounSeek.traitHash(HEAD, 9, 100),
+            0
+        );
+
         uint256 amount = nounSeek.remove(requestId1);
+        assertEq(amount, 0);
+    }
+
+    function test_REMOVE_removeAfterMatchAndInactiveDonee() public {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+
+        nounSeek.add{value: minValue}(HEAD, 9, 100, 0);
+        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
+
+        vm.stopPrank();
+
+        uint256 donee0Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            0
+        );
+        uint256 donee1Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            1
+        );
+
+        assertEq(donee0Amount, minValue);
+        assertEq(donee1Amount, minValue);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 100);
+        mockAuctionHouse.setNounId(102);
+
+        // set donee1 to inactive
+        nounSeek.setDoneeActive(1, false);
+
+        vm.prank(user2);
+
+        // Sanity check match occured
+        vm.expectCall(address(donee0), minValue - minReimbursement, "");
+        vm.expectCall(address(user2), minReimbursement, "");
+        nounSeek.matchAndDonate(HEAD);
+
+        donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+
+        // donee0 matched, funds removed
+        assertEq(donee0Amount, 0);
+        // donee1 did not match, funds remain
+        assertEq(donee1Amount, minValue);
+
+        mockAuctionHouse.setNounId(103);
+
+        // requestId2 can be removed
+        vm.startPrank(user1);
+        vm.expectEmit(true, true, true, true);
+        emit RequestRemoved(
+            requestId2,
+            address(user1),
+            HEAD,
+            9,
+            100,
+            1,
+            nounSeek.traitHash(HEAD, 9, 100),
+            minValue
+        );
+
+        uint256 amount = nounSeek.remove(requestId2);
+        assertEq(amount, minValue);
+
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+        assertEq(donee1Amount, 0);
+    }
+
+    function test_REMOVE_removeAfterMatchAndInactiveDoneeBecomesActive()
+        public
+    {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+
+        nounSeek.add{value: minValue}(HEAD, 9, 100, 0);
+        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
+
+        vm.stopPrank();
+
+        uint256 donee0Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            0
+        );
+        uint256 donee1Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            1
+        );
+
+        assertEq(donee0Amount, minValue);
+        assertEq(donee1Amount, minValue);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 100);
+        mockAuctionHouse.setNounId(102);
+
+        // set donee1 to inactive
+        nounSeek.setDoneeActive(1, false);
+
+        vm.prank(user2);
+
+        // Sanity check match occured
+        vm.expectCall(address(donee0), minValue - minReimbursement, "");
+        vm.expectCall(address(user2), minReimbursement, "");
+        nounSeek.matchAndDonate(HEAD);
+
+        donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+
+        // donee0 matched, funds removed
+        assertEq(donee0Amount, 0);
+        // donee1 did not match, funds remain
+        assertEq(donee1Amount, minValue);
+
+        // set donee1 to active
+        nounSeek.setDoneeActive(1, true);
+
+        vm.prank(user2);
+        vm.expectCall(address(donee1), minValue - minReimbursement, "");
+        nounSeek.matchAndDonate(HEAD);
+
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+        assertEq(donee1Amount, 0);
+
+        // mockAuctionHouse.setNounId(103);
+
+        // requestId2 can be removed
+        vm.startPrank(user1);
+        vm.expectEmit(true, true, true, true);
+        emit RequestRemoved(
+            requestId2,
+            address(user1),
+            HEAD,
+            9,
+            100,
+            1,
+            nounSeek.traitHash(HEAD, 9, 100),
+            0
+        );
+
+        uint256 amount = nounSeek.remove(requestId2);
         assertEq(amount, 0);
     }
 
@@ -691,12 +861,15 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 8, ANY_ID, 0);
         nounSeek.add{value: minValue}(HEAD, 8, 102, 1);
 
+        // 5 Should match, but donee2 will be set inactive
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 2);
+
         vm.stopPrank();
 
         NounSeek.ActiveRequest[] memory requests = nounSeek
             .requestsActiveByAddress(user1);
 
-        assertEq(requests.length, 4);
+        assertEq(requests.length, 5);
 
         // Sanity check first request
         assertEq(uint8(requests[0].trait), uint8(HEAD));
@@ -704,6 +877,18 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[0].traitId, 9);
         assertEq(requests[0].nounId, ANY_ID);
         assertEq(requests[0].doneeId, 0);
+        assertEq(requests[0].doneeName, "donee0");
+
+        // Sanity check last request
+        assertEq(uint8(requests[4].trait), uint8(HEAD));
+        assertEq(requests[4].id, 4);
+        assertEq(requests[4].traitId, 9);
+        assertEq(requests[4].nounId, ANY_ID);
+        assertEq(requests[4].doneeId, 2);
+        assertEq(requests[4].doneeName, "donee2");
+
+        // Set donee2 inactive
+        nounSeek.setDoneeActive(2, false);
 
         // Match Noun
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -711,7 +896,7 @@ contract NounSeekTest is BaseNounSeekTest {
             0,
             0,
             9,
-            0
+            9
         );
         mockNouns.setSeed(seed, 102);
         mockAuctionHouse.setNounId(103);
@@ -722,7 +907,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Requests shoud be unmatched only
         requests = nounSeek.requestsActiveByAddress(user1);
 
-        assertEq(requests.length, 2);
+        assertEq(requests.length, 3);
 
         assertEq(uint8(requests[0].trait), uint8(HEAD));
         assertEq(requests[0].id, 2);
@@ -738,6 +923,13 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[1].doneeId, 1);
         assertEq(requests[1].doneeName, "donee1");
 
+        assertEq(uint8(requests[2].trait), uint8(HEAD));
+        assertEq(requests[2].id, 4);
+        assertEq(requests[2].traitId, 9);
+        assertEq(requests[2].nounId, ANY_ID);
+        assertEq(requests[2].doneeId, 2);
+        assertEq(requests[2].doneeName, "donee2");
+
         // Delete active request
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
@@ -745,6 +937,28 @@ contract NounSeekTest is BaseNounSeekTest {
 
         vm.prank(user1);
         nounSeek.remove(3);
+
+        // Requests should be only unmatched,  not deleted, inactive donnee2
+        requests = nounSeek.requestsActiveByAddress(user1);
+
+        assertEq(requests.length, 2);
+
+        assertEq(uint8(requests[0].trait), uint8(HEAD));
+        assertEq(requests[0].id, 2);
+        assertEq(requests[0].traitId, 8);
+        assertEq(requests[0].nounId, 0);
+        assertEq(requests[0].doneeId, 0);
+        assertEq(requests[0].doneeName, "donee0");
+
+        assertEq(uint8(requests[1].trait), uint8(HEAD));
+        assertEq(requests[1].id, 4);
+        assertEq(requests[1].traitId, 9);
+        assertEq(requests[1].nounId, ANY_ID);
+        assertEq(requests[1].doneeId, 2);
+        assertEq(requests[1].doneeName, "donee2");
+
+        vm.prank(user1);
+        nounSeek.remove(4);
 
         // Requests should be only unmatched and not deleted
         requests = nounSeek.requestsActiveByAddress(user1);

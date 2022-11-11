@@ -436,4 +436,104 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.prank(user2);
         nounSeek.matchAndDonate(HEAD);
     }
+
+    function test_MATCHANDDONATE_allDoneesInactive() public {
+        vm.startPrank(user1);
+        // 1 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        // 2 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
+        // 3-6 Should not match
+        nounSeek.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounSeek.add{value: minValue}(HEAD, 8, 102, 1);
+        nounSeek.add{value: minValue}(HEAD, 9, 103, 1);
+        nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
+
+        vm.stopPrank();
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        nounSeek.setDoneeActive(0, false);
+        nounSeek.setDoneeActive(1, false);
+        vm.startPrank(user2);
+
+        // No donations to send; all donees inactive
+        vm.expectRevert(NounSeek.NoMatch.selector);
+
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    function test_MATCHANDDONATE_oneDoneeInactive() public {
+        vm.startPrank(user1);
+        // 1 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        // 2 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
+
+        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 102);
+
+        vm.stopPrank();
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // Set donee1 inactive
+        nounSeek.setDoneeActive(1, false);
+
+        // reqeust 1
+        vm.expectCall(address(donee0), minValue - minReimbursement, "");
+        // request 1 reimbursement
+        vm.expectCall(address(user2), minReimbursement, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+
+        // nonces increase for matches
+        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
+        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces2);
+
+        assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 0), 0), 0);
+
+        // donnee1 retains deposited amount
+        assertEq(
+            nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1),
+            minValue
+        );
+
+        // Cannot re-match Noun
+        vm.expectRevert(NounSeek.NoMatch.selector);
+        nounSeek.matchAndDonate(HEAD);
+
+        // Set donee1 active
+        nounSeek.setDoneeActive(1, true);
+
+        // reqeust 2
+        vm.expectCall(address(donee1), minValue - minReimbursement, "");
+        // request 2 reimbursement
+        vm.expectCall(address(user2), minReimbursement, "");
+
+        // can re-match noun
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+
+        // nonces increase for active donee match
+        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces2 + 1);
+
+        // donnee1 amounts are 0
+        assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);
+    }
 }

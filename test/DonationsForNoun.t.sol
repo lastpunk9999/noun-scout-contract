@@ -274,6 +274,94 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
+    function test_DONATIONSFORNEXTNOUN_WithInactiveDonee() public {
+        vm.startPrank(user1);
+
+        // For Each trait, except Background
+        for (uint16 trait = 1; trait < 5; trait++) {
+            // For traitIds 0 - 9
+            for (uint16 traitId; traitId < 10; traitId++) {
+                // add a request for ANY_ID, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    0
+                );
+                // add a request for 99, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    99,
+                    0
+                );
+                // add a request for ANY_ID, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    1
+                );
+
+                // add a request for 99, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    99,
+                    1
+                );
+            }
+        }
+        vm.stopPrank();
+
+        // set donee1 inactive
+        nounSeek.setDoneeActive(1, false);
+
+        // Next Noun matches ANY_ID requests
+        mockAuctionHouse.setNounId(98);
+        (, , uint256[][][5] memory nextAuctionDonations, ) = nounSeek
+            .donationsForNextNoun();
+
+        assertEq(nextAuctionDonations[0].length, nounSeek.backgroundCount());
+        assertEq(nextAuctionDonations[1].length, nounSeek.bodyCount());
+        assertEq(nextAuctionDonations[2].length, nounSeek.accessoryCount());
+        assertEq(nextAuctionDonations[3].length, nounSeek.headCount());
+        assertEq(nextAuctionDonations[4].length, nounSeek.glassesCount());
+
+        uint256 doneesCount = nounSeek.donees().length;
+        for (uint256 trait = 0; trait < 5; trait++) {
+            // Random check that each traitId has enough slots for each Donnee
+            assertEq(nextAuctionDonations[trait][trait].length, doneesCount);
+        }
+        for (uint256 trait = 1; trait < 5; trait++) {
+            for (uint256 traitId; traitId < 10; traitId++) {
+                // donee0 matches ANY_ID and 98 specified
+                assertEq(nextAuctionDonations[trait][traitId][0], minValue * 2);
+                // donee#1 is 0 because inactive
+                assertEq(nextAuctionDonations[trait][traitId][1], 0);
+            }
+        }
+
+        // set donee1 active
+        nounSeek.setDoneeActive(1, true);
+
+        mockAuctionHouse.setNounId(98);
+        (, , nextAuctionDonations, ) = nounSeek.donationsForNextNoun();
+
+        for (uint256 trait = 0; trait < 5; trait++) {
+            // Random check that each traitId has enough slots for each Donnee
+            assertEq(nextAuctionDonations[trait][trait].length, doneesCount);
+        }
+        for (uint256 trait = 1; trait < 5; trait++) {
+            for (uint256 traitId; traitId < 10; traitId++) {
+                // donee0 matches ANY_ID and 98 specified
+                assertEq(nextAuctionDonations[trait][traitId][0], minValue * 2);
+                // donee1 now active, matches ANY_ID and 98 specified
+                assertEq(nextAuctionDonations[trait][traitId][1], minValue * 2);
+            }
+        }
+    }
+
     function test_DONATIONSFORCURRENTNOUN_NoNonAuctionedNoSpecificID() public {
         vm.startPrank(user1);
 
@@ -466,6 +554,92 @@ contract NounSeekTest is BaseNounSeekTest {
             assertEq(prevNonAuctionDonations[trait][2], expected);
             assertEq(prevNonAuctionDonations[trait][3], 0);
         }
+    }
+
+    function test_DONATIONSFORCURRENTNOUN_WithInactiveDonee() public {
+        vm.startPrank(user1);
+
+        // For Each trait, except Background
+        for (uint16 trait = 1; trait < 5; trait++) {
+            // For traitIds 0 - 9
+            for (uint16 traitId; traitId < 10; traitId++) {
+                // add a request for ANY_ID, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    0
+                );
+                // add a request for 99, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    99,
+                    0
+                );
+                // add a request for ANY_ID, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    1
+                );
+
+                // add a request for 99, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    99,
+                    1
+                );
+            }
+        }
+        vm.stopPrank();
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            1,
+            2,
+            3,
+            4
+        );
+        mockNouns.setSeed(seed, 99);
+
+        // set donee1 inactive
+        nounSeek.setDoneeActive(1, false);
+        (, , uint256[][5] memory currentAuctionDonations, ) = nounSeek
+            .donationsForCurrentNoun();
+
+        uint256 doneesCount = nounSeek.donees().length;
+
+        assertEq(currentAuctionDonations[0].length, doneesCount);
+        assertEq(currentAuctionDonations[1].length, doneesCount);
+        assertEq(currentAuctionDonations[2].length, doneesCount);
+        assertEq(currentAuctionDonations[3].length, doneesCount);
+        assertEq(currentAuctionDonations[4].length, doneesCount);
+
+        // donee0 has values
+        assertEq(currentAuctionDonations[1][0], minValue * 2);
+        assertEq(currentAuctionDonations[2][0], minValue * 2);
+        assertEq(currentAuctionDonations[3][0], minValue * 2);
+        assertEq(currentAuctionDonations[4][0], minValue * 2);
+
+        // donee1 has no values because it is inactive
+        assertEq(currentAuctionDonations[1][1], 0);
+        assertEq(currentAuctionDonations[2][1], 0);
+        assertEq(currentAuctionDonations[3][1], 0);
+        assertEq(currentAuctionDonations[4][1], 0);
+
+        // set donee1 active
+        nounSeek.setDoneeActive(1, true);
+
+        (, , currentAuctionDonations, ) = nounSeek.donationsForCurrentNoun();
+
+        // donee1 has values reset because it is now active
+        assertEq(currentAuctionDonations[1][1], minValue * 2);
+        assertEq(currentAuctionDonations[2][1], minValue * 2);
+        assertEq(currentAuctionDonations[3][1], minValue * 2);
+        assertEq(currentAuctionDonations[4][1], minValue * 2);
     }
 
     function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_AuctionedNoSkip()
@@ -812,5 +986,136 @@ contract NounSeekTest is BaseNounSeekTest {
                 : (minValue * 4) - minReimbursement;
             assertEq(totalDonationsPerTrait[trait], expectedPerTraitDonation);
         }
+    }
+
+    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_WithInactiveDonee()
+        public
+    {
+        vm.startPrank(user1);
+
+        // For Each trait, except Background
+        for (uint16 trait = 1; trait < 5; trait++) {
+            // For traitIds 0 - 9
+            for (uint16 traitId; traitId < 10; traitId++) {
+                // add a request for ANY_ID, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    0
+                );
+                // add a request for 99, to donee 0
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    98,
+                    0
+                );
+                // add a request for ANY_ID, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    ANY_ID,
+                    1
+                );
+
+                // add a request for 99, to donee 1
+                nounSeek.add{value: minValue}(
+                    NounSeek.Traits(trait),
+                    traitId,
+                    98,
+                    1
+                );
+            }
+        }
+        vm.stopPrank();
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            1,
+            2,
+            3,
+            4
+        );
+        mockNouns.setSeed(seed, 98);
+        mockAuctionHouse.setNounId(99);
+
+        // set donee1 inactive
+        nounSeek.setDoneeActive(1, false);
+
+        (
+            ,
+            ,
+            uint256[][5] memory auctionedNounDonations,
+            ,
+            uint256[5] memory totalDonationsPerTrait,
+            uint256[5] memory reimbursementPerTrait
+        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+
+        uint256 doneesCount = nounSeek.donees().length;
+
+        assertEq(auctionedNounDonations[0].length, doneesCount);
+        assertEq(auctionedNounDonations[1].length, doneesCount);
+        assertEq(auctionedNounDonations[2].length, doneesCount);
+        assertEq(auctionedNounDonations[3].length, doneesCount);
+        assertEq(auctionedNounDonations[4].length, doneesCount);
+
+        // donee0 has values
+        assertEq(auctionedNounDonations[1][0], minValue * 2);
+        assertEq(auctionedNounDonations[2][0], minValue * 2);
+        assertEq(auctionedNounDonations[3][0], minValue * 2);
+        assertEq(auctionedNounDonations[4][0], minValue * 2);
+
+        // donee1 has no values because it is inactive
+        assertEq(auctionedNounDonations[1][1], 0);
+        assertEq(auctionedNounDonations[2][1], 0);
+        assertEq(auctionedNounDonations[3][1], 0);
+        assertEq(auctionedNounDonations[4][1], 0);
+
+        // Include only donee0 matches minus minReimbursement
+        assertEq(totalDonationsPerTrait[1], (minValue * 2) - minReimbursement);
+        assertEq(totalDonationsPerTrait[2], (minValue * 2) - minReimbursement);
+        assertEq(totalDonationsPerTrait[3], (minValue * 2) - minReimbursement);
+        assertEq(totalDonationsPerTrait[4], (minValue * 2) - minReimbursement);
+
+        assertEq(reimbursementPerTrait[1], minReimbursement);
+        assertEq(reimbursementPerTrait[2], minReimbursement);
+        assertEq(reimbursementPerTrait[3], minReimbursement);
+        assertEq(reimbursementPerTrait[4], minReimbursement);
+
+        // set donee1 active
+        nounSeek.setDoneeActive(1, true);
+
+        (
+            ,
+            ,
+            auctionedNounDonations,
+            ,
+            totalDonationsPerTrait,
+            reimbursementPerTrait
+        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+
+        // donee0 has values
+        assertEq(auctionedNounDonations[1][0], minValue * 2);
+        assertEq(auctionedNounDonations[2][0], minValue * 2);
+        assertEq(auctionedNounDonations[3][0], minValue * 2);
+        assertEq(auctionedNounDonations[4][0], minValue * 2);
+
+        // donee1 has values because it is now active
+        assertEq(auctionedNounDonations[1][1], minValue * 2);
+        assertEq(auctionedNounDonations[2][1], minValue * 2);
+        assertEq(auctionedNounDonations[3][1], minValue * 2);
+        assertEq(auctionedNounDonations[4][1], minValue * 2);
+
+        // Include donee0 and donee1 matches minus minReimbursement
+        assertEq(totalDonationsPerTrait[1], (minValue * 4) - minReimbursement);
+        assertEq(totalDonationsPerTrait[2], (minValue * 4) - minReimbursement);
+        assertEq(totalDonationsPerTrait[3], (minValue * 4) - minReimbursement);
+        assertEq(totalDonationsPerTrait[4], (minValue * 4) - minReimbursement);
+
+        assertEq(reimbursementPerTrait[1], minReimbursement);
+        assertEq(reimbursementPerTrait[2], minReimbursement);
+        assertEq(reimbursementPerTrait[3], minReimbursement);
+        assertEq(reimbursementPerTrait[4], minReimbursement);
     }
 }

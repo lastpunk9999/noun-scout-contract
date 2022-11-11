@@ -51,7 +51,7 @@ contract NounSeek is Ownable2Step, Pausable {
         address to,
         string description
     );
-    event DoneeActiveStatusChanged(uint256 doneeId, bool active);
+    event DoneeisActivetatusChanged(uint256 doneeId, bool active);
     event Matched(
         Traits indexed trait,
         uint16 traitId,
@@ -238,13 +238,17 @@ contract NounSeek is Ownable2Step, Pausable {
                 if (request.amount < 1) {
                     continue;
                 }
-                uint16 nonce = nonceForTraits(
-                    request.trait,
-                    request.traitId,
-                    request.nounId
-                );
+
                 // Request has been matched
-                if (nonce > request.nonce) {
+                if (
+                    amounts[
+                        traitHash(
+                            request.trait,
+                            request.traitId,
+                            request.nounId
+                        )
+                    ][request.doneeId] < 1
+                ) {
                     continue;
                 }
                 activeRequestIds[activeRequestCount] = i;
@@ -355,13 +359,13 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @param requestTrait The trait type to compare the given Noun ID with
     /// @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
     /// @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
-    /// @param nounId Noun ID to fetch the attributes of to compare against the given request properties
+    /// @param onChainNounId Noun ID to fetch the attributes of to compare against the given request properties
     /// @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
     function requestParamsMatchNounParams(
         Traits requestTrait,
         uint16 requestTraitId,
         uint16 requestNounId,
-        uint16 nounId
+        uint16 onChainNounId
     ) public view returns (bool) {
         return
             requestMatchesNoun(
@@ -373,7 +377,7 @@ contract NounSeek is Ownable2Step, Pausable {
                     nounId: requestNounId,
                     amount: 0
                 }),
-                nounId
+                onChainNounId
             );
     }
 
@@ -854,8 +858,23 @@ contract NounSeek is Ownable2Step, Pausable {
             revert ValueTooLow();
         }
 
+        uint16 nounId = uint16(auctionHouse.auction().nounId);
+
+        uint16 doneeId = request.doneeId;
+
+        bytes32 hash = traitHash(
+            request.trait,
+            request.traitId,
+            request.nounId
+        );
+
+        /// If a request has not been matched, full amount can be sent
+        amount = amounts[hash][doneeId] >= request.amount ? request.amount : 0;
+
         /* @dev
-         * Cannot remove a request if:
+         * If there are funds to retrun and the donee is active,
+         * check if the request matches a current or previous Noun seed.
+         * A request cannot be removed if:
          * 1) The current Noun on auction has the requested traits
          * 2) The previous Noun has the requested traits
          * 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
@@ -868,33 +887,24 @@ contract NounSeek is Ownable2Step, Pausable {
          *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
          *    1,2 |     103 | 103, 102
         */
-        uint16 nounId = uint16(auctionHouse.auction().nounId);
+        if (amount > 0 && _donees[doneeId].active) {
+            // Case 1
+            _revertIfRequestMatchesNoun(request, nounId);
 
-        // Case 1
-        _revertIfRequestMatchesNoun(request, nounId);
-
-        // Case 2
-        if (_isAuctionedNoun(nounId - 1)) {
-            _revertIfRequestMatchesNoun(request, nounId - 1);
-            // Case 2b
-            if (_isNonAuctionedNoun(nounId - 2)) {
+            // Case 2
+            if (_isAuctionedNoun(nounId - 1)) {
+                _revertIfRequestMatchesNoun(request, nounId - 1);
+                // Case 2b
+                if (_isNonAuctionedNoun(nounId - 2)) {
+                    _revertIfRequestMatchesNoun(request, nounId - 2);
+                }
+            } else {
+                // Case 3
                 _revertIfRequestMatchesNoun(request, nounId - 2);
             }
-        } else {
-            // Case 3
-            _revertIfRequestMatchesNoun(request, nounId - 2);
         }
 
         delete _requests[msg.sender][requestId];
-
-        bytes32 hash = traitHash(
-            request.trait,
-            request.traitId,
-            request.nounId
-        );
-
-        /// Funds can be returned if request has yet to be matched
-        amount = nonces[hash] == request.nonce ? request.amount : 0;
 
         emit RequestRemoved({
             requestId: requestId,
@@ -976,7 +986,7 @@ contract NounSeek is Ownable2Step, Pausable {
             trait,
             traitIds,
             nounIds,
-            uint16(doneesCount)
+            doneesCount
         );
 
         if (total < 1) {
@@ -1049,7 +1059,7 @@ contract NounSeek is Ownable2Step, Pausable {
     function setDoneeActive(uint256 doneeId, bool active) external onlyOwner {
         if (active == _donees[doneeId].active) return;
         _donees[doneeId].active = active;
-        emit DoneeActiveStatusChanged({doneeId: doneeId, active: active});
+        emit DoneeisActivetatusChanged({doneeId: doneeId, active: active});
     }
 
     function setMinValue(uint256 newMinValue) external onlyOwner {
@@ -1168,9 +1178,12 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16[] memory traitIds,
         uint16[] memory nounIds,
-        uint16 doneesCount
+        uint256 doneesCount
     ) internal returns (uint256[] memory donations, uint256 total) {
         donations = new uint256[](doneesCount);
+
+        // cache donee active status; we will at lest need to check this once
+        bool[] memory isActive = _mapDoneeActive(doneesCount);
 
         uint256 nounIdsLength = nounIds.length;
 
@@ -1178,6 +1191,8 @@ contract NounSeek is Ownable2Step, Pausable {
             bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
             uint256 traitTotal;
             for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
+                if (!isActive[doneeId]) continue;
+
                 uint256 amount = amounts[hash][doneeId];
                 if (amount < 1) {
                     continue;
@@ -1256,6 +1271,24 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    /**
+     * @notice Maps array of Donees to array of active status booleans
+     * @param doneesCount Cached length of _donees array
+     * @return isActive Array of active status booleans
+     */
+    function _mapDoneeActive(uint256 doneesCount)
+        internal
+        view
+        returns (bool[] memory isActive)
+    {
+        unchecked {
+            isActive = new bool[](doneesCount);
+            for (uint256 i; i < doneesCount; i++) {
+                isActive[i] = _donees[i].active;
+            }
+        }
+    }
+
     function _donationsForNounIdWithTraitId(
         Traits trait,
         uint16 traitId,
@@ -1264,6 +1297,8 @@ contract NounSeek is Ownable2Step, Pausable {
         uint256 doneesCount
     ) internal view returns (uint256[] memory donations) {
         unchecked {
+            bool[] memory isActive = _mapDoneeActive(doneesCount);
+
             bytes32 hash = traitHash(trait, traitId, nounId);
             bytes32 anyIdHash;
             if (processAnyId) {
@@ -1271,6 +1306,7 @@ contract NounSeek is Ownable2Step, Pausable {
             }
             donations = new uint256[](doneesCount);
             for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
+                if (!isActive[doneeId]) continue;
                 uint256 anyIdAmount = processAnyId
                     ? amounts[anyIdHash][doneeId]
                     : 0;
