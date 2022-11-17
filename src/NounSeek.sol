@@ -93,6 +93,7 @@ contract NounSeek is Ownable2Step, Pausable {
         string doneeName;
         uint16 nounId;
         uint128 amount;
+        RemoveStatus removeStatus;
     }
 
     /// @notice Name, address, and active status where funds can be donated
@@ -240,27 +241,26 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256 activeRequestCount;
             uint256 requestCount = _requests[requester].length;
             uint256[] memory activeRequestIds = new uint256[](requestCount);
+            RemoveStatus[] memory removeStatuses = new RemoveStatus[](
+                requestCount
+            );
 
             for (uint256 i; i < requestCount; i++) {
                 Request memory request = _requests[requester][i];
+                (RemoveStatus status, , uint256 amount, ) = _getRemoveParams(
+                    request
+                );
                 // Request has been deleted
-                if (request.amount < 1) {
+                if (status == RemoveStatus.ALREADY_REMOVED) {
                     continue;
                 }
 
                 // Request has been matched
-                if (
-                    amounts[
-                        traitHash(
-                            request.trait,
-                            request.traitId,
-                            request.nounId
-                        )
-                    ][request.doneeId] < 1
-                ) {
+                if (amount < 1) {
                     continue;
                 }
                 activeRequestIds[activeRequestCount] = i;
+                removeStatuses[activeRequestCount] = status;
                 activeRequestCount++;
             }
 
@@ -277,7 +277,8 @@ contract NounSeek is Ownable2Step, Pausable {
                     doneeName: _donees[request.doneeId].name,
                     doneeId: request.doneeId,
                     nounId: request.nounId,
-                    amount: request.amount
+                    amount: request.amount,
+                    removeStatus: removeStatuses[i]
                 });
             }
         }
