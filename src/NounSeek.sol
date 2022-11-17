@@ -113,8 +113,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /// @notice Removal status types for a Request
+    /// @dev If "CAN_REMOVE", `remove(uint16 requestId)` function will not revert
     enum RemoveStatus {
-        OK,
+        CAN_REMOVE,
         ALREADY_REMOVED,
         AUCTION_ENDING_SOON,
         MATCH_FOUND
@@ -863,7 +864,7 @@ contract NounSeek is Ownable2Step, Pausable {
             uint16 nounId
         ) = _getRemoveParams(request);
 
-        if (status == RemoveStatus.OK) {
+        if (status == RemoveStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash, amount);
         } else if (status == RemoveStatus.ALREADY_REMOVED) {
             revert AlreadyRemoved();
@@ -1158,9 +1159,9 @@ contract NounSeek is Ownable2Step, Pausable {
         amount = amounts[hash][doneeId] >= request.amount ? request.amount : 0;
 
         if (!_donees[doneeId].active)
-            return (RemoveStatus.OK, hash, amount, nounId);
+            return (RemoveStatus.CAN_REMOVE, hash, amount, nounId);
 
-        if (amount < 1) return (RemoveStatus.OK, hash, amount, nounId);
+        if (amount < 1) return (RemoveStatus.CAN_REMOVE, hash, amount, nounId);
 
         // Cannot executed within a time period from an auction's end
         if (
