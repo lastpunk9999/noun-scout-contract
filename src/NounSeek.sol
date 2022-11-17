@@ -1061,7 +1061,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-     * INTERNAL FUNCTIONS
+     * INTERNAL WRITE FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
@@ -1137,6 +1137,67 @@ contract NounSeek is Ownable2Step, Pausable {
 
         return amount;
     }
+
+    /**
+     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
+     * @param trait The trait type requests should match (see Traits enum)
+     * @param traitIds Specific trait Id
+     * @param nounIds Specific Noun Id
+     * @return donations Mutated donations array
+     * @return total total
+     */
+    function _combineAmountsAndDelete(
+        Traits trait,
+        uint16[] memory traitIds,
+        uint16[] memory nounIds,
+        uint256 doneesCount
+    ) internal returns (uint256[] memory donations, uint256 total) {
+        donations = new uint256[](doneesCount);
+
+        // cache donee active status; we will at lest need to check this once
+        bool[] memory isActive = _mapDoneeActive(doneesCount);
+
+        uint256 nounIdsLength = nounIds.length;
+
+        for (uint16 i; i < nounIdsLength; i++) {
+            bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
+            uint256 traitTotal;
+            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
+                if (!isActive[doneeId]) continue;
+
+                uint256 amount = amounts[hash][doneeId];
+                if (amount < 1) {
+                    continue;
+                }
+                traitTotal += amount;
+                total += amount;
+                donations[doneeId] += amount;
+
+                delete amounts[hash][doneeId];
+            }
+
+            if (traitTotal < 1) {
+                continue;
+            }
+
+            uint16 newNonce = nonces[hash] + 1;
+            nonces[hash] = newNonce;
+
+            emit Matched({
+                trait: trait,
+                traitId: traitIds[i],
+                nounId: nounIds[i],
+                traitsHash: hash,
+                newNonce: newNonce
+            });
+        }
+    }
+
+    /**
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * INTERNAL READ FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
 
     function _getRemoveParams(Request memory request)
         internal
@@ -1224,61 +1285,6 @@ contract NounSeek is Ownable2Step, Pausable {
     /// @notice Was the specified Noun ID auctioned
     function _isAuctionedNoun(uint16 nounId) internal pure returns (bool) {
         return nounId % 10 > 0 || nounId > 1820;
-    }
-
-    /**
-     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
-     * @param trait The trait type requests should match (see Traits enum)
-     * @param traitIds Specific trait Id
-     * @param nounIds Specific Noun Id
-     * @return donations Mutated donations array
-     * @return total total
-     */
-    function _combineAmountsAndDelete(
-        Traits trait,
-        uint16[] memory traitIds,
-        uint16[] memory nounIds,
-        uint256 doneesCount
-    ) internal returns (uint256[] memory donations, uint256 total) {
-        donations = new uint256[](doneesCount);
-
-        // cache donee active status; we will at lest need to check this once
-        bool[] memory isActive = _mapDoneeActive(doneesCount);
-
-        uint256 nounIdsLength = nounIds.length;
-
-        for (uint16 i; i < nounIdsLength; i++) {
-            bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
-            uint256 traitTotal;
-            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
-                if (!isActive[doneeId]) continue;
-
-                uint256 amount = amounts[hash][doneeId];
-                if (amount < 1) {
-                    continue;
-                }
-                traitTotal += amount;
-                total += amount;
-                donations[doneeId] += amount;
-
-                delete amounts[hash][doneeId];
-            }
-
-            if (traitTotal < 1) {
-                continue;
-            }
-
-            uint16 newNonce = nonces[hash] + 1;
-            nonces[hash] = newNonce;
-
-            emit Matched({
-                trait: trait,
-                traitId: traitIds[i],
-                nounId: nounIds[i],
-                traitsHash: hash,
-                newNonce: newNonce
-            });
-        }
     }
 
     function _fetchTraitId(Traits trait, uint16 nounId)
