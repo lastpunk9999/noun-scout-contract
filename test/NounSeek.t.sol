@@ -446,7 +446,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.startPrank(user1);
         uint256 requestId1 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
 
-        vm.expectRevert(NounSeek.TooLate.selector);
+        vm.expectRevert(NounSeek.AuctionEndingSoon.selector);
         nounSeek.remove(requestId1);
     }
 
@@ -457,7 +457,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.startPrank(user1);
         uint256 requestId1 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
 
-        vm.expectRevert(NounSeek.TooLate.selector);
+        vm.expectRevert(NounSeek.AuctionEndingSoon.selector);
         nounSeek.remove(requestId1);
     }
 

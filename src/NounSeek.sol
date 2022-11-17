@@ -8,10 +8,10 @@ import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 contract NounSeek is Ownable2Step, Pausable {
     /**
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-     * ERROR
+     * ERRORS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
-    error TooLate();
+    error AuctionEndingSoon();
     error MatchFound(uint16 nounId);
     error NoMatch();
     error InactiveDonee();
@@ -101,14 +101,22 @@ contract NounSeek is Ownable2Step, Pausable {
         address to;
         bool active;
     }
-    /// @notice Noun traits in the order they appear on the NounSeeder.Seed struct
 
+    /// @notice Noun traits in the order they appear on the NounSeeder.Seed struct
     enum Traits {
         BACKGROUND,
         BODY,
         ACCESSORY,
         HEAD,
         GLASSES
+    }
+
+    /// @notice Removal status types for a Request
+    enum RemoveStatus {
+        OK,
+        ALREADY_REMOVED,
+        AUCTION_ENDING_SOON,
+        MATCH_FOUND
     }
 
     /**
@@ -847,66 +855,24 @@ contract NounSeek is Ownable2Step, Pausable {
     function remove(uint256 requestId) public returns (uint256 amount) {
         Request memory request = _requests[msg.sender][requestId];
 
-        if (request.amount < 1) {
+        (
+            RemoveStatus status,
+            bytes32 hash,
+            uint256 amount,
+            uint16 nounId
+        ) = _getRemoveParams(request);
+
+        if (status == RemoveStatus.OK) {
+            return _remove(request, requestId, hash, amount);
+        } else if (status == RemoveStatus.ALREADY_REMOVED) {
             revert AlreadyRemoved();
-        }
-
-        bytes32 hash = traitHash(
-            request.trait,
-            request.traitId,
-            request.nounId
-        );
-
-        uint16 doneeId = request.doneeId;
-
-        /// If a request has not been matched, full amount can be sent
-        amount = amounts[hash][doneeId] >= request.amount ? request.amount : 0;
-
-        if (!_donees[doneeId].active)
-            return _remove(requestId, request, hash, amount);
-
-        if (amount < 1) return _remove(requestId, request, hash, amount);
-
-        // Cannot executed within a time period from an auction's end
-        if (
-            block.timestamp + AUCTION_END_LIMIT >=
-            auctionHouse.auction().endTime
-        ) {
-            revert TooLate();
-        }
-
-        uint16 nounId = uint16(auctionHouse.auction().nounId);
-
-        /* @dev
-         * A request cannot be removed if:
-         * 1) The current Noun on auction has the requested traits
-         * 2) The previous Noun has the requested traits
-         * 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
-         * 3) A Non-Auctioned Noun which matches the request.nounId is the previous previous Noun
-
-         * Case # | Example | Ineligible
-         *        | Noun Id | Noun Id
-         * -------|---------|-------------------
-         *    1,3 |     101 | 101, 99 (*skips 100)
-         *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
-         *    1,2 |     103 | 103, 102
-        */
-        // Case 1
-        _revertIfRequestMatchesNoun(request, nounId);
-
-        // Case 2
-        if (_isAuctionedNoun(nounId - 1)) {
-            _revertIfRequestMatchesNoun(request, nounId - 1);
-            // Case 2b
-            if (_isNonAuctionedNoun(nounId - 2)) {
-                _revertIfRequestMatchesNoun(request, nounId - 2);
-            }
+        } else if (status == RemoveStatus.AUCTION_ENDING_SOON) {
+            revert AuctionEndingSoon();
+        } else if (status == RemoveStatus.MATCH_FOUND) {
+            revert MatchFound(nounId);
         } else {
-            // Case 3
-            _revertIfRequestMatchesNoun(request, nounId - 2);
+            revert();
         }
-
-        return _remove(requestId, request, hash, amount);
     }
 
     /// @notice Match all trait requests for the previous Noun(s).
@@ -1144,8 +1110,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /// @notice Deletes a Request, returns funds if any, and logs `RequestRemoved`
     function _remove(
-        uint256 requestId,
         Request memory request,
+        uint256 requestId,
         bytes32 hash,
         uint256 amount
     ) internal returns (uint256) {
@@ -1168,6 +1134,84 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         return amount;
+    }
+
+    function _getRemoveParams(Request memory request)
+        internal
+        view
+        returns (
+            RemoveStatus removeStatus,
+            bytes32 hash,
+            uint256 amount,
+            uint16 nounId
+        )
+    {
+        hash = traitHash(request.trait, request.traitId, request.nounId);
+
+        if (request.amount < 1) {
+            return (RemoveStatus.ALREADY_REMOVED, hash, amount, nounId);
+        }
+
+        uint16 doneeId = request.doneeId;
+
+        amount = amounts[hash][doneeId] >= request.amount ? request.amount : 0;
+
+        if (!_donees[doneeId].active)
+            return (RemoveStatus.OK, hash, amount, nounId);
+
+        if (amount < 1) return (RemoveStatus.OK, hash, amount, nounId);
+
+        // Cannot executed within a time period from an auction's end
+        if (
+            block.timestamp + AUCTION_END_LIMIT >=
+            auctionHouse.auction().endTime
+        ) {
+            return (RemoveStatus.AUCTION_ENDING_SOON, hash, amount, nounId);
+        }
+
+        uint16 nounId = uint16(auctionHouse.auction().nounId);
+
+        /* @dev
+         * A request cannot be removed if:
+         * 1) The current Noun on auction has the requested traits
+         * 2) The previous Noun has the requested traits
+         * 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
+         * 3) A Non-Auctioned Noun which matches the request.nounId is the previous previous Noun
+
+         * Case # | Example | Ineligible
+         *        | Noun Id | Noun Id
+         * -------|---------|-------------------
+         *    1,3 |     101 | 101, 99 (*skips 100)
+         *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
+         *    1,2 |     103 | 103, 102
+        */
+        // Case 1
+        if (requestMatchesNoun(request, nounId)) {
+            return (RemoveStatus.MATCH_FOUND, hash, amount, nounId);
+        }
+
+        uint16 prevNounId = nounId - 1;
+        uint16 prevPrevNounId = nounId - 2;
+
+        // Case 2
+        if (_isAuctionedNoun(prevNounId)) {
+            if (requestMatchesNoun(request, prevNounId))
+                return (RemoveStatus.MATCH_FOUND, hash, amount, prevNounId);
+            // Case 2b
+            if (_isNonAuctionedNoun(prevPrevNounId)) {
+                if (requestMatchesNoun(request, prevPrevNounId))
+                    return (
+                        RemoveStatus.MATCH_FOUND,
+                        hash,
+                        amount,
+                        prevPrevNounId
+                    );
+            }
+        } else {
+            // Case 3
+            if (requestMatchesNoun(request, prevPrevNounId))
+                return (RemoveStatus.MATCH_FOUND, hash, amount, prevPrevNounId);
+        }
     }
 
     /// @notice Was the specified Noun ID not auctioned
@@ -1232,15 +1276,6 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitsHash: hash,
                 newNonce: newNonce
             });
-        }
-    }
-
-    function _revertIfRequestMatchesNoun(Request memory request, uint16 nounId)
-        internal
-        view
-    {
-        if (requestMatchesNoun(request, nounId)) {
-            revert MatchFound(nounId);
         }
     }
 
