@@ -470,7 +470,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         nounSeek.remove(requestId1);
 
-        vm.expectRevert(NounSeek.ValueTooLow.selector);
+        vm.expectRevert(NounSeek.AlreadyRemoved.selector);
         nounSeek.remove(requestId1);
     }
 
@@ -744,8 +744,6 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(donee0Amount, 0);
         // donee1 did not match, funds remain
         assertEq(donee1Amount, minValue);
-
-        mockAuctionHouse.setNounId(103);
 
         // requestId2 can be removed
         vm.startPrank(user1);
