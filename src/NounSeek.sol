@@ -939,13 +939,11 @@ contract NounSeek is Ownable2Step, Pausable {
      */
     function remove(uint256 requestId) public returns (uint256 amount) {
         Request memory request = _requests[msg.sender][requestId];
+        RemoveStatus status;
+        bytes32 hash;
+        uint16 nounId;
 
-        (
-            RemoveStatus status,
-            bytes32 hash,
-            uint256 amount,
-            uint16 nounId
-        ) = _getRemoveParams(request);
+        (status, hash, amount, nounId) = _getRemoveParams(request);
 
         if (status == RemoveStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash, amount);
@@ -1334,7 +1332,7 @@ contract NounSeek is Ownable2Step, Pausable {
             return (RemoveStatus.AUCTION_ENDING_SOON, hash, amount, nounId);
         }
 
-        uint16 nounId = uint16(auctionHouse.auction().nounId);
+        nounId = uint16(auctionHouse.auction().nounId);
 
         /**
          * A request cannot be removed if:
