@@ -128,6 +128,7 @@ contract NounSeek is Ownable2Step, Pausable {
     enum RemoveStatus {
         CAN_REMOVE,
         ALREADY_REMOVED,
+        MATCHED,
         AUCTION_ENDING_SOON,
         MATCH_FOUND
     }
@@ -310,10 +311,6 @@ contract NounSeek is Ownable2Step, Pausable {
                     continue;
                 }
 
-                // Request has been matched
-                if (amount < 1) {
-                    continue;
-                }
                 activeRequestIds[activeRequestCount] = i;
                 removeStatuses[activeRequestCount] = status;
                 activeRequestCount++;
@@ -947,6 +944,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
         if (status == RemoveStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash, amount);
+        } else if (status == RemoveStatus.MATCHED && amount < 1) {
+            return _remove(request, requestId, hash, amount);
         } else if (status == RemoveStatus.ALREADY_REMOVED) {
             revert AlreadyRemoved();
         } else if (status == RemoveStatus.AUCTION_ENDING_SOON) {
@@ -1319,10 +1318,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
         amount = amounts[hash][doneeId] >= request.amount ? request.amount : 0;
 
-        if (!_donees[doneeId].active)
+        // Donee is inactive or was inactive at the time of match and there are funds to return
+        if (!_donees[doneeId].active && amount > 0)
             return (RemoveStatus.CAN_REMOVE, hash, amount, nounId);
 
-        if (amount < 1) return (RemoveStatus.CAN_REMOVE, hash, amount, nounId);
+        // Donee was active at time of match, no funds to return
+        if (amount < 1) return (RemoveStatus.MATCHED, hash, amount, nounId);
 
         // Cannot executed within a time period from an auction's end
         if (
