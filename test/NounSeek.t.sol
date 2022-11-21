@@ -951,8 +951,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[0].doneeId, 0);
         assertEq(requests[0].doneeName, "donee0");
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // Sanity check last request
@@ -963,8 +963,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[4].doneeId, 2);
         assertEq(requests[4].doneeName, "donee2");
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // Case 2
@@ -972,12 +972,12 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.warp(timestamp + 24 hours);
         requests = nounSeek.requestsActiveByAddress(user1);
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.AUCTION_ENDING_SOON)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.AUCTION_ENDING_SOON)
         );
         assertEq(
-            uint8(requests[4].removeStatus),
-            uint8(NounSeek.RemoveStatus.AUCTION_ENDING_SOON)
+            uint8(requests[4].status),
+            uint8(NounSeek.RequestStatus.AUCTION_ENDING_SOON)
         );
 
         // Set donee2 inactive
@@ -988,12 +988,12 @@ contract NounSeekTest is BaseNounSeekTest {
         // Donee 2 is inactive
         requests = nounSeek.requestsActiveByAddress(user1);
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.AUCTION_ENDING_SOON)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.AUCTION_ENDING_SOON)
         );
         assertEq(
-            uint8(requests[4].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[4].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // Create matchable Noun
@@ -1015,12 +1015,12 @@ contract NounSeekTest is BaseNounSeekTest {
         // Donee2 is inactive
         requests = nounSeek.requestsActiveByAddress(user1);
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCH_FOUND)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.MATCH_FOUND)
         );
         assertEq(
-            uint8(requests[4].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[4].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // User2 performs the match; request 1 and 2 should match
@@ -1036,13 +1036,13 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // Request 1,2 Matched
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         assertEq(
-            uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[1].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         // Request 3,4 Did Not Match
@@ -1054,8 +1054,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[2].doneeId, 0);
         assertEq(requests[2].doneeName, "donee0");
         assertEq(
-            uint8(requests[2].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[2].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         assertEq(uint8(requests[3].trait), uint8(HEAD));
@@ -1065,8 +1065,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[3].doneeId, 1);
         assertEq(requests[3].doneeName, "donee1");
         assertEq(
-            uint8(requests[3].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[3].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // Request 5 would have matched, but is inactive
@@ -1077,8 +1077,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[4].doneeId, 2);
         assertEq(requests[4].doneeName, "donee2");
         assertEq(
-            uint8(requests[4].removeStatus),
-            uint8(NounSeek.RemoveStatus.CAN_REMOVE)
+            uint8(requests[4].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
         );
 
         // User removes request 3
@@ -1093,13 +1093,13 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests.length, 4);
 
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         assertEq(
-            uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[1].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));
@@ -1128,13 +1128,13 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests.length, 3);
 
         assertEq(
-            uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         assertEq(
-            uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.DONATION_SENT)
+            uint8(requests[1].status),
+            uint8(NounSeek.RequestStatus.DONATION_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));

@@ -99,7 +99,7 @@ contract NounSeek is Ownable2Step, Pausable {
         string doneeName;
         uint16 nounId;
         uint128 amount;
-        RemoveStatus removeStatus;
+        RequestStatus status;
     }
 
     /**
@@ -126,7 +126,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @notice Removal status types for a Request
      * @dev If "CAN_REMOVE", `remove(uint16 requestId)` function will not revert
      */
-    enum RemoveStatus {
+    enum RequestStatus {
         CAN_REMOVE,
         REMOVED,
         DONATION_SENT,
@@ -298,20 +298,20 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256 activeRequestCount;
             uint256 requestCount = _requests[requester].length;
             uint256[] memory activeRequestIds = new uint256[](requestCount);
-            RemoveStatus[] memory removeStatuses = new RemoveStatus[](
+            RequestStatus[] memory requestStatuses = new RequestStatus[](
                 requestCount
             );
 
             for (uint256 i; i < requestCount; i++) {
                 Request memory request = _requests[requester][i];
-                (RemoveStatus status, , ) = _getRemoveParams(request);
+                (RequestStatus status, , ) = _getRemoveParams(request);
                 // Request has been deleted
-                if (status == RemoveStatus.REMOVED) {
+                if (status == RequestStatus.REMOVED) {
                     continue;
                 }
 
                 activeRequestIds[activeRequestCount] = i;
-                removeStatuses[activeRequestCount] = status;
+                requestStatuses[activeRequestCount] = status;
                 activeRequestCount++;
             }
 
@@ -329,7 +329,7 @@ contract NounSeek is Ownable2Step, Pausable {
                     doneeId: request.doneeId,
                     nounId: request.nounId,
                     amount: request.amount,
-                    removeStatus: removeStatuses[i]
+                    status: requestStatuses[i]
                 });
             }
         }
@@ -935,21 +935,21 @@ contract NounSeek is Ownable2Step, Pausable {
      */
     function remove(uint256 requestId) public returns (uint256 amount) {
         Request memory request = _requests[msg.sender][requestId];
-        RemoveStatus status;
+        RequestStatus status;
         bytes32 hash;
         uint16 nounId;
 
         (status, hash, nounId) = _getRemoveParams(request);
 
-        if (status == RemoveStatus.CAN_REMOVE) {
+        if (status == RequestStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash);
-        } else if (status == RemoveStatus.DONATION_SENT) {
+        } else if (status == RequestStatus.DONATION_SENT) {
             revert DonationAlreadySent();
-        } else if (status == RemoveStatus.REMOVED) {
+        } else if (status == RequestStatus.REMOVED) {
             revert AlreadyRemoved();
-        } else if (status == RemoveStatus.AUCTION_ENDING_SOON) {
+        } else if (status == RequestStatus.AUCTION_ENDING_SOON) {
             revert AuctionEndingSoon();
-        } else if (status == RemoveStatus.MATCH_FOUND) {
+        } else if (status == RequestStatus.MATCH_FOUND) {
             revert MatchFound(nounId);
         } else {
             revert();
@@ -1300,7 +1300,7 @@ contract NounSeek is Ownable2Step, Pausable {
         internal
         view
         returns (
-            RemoveStatus removeStatus,
+            RequestStatus requestStatus,
             bytes32 hash,
             uint16 nounId
         )
@@ -1308,7 +1308,7 @@ contract NounSeek is Ownable2Step, Pausable {
         hash = traitHash(request.trait, request.traitId, request.nounId);
 
         if (request.amount < 1) {
-            return (RemoveStatus.REMOVED, hash, nounId);
+            return (RequestStatus.REMOVED, hash, nounId);
         }
 
         uint16 doneeId = request.doneeId;
@@ -1318,17 +1318,17 @@ contract NounSeek is Ownable2Step, Pausable {
 
         // Donee is inactive (and/or was inactive at the time of match) and there are funds to return
         if (!_donees[doneeId].active && !matched)
-            return (RemoveStatus.CAN_REMOVE, hash, nounId);
+            return (RequestStatus.CAN_REMOVE, hash, nounId);
 
         // Donee was active at time of match, no funds to return
-        if (matched) return (RemoveStatus.DONATION_SENT, hash, nounId);
+        if (matched) return (RequestStatus.DONATION_SENT, hash, nounId);
 
         // Cannot executed within a time period from an auction's end
         if (
             block.timestamp + AUCTION_END_LIMIT >=
             auctionHouse.auction().endTime
         ) {
-            return (RemoveStatus.AUCTION_ENDING_SOON, hash, nounId);
+            return (RequestStatus.AUCTION_ENDING_SOON, hash, nounId);
         }
 
         nounId = uint16(auctionHouse.auction().nounId);
@@ -1349,7 +1349,7 @@ contract NounSeek is Ownable2Step, Pausable {
         */
         // Case 1
         if (requestMatchesNoun(request, nounId)) {
-            return (RemoveStatus.MATCH_FOUND, hash, nounId);
+            return (RequestStatus.MATCH_FOUND, hash, nounId);
         }
 
         uint16 prevNounId = nounId - 1;
@@ -1358,16 +1358,16 @@ contract NounSeek is Ownable2Step, Pausable {
         // Case 2
         if (_isAuctionedNoun(prevNounId)) {
             if (requestMatchesNoun(request, prevNounId))
-                return (RemoveStatus.MATCH_FOUND, hash, prevNounId);
+                return (RequestStatus.MATCH_FOUND, hash, prevNounId);
             // Case 2b
             if (_isNonAuctionedNoun(prevPrevNounId)) {
                 if (requestMatchesNoun(request, prevPrevNounId))
-                    return (RemoveStatus.MATCH_FOUND, hash, prevPrevNounId);
+                    return (RequestStatus.MATCH_FOUND, hash, prevPrevNounId);
             }
         } else {
             // Case 3
             if (requestMatchesNoun(request, prevPrevNounId))
-                return (RemoveStatus.MATCH_FOUND, hash, prevPrevNounId);
+                return (RequestStatus.MATCH_FOUND, hash, prevPrevNounId);
         }
     }
 
