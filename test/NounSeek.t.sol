@@ -651,7 +651,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId6);
     }
 
-    function test_REMOVE_succeedsNoTransferAlreadyMatched() public {
+    function test_REMOVE_revertsAlreadyMatched() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -675,23 +675,16 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
         nounSeek.matchAndDonate(HEAD);
 
+        vm.startPrank(user1);
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
+
+        nounSeek.remove(requestId1);
+
         mockAuctionHouse.setNounId(103);
 
-        vm.startPrank(user1);
-        vm.expectEmit(true, true, true, true);
-        emit RequestRemoved(
-            requestId1,
-            address(user1),
-            HEAD,
-            9,
-            100,
-            0,
-            nounSeek.traitHash(HEAD, 9, 100),
-            0
-        );
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
 
-        uint256 amount = nounSeek.remove(requestId1);
-        assertEq(amount, 0);
+        nounSeek.remove(requestId1);
     }
 
     function test_REMOVE_removeAfterMatchAndInactiveDonee() public {
@@ -766,7 +759,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(donee1Amount, 0);
     }
 
-    function test_REMOVE_removeAfterMatchAndInactiveDoneeBecomesActive()
+    function test_REMOVE_revertsAfterInactiveDoneeBecomesActiveAndMatches()
         public
     {
         uint256 timestamp = 1_000_000;
@@ -829,10 +822,81 @@ contract NounSeekTest is BaseNounSeekTest {
         donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
         assertEq(donee1Amount, 0);
 
-        // mockAuctionHouse.setNounId(103);
-
-        // requestId2 can be removed
+        // requestId2 cannot be removed
         vm.startPrank(user1);
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
+
+        nounSeek.remove(requestId2);
+    }
+
+    function test_REMOVE_removeAfterInactiveDoneeBecomesActive() public {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+
+        nounSeek.add{value: minValue}(HEAD, 9, 100, 0);
+        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
+
+        vm.stopPrank();
+
+        uint256 donee0Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            0
+        );
+        uint256 donee1Amount = nounSeek.amounts(
+            nounSeek.traitHash(HEAD, 9, 100),
+            1
+        );
+
+        assertEq(donee0Amount, minValue);
+        assertEq(donee1Amount, minValue);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 100);
+        mockAuctionHouse.setNounId(102);
+
+        // set donee1 to inactive
+        nounSeek.setDoneeActive(1, false);
+
+        vm.prank(user2);
+
+        // Sanity check match occured
+        vm.expectCall(address(donee0), minValue - minReimbursement, "");
+        vm.expectCall(address(user2), minReimbursement, "");
+        nounSeek.matchAndDonate(HEAD);
+
+        donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+
+        // donee0 matched, funds removed
+        assertEq(donee0Amount, 0);
+        // donee1 did not match, funds remain
+        assertEq(donee1Amount, minValue);
+
+        // set donee1 to active
+        nounSeek.setDoneeActive(1, true);
+
+        vm.startPrank(user1);
+
+        // donee1, now active, matches Noun 100, cannot be removed
+        vm.expectRevert(
+            abi.encodeWithSelector(NounSeek.MatchFound.selector, 100)
+        );
+        nounSeek.remove(requestId2);
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+        // donee1 funds removed
+        assertEq(donee1Amount, minValue);
+
+        // Current/prev Noun no longer matches
+        mockAuctionHouse.setNounId(199);
+
         vm.expectEmit(true, true, true, true);
         emit RequestRemoved(
             requestId2,
@@ -842,11 +906,14 @@ contract NounSeekTest is BaseNounSeekTest {
             100,
             1,
             nounSeek.traitHash(HEAD, 9, 100),
-            0
+            minValue
         );
-
+        vm.expectCall(address(user1), minValue, "");
         uint256 amount = nounSeek.remove(requestId2);
-        assertEq(amount, 0);
+        assertEq(amount, minValue);
+        donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
+        // donee1 funds removed
+        assertEq(donee1Amount, 0);
     }
 
     function test_REQUESTSBYACTIVEADDRESS_happyCase() public {
@@ -970,12 +1037,12 @@ contract NounSeekTest is BaseNounSeekTest {
         // Request 1,2 Matched
         assertEq(
             uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         assertEq(
             uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         // Request 3,4 Did Not Match
@@ -1027,12 +1094,12 @@ contract NounSeekTest is BaseNounSeekTest {
 
         assertEq(
             uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         assertEq(
             uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));
@@ -1062,12 +1129,12 @@ contract NounSeekTest is BaseNounSeekTest {
 
         assertEq(
             uint8(requests[0].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         assertEq(
             uint8(requests[1].removeStatus),
-            uint8(NounSeek.RemoveStatus.MATCHED)
+            uint8(NounSeek.RemoveStatus.DONATION_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));
