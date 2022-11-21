@@ -949,7 +949,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[0].traitId, 9);
         assertEq(requests[0].nounId, ANY_ID);
         assertEq(requests[0].doneeId, 0);
-        assertEq(requests[0].doneeName, "donee0");
+
         assertEq(
             uint8(requests[0].status),
             uint8(NounSeek.RequestStatus.CAN_REMOVE)
@@ -961,7 +961,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[4].traitId, 9);
         assertEq(requests[4].nounId, ANY_ID);
         assertEq(requests[4].doneeId, 2);
-        assertEq(requests[4].doneeName, "donee2");
+
         assertEq(
             uint8(requests[0].status),
             uint8(NounSeek.RequestStatus.CAN_REMOVE)
@@ -1052,7 +1052,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[2].traitId, 8);
         assertEq(requests[2].nounId, ANY_ID);
         assertEq(requests[2].doneeId, 0);
-        assertEq(requests[2].doneeName, "donee0");
+
         assertEq(
             uint8(requests[2].status),
             uint8(NounSeek.RequestStatus.CAN_REMOVE)
@@ -1063,7 +1063,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[3].traitId, 8);
         assertEq(requests[3].nounId, 102);
         assertEq(requests[3].doneeId, 1);
-        assertEq(requests[3].doneeName, "donee1");
+
         assertEq(
             uint8(requests[3].status),
             uint8(NounSeek.RequestStatus.CAN_REMOVE)
@@ -1075,7 +1075,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[4].traitId, 9);
         assertEq(requests[4].nounId, ANY_ID);
         assertEq(requests[4].doneeId, 2);
-        assertEq(requests[4].doneeName, "donee2");
+
         assertEq(
             uint8(requests[4].status),
             uint8(NounSeek.RequestStatus.CAN_REMOVE)
@@ -1107,14 +1107,12 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[2].traitId, 8);
         assertEq(requests[2].nounId, 0);
         assertEq(requests[2].doneeId, 0);
-        assertEq(requests[2].doneeName, "donee0");
 
         assertEq(uint8(requests[3].trait), uint8(HEAD));
         assertEq(requests[3].id, 4);
         assertEq(requests[3].traitId, 9);
         assertEq(requests[3].nounId, ANY_ID);
         assertEq(requests[3].doneeId, 2);
-        assertEq(requests[3].doneeName, "donee2");
 
         // User removes request 4
         vm.prank(user1);
@@ -1142,6 +1140,5 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[2].traitId, 8);
         assertEq(requests[2].nounId, 0);
         assertEq(requests[2].doneeId, 0);
-        assertEq(requests[2].doneeName, "donee0");
     }
 }
