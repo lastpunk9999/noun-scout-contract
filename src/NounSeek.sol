@@ -88,7 +88,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Request with additional `id` and `doneeName` parameters; Returned by `requestsActiveByAddress()`
+     * @notice Request with additional `id` and `status` parameters; Returned by `requestsActiveByAddress()`
      */
     struct ActiveRequest {
         uint256 id;
@@ -96,7 +96,6 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait;
         uint16 traitId;
         uint16 doneeId;
-        string doneeName;
         uint16 nounId;
         uint128 amount;
         RequestStatus status;
@@ -304,7 +303,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
             for (uint256 i; i < requestCount; i++) {
                 Request memory request = _requests[requester][i];
-                (RequestStatus status, , ) = _getRemoveParams(request);
+                (RequestStatus status, , ) = _getRequestStatusAndParams(request);
                 // Request has been deleted
                 if (status == RequestStatus.REMOVED) {
                     continue;
@@ -325,7 +324,6 @@ contract NounSeek is Ownable2Step, Pausable {
                     nonce: request.nonce,
                     trait: request.trait,
                     traitId: request.traitId,
-                    doneeName: _donees[request.doneeId].name,
                     doneeId: request.doneeId,
                     nounId: request.nounId,
                     amount: request.amount,
@@ -939,7 +937,7 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 hash;
         uint16 nounId;
 
-        (status, hash, nounId) = _getRemoveParams(request);
+        (status, hash, nounId) = _getRequestStatusAndParams(request);
 
         if (status == RequestStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash);
@@ -1296,7 +1294,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
-    function _getRemoveParams(Request memory request)
+    function _getRequestStatusAndParams(Request memory request)
         internal
         view
         returns (
@@ -1305,11 +1303,11 @@ contract NounSeek is Ownable2Step, Pausable {
             uint16 nounId
         )
     {
-        hash = traitHash(request.trait, request.traitId, request.nounId);
-
         if (request.amount < 1) {
             return (RequestStatus.REMOVED, hash, nounId);
         }
+
+        hash = traitHash(request.trait, request.traitId, request.nounId);
 
         uint16 doneeId = request.doneeId;
 
