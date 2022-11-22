@@ -12,3 +12,5 @@ out/
 .scratchpad
 .env
 .vscode
+node_modules
+artifacts
