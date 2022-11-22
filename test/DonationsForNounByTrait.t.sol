@@ -147,7 +147,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][] memory nextAuctionDonations,
             uint256[][] memory nextNonAuctionDonations
-        ) = nounSeek.donationsForNextNounByTrait(HEAD);
+        ) = nounSeek.donationsForUpcomingNounByTrait(HEAD);
 
         assertEq(nextAuctionedId, 99);
         assertEq(nextNonAuctionedId, type(uint16).max);
@@ -193,7 +193,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][] memory nextAuctionDonations,
             uint256[][] memory nextNonAuctionDonations
-        ) = nounSeek.donationsForNextNounByTrait(HEAD);
+        ) = nounSeek.donationsForUpcomingNounByTrait(HEAD);
 
         assertEq(nextAuctionedId, 101);
         assertEq(nextNonAuctionedId, 100);
@@ -290,7 +290,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[] memory currentAuctionDonations,
             uint256[] memory prevNonAuctionDonations
-        ) = nounSeek.donationsForCurrentNounByTrait(GLASSES);
+        ) = nounSeek.donationsForNounOnAuctionByTrait(GLASSES);
 
         assertEq(currentAuctionedId, 102);
         assertEq(prevNonAuctionedId, type(uint16).max);
@@ -307,7 +307,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // Current Noun has no matching requests for HEAD
         (, , currentAuctionDonations, prevNonAuctionDonations) = nounSeek
-            .donationsForCurrentNounByTrait(HEAD);
+            .donationsForNounOnAuctionByTrait(HEAD);
         assertEq(currentAuctionDonations.length, doneesCount);
 
         assertEq(currentAuctionDonations[0], 0);
@@ -380,7 +380,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[] memory currentAuctionDonations,
             uint256[] memory prevNonAuctionDonations
-        ) = nounSeek.donationsForCurrentNounByTrait(GLASSES);
+        ) = nounSeek.donationsForNounOnAuctionByTrait(GLASSES);
 
         assertEq(currentAuctionedId, 101);
         assertEq(prevNonAuctionedId, 100);
@@ -402,7 +402,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // No requests for match current HEAD
         (, , currentAuctionDonations, prevNonAuctionDonations) = nounSeek
-            .donationsForCurrentNounByTrait(HEAD);
+            .donationsForNounOnAuctionByTrait(HEAD);
 
         assertEq(currentAuctionDonations.length, doneesCount);
 
@@ -490,7 +490,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[] memory nonAuctionedNounDonations,
             uint256 totalDonations,
             uint256 reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(GLASSES);
+        ) = nounSeek.donationsForMatchableNounByTrait(GLASSES);
 
         assertEq(auctionedNounId, 102);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -518,7 +518,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nonAuctionedNounDonations,
             totalDonations,
             reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(HEAD);
+        ) = nounSeek.donationsForMatchableNounByTrait(HEAD);
 
         assertEq(auctionedNounId, 102);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -607,7 +607,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[] memory nonAuctionedNounDonations,
             uint256 totalDonations,
             uint256 reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(GLASSES);
+        ) = nounSeek.donationsForMatchableNounByTrait(GLASSES);
 
         assertEq(auctionedNounId, 99);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -637,7 +637,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nonAuctionedNounDonations,
             totalDonations,
             reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(HEAD);
+        ) = nounSeek.donationsForMatchableNounByTrait(HEAD);
 
         assertEq(auctionedNounId, 99);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -727,7 +727,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[] memory nonAuctionedNounDonations,
             uint256 totalDonations,
             uint256 reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(GLASSES);
+        ) = nounSeek.donationsForMatchableNounByTrait(GLASSES);
         assertEq(auctionedNounId, 101);
         assertEq(nonAuctionedNounId, 100);
 
@@ -763,7 +763,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nonAuctionedNounDonations,
             totalDonations,
             reimbursement
-        ) = nounSeek.donationsAndReimbursementForPreviousNounByTrait(HEAD);
+        ) = nounSeek.donationsForMatchableNounByTrait(HEAD);
         assertEq(auctionedNounId, 101);
         assertEq(nonAuctionedNounId, 100);
 

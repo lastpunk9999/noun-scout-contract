@@ -303,7 +303,9 @@ contract NounSeek is Ownable2Step, Pausable {
 
             for (uint256 i; i < requestCount; i++) {
                 Request memory request = _requests[requester][i];
-                (RequestStatus status, , ) = _getRequestStatusAndParams(request);
+                (RequestStatus status, , ) = _getRequestStatusAndParams(
+                    request
+                );
                 // Request has been deleted
                 if (status == RequestStatus.REMOVED) {
                     continue;
@@ -519,7 +521,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsForNextNoun()
+    function donationsForUpcomingNoun()
         public
         view
         returns (
@@ -546,7 +548,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsForCurrentNoun()
+    function donationsForNounOnAuction()
         public
         view
         returns (
@@ -580,7 +582,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsAndReimbursementForPreviousNoun()
+    function donationsForMatchableNoun()
         public
         view
         returns (
@@ -708,7 +710,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsForNextNounByTrait(Traits trait)
+    function donationsForUpcomingNounByTrait(Traits trait)
         public
         view
         returns (
@@ -741,7 +743,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsForCurrentNounByTrait(Traits trait)
+    function donationsForNounOnAuctionByTrait(Traits trait)
         public
         view
         returns (
@@ -784,7 +786,7 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
-    function donationsAndReimbursementForPreviousNounByTrait(Traits trait)
+    function donationsForMatchableNounByTrait(Traits trait)
         public
         view
         returns (

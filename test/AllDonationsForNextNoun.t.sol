@@ -86,7 +86,7 @@
 //             uint16 nextNonAuctionedId,
 //             uint256[][] memory nextAuctionDonations,
 //             uint256[][] memory nextNonAuctionDonations
-//         ) = nounSeek.donationsForNextNounByTrait(HEAD);
+//         ) = nounSeek.donationsForUpcomingNounByTrait(HEAD);
 //         assertEq(nextAuctionedId, 101);
 //         assertEq(nextNonAuctionedId, 100);
 //         // All donees are represented

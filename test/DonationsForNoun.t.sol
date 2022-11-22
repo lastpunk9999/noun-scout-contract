@@ -155,7 +155,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][][5] memory nextAuctionDonations,
             uint256[][][5] memory nextNonAuctionDonations
-        ) = nounSeek.donationsForNextNoun();
+        ) = nounSeek.donationsForUpcomingNoun();
         assertEq(nextAuctionedId, 99);
         assertEq(nextNonAuctionedId, type(uint16).max);
 
@@ -233,7 +233,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][][5] memory nextAuctionDonations,
             uint256[][][5] memory nextNonAuctionDonations
-        ) = nounSeek.donationsForNextNoun();
+        ) = nounSeek.donationsForUpcomingNoun();
         assertEq(nextAuctionedId, 101);
         assertEq(nextNonAuctionedId, 100);
 
@@ -320,7 +320,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Next Noun matches ANY_ID requests
         mockAuctionHouse.setNounId(98);
         (, , uint256[][][5] memory nextAuctionDonations, ) = nounSeek
-            .donationsForNextNoun();
+            .donationsForUpcomingNoun();
 
         assertEq(nextAuctionDonations[0].length, nounSeek.backgroundCount());
         assertEq(nextAuctionDonations[1].length, nounSeek.bodyCount());
@@ -346,7 +346,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.setDoneeActive(1, true);
 
         mockAuctionHouse.setNounId(98);
-        (, , nextAuctionDonations, ) = nounSeek.donationsForNextNoun();
+        (, , nextAuctionDonations, ) = nounSeek.donationsForUpcomingNoun();
 
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
@@ -429,7 +429,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[][5] memory currentAuctionDonations,
             uint256[][5] memory prevNonAuctionDonations
-        ) = nounSeek.donationsForCurrentNoun();
+        ) = nounSeek.donationsForNounOnAuction();
         assertEq(currentAuctionedId, 102);
         assertEq(prevNonAuctionedId, type(uint16).max);
 
@@ -523,7 +523,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[][5] memory currentAuctionDonations,
             uint256[][5] memory prevNonAuctionDonations
-        ) = nounSeek.donationsForCurrentNoun();
+        ) = nounSeek.donationsForNounOnAuction();
         assertEq(currentAuctionedId, 101);
         assertEq(prevNonAuctionedId, 100);
 
@@ -608,7 +608,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // set donee1 inactive
         nounSeek.setDoneeActive(1, false);
         (, , uint256[][5] memory currentAuctionDonations, ) = nounSeek
-            .donationsForCurrentNoun();
+            .donationsForNounOnAuction();
 
         uint256 doneesCount = nounSeek.donees().length;
 
@@ -633,7 +633,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // set donee1 active
         nounSeek.setDoneeActive(1, true);
 
-        (, , currentAuctionDonations, ) = nounSeek.donationsForCurrentNoun();
+        (, , currentAuctionDonations, ) = nounSeek.donationsForNounOnAuction();
 
         // donee1 has values reset because it is now active
         assertEq(currentAuctionDonations[1][1], minValue * 2);
@@ -713,7 +713,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounDonations,
             uint256[5] memory totalDonationsPerTrait,
             uint256[5] memory reimbursementPerTrait
-        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+        ) = nounSeek.donationsForMatchableNoun();
         assertEq(auctionedNounId, 102);
         assertEq(nonAuctionedNounId, type(uint16).max);
 
@@ -826,7 +826,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounDonations,
             uint256[5] memory totalDonationsPerTrait,
             uint256[5] memory reimbursementPerTrait
-        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+        ) = nounSeek.donationsForMatchableNoun();
         assertEq(auctionedNounId, 99);
         assertEq(nonAuctionedNounId, type(uint16).max);
 
@@ -939,7 +939,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounDonations,
             uint256[5] memory totalDonationsPerTrait,
             uint256[5] memory reimbursementPerTrait
-        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+        ) = nounSeek.donationsForMatchableNoun();
         assertEq(auctionedNounId, 101);
         assertEq(nonAuctionedNounId, 100);
 
@@ -1050,7 +1050,7 @@ contract NounSeekTest is BaseNounSeekTest {
             ,
             uint256[5] memory totalDonationsPerTrait,
             uint256[5] memory reimbursementPerTrait
-        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+        ) = nounSeek.donationsForMatchableNoun();
 
         uint256 doneesCount = nounSeek.donees().length;
 
@@ -1093,7 +1093,7 @@ contract NounSeekTest is BaseNounSeekTest {
             ,
             totalDonationsPerTrait,
             reimbursementPerTrait
-        ) = nounSeek.donationsAndReimbursementForPreviousNoun();
+        ) = nounSeek.donationsForMatchableNoun();
 
         // donee0 has values
         assertEq(auctionedNounDonations[1][0], minValue * 2);
