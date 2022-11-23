@@ -45,7 +45,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.warp(timestamp);
     }
 
-    function test_DONATIONSFORNEXTNOUNBYTRAIT_NoNonAuctionedNoSpecificID()
+    function test_DONATIONSFORUPCOMINGNOUNBYTRAIT_NoNonAuctionedNoSpecificID()
         public
     {
         vm.startPrank(user1);
@@ -89,7 +89,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORNEXTNOUNBYTRAIT_NonAuctionedAndSpecificID()
+    function test_DONATIONSFORUPCOMINGNOUNBYTRAIT_NonAuctionedAndSpecificID()
         public
     {
         vm.startPrank(user1);
@@ -144,7 +144,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORCURRENTNOUNBYTRAIT_NoNonAuctionedNoSpecificID()
+    function test_DONATIONSFORNOUNONAUCTIONBYTRAIT_NoNonAuctionedNoSpecificID()
         public
     {
         vm.startPrank(user1);
@@ -242,7 +242,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(currentAuctionDonations[3], 0);
     }
 
-    function test_DONATIONSFORCURRENTNOUNBYTRAIT_NonAuctionedAndSpecificID()
+    function test_DONATIONSFORNOUNONAUCTIONBYTRAIT_NonAuctionedAndSpecificID()
         public
     {
         vm.startPrank(user1);
@@ -349,9 +349,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(prevNonAuctionDonations[3], 0);
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUNBYTRAIT_AuctionedNoSkip()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUNBYTRAIT_AuctionedNoSkip() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -466,9 +464,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(totalDonations, 0);
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUNBYTRAIT_AuctionedSkip()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUNBYTRAIT_AuctionedSkip() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -586,9 +582,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(totalDonations, 0);
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUNBYTRAIT_NonAuctioned()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUNBYTRAIT_NonAuctioned() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background

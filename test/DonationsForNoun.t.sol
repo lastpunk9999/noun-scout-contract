@@ -115,7 +115,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORNEXTNOUN_NoNonAuctionedNoSpecificID() public {
+    function test_DONATIONSFORUPCOMINGNOUN_NoNonAuctionedNoSpecificID() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -187,7 +187,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORNEXTNOUN_NonAuctionedAndSpecificID() public {
+    function test_DONATIONSFORUPCOMINGNOUN_NonAuctionedAndSpecificID() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -274,7 +274,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORNEXTNOUN_WithInactiveDonee() public {
+    function test_DONATIONSFORUPCOMINGNOUN_WithInactiveDonee() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -362,7 +362,9 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORCURRENTNOUN_NoNonAuctionedNoSpecificID() public {
+    function test_DONATIONSFORNOUNONAUCTION_NoNonAuctionedNoSpecificID()
+        public
+    {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -457,7 +459,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORCURRENTNOUN_NonAuctionedAndSpecificID() public {
+    function test_DONATIONSFORNOUNONAUCTION_NonAuctionedAndSpecificID() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -556,7 +558,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSFORCURRENTNOUN_WithInactiveDonee() public {
+    function test_DONATIONSFORNOUNONAUCTION_WithInactiveDonee() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -642,9 +644,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(currentAuctionDonations[4][1], minValue * 2);
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_AuctionedNoSkip()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUN_AuctionedNoSkip() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -755,9 +755,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_AuctionedSkip()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUN_AuctionedSkip() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -868,9 +866,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_NonAuctioned()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUN_NonAuctioned() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -988,9 +984,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_DONATIONSANDREIMBURSEMENTSFORPREVIOUSNOUN_WithInactiveDonee()
-        public
-    {
+    function test_DONATIONSFORMATCHABLENOUN_WithInactiveDonee() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
