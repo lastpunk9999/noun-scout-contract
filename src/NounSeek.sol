@@ -483,24 +483,25 @@ contract NounSeek is Ownable2Step, Pausable {
     //-----------------------------------------//
 
     /**
-     * @notice Returns all donations for all traits for a given Noun ID packed into arrays. See example in function body.
-     * @dev When passing in a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
-     * @param nounId The ID of the Noun requests should match
-     * @return donations Total donations for a given Noun ID as a nested arrays in the order trait, traitId, and doneeId.
+     * @notice For a given Noun Id, get cumulative donation amounts for each donee scoped by Trait type and Trait ID.
+     * @dev The donations array is a nested structure of 3 arrays of Trait type, Trait ID, and Donee ID.
+     * The length of the first array is 5 representing all Trait types.
+     * The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait type 3 aka heads).
+     * The length of the third is dependant on the number of donees added to this contract.
+     * Examples:
+     * - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait Id 0) and `warm` (Trait Id 1)
+     * - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background.
+     * - `donations[0][0][1]` is in the total amount that has been Example: `donationsForNounIdByTrait(3, 25) `queries for all requests that are seeking Head #5 for Noun #25. The value in `donations[5][2]` is the total donations for Donee Id #2 if Noun ID 25 had Trait ID 5 to Donee ID 1 if Noun 101 is minted with a cool background (Trait 0, traitId 0)
+     * - `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
+     * @param nounId The ID of the Noun requests should match.
+     * @return donations Total donations for a given Noun ID as a nested arrays in the order Trait type, Trait ID, and Donee ID.
      */
     function donationsForNounId(uint16 nounId)
         public
         view
         returns (uint256[][][5] memory donations)
     {
-        /**
-         * Example:
-         * `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
-         * It returns a nested array where:
-         * - `donations[3][5][2]` is in the total donations for Donee ID 2 if any Noun is minted with a banana head (Trait 3, traitId 5)
-         * - `donations[4][3][1]` is in the total donations for Donee ID 1 if any Noun is minted with black glasses (Trait 4, traitId 3)
-         */
-
         for (uint256 trait; trait < 5; trait++) {
             uint256 traitCount;
             Traits traitEnum = Traits(trait);
@@ -521,6 +522,14 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    /**
+     * @notice For a the next Noun Id (both auctioned and non-auctioned), get cumulative donation amounts for each donee scoped by Trait type and Trait ID.
+     * @dev See { donationsForNounId } for detailed documentation of the nested array structure
+     * @return nextAuctionId The ID of the next Noun that will be auctioned
+     * @return nextNonAuctionId If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
+     * @return nextAuctionDonations Total donations for the next auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     * @return nextNonAuctionDonations If two Nouns are due to be minted, this will contain the total donations for the next non-auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     */
     function donationsForUpcomingNoun()
         public
         view
@@ -548,6 +557,14 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    /**
+     * @notice For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each donee scoped by Trait type and Trait ID.
+     * @dev See { donationsForNounId } for detailed documentation of the nested array structure
+     * @return currentAuctionId The ID of the Noun that is currently being auctioend
+     * @return prevNonAuctionId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
+     * @return currentAuctionDonations Total donations for the current auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     * @return prevNonAuctionDonations If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     */
     function donationsForNounOnAuction()
         public
         view
@@ -582,6 +599,17 @@ contract NounSeek is Ownable2Step, Pausable {
         }
     }
 
+    /**
+     * @notice For the Noun that is eligible to be matched with requests (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each donee scoped by Trait type and Trait ID.
+     * @dev See { donationsForNounId } for detailed documentation of the nested array structure.
+     * See the documentation in the function body for the cases used to match eligible Nouns
+     * @return auctionedNounId The ID of the Noun that is was auctioend
+     * @return nonAuctionedNounId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
+     * @return auctionedNounDonations Total donations for the eligible auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     * @return nonAuctionedNounDonations If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait type, Trait ID, and Donee ID
+     * @return totalDonationsPerTrait An array of total donation amount that will be sent for each Trait Type, less matcher's reimbursement
+     * @return reimbursementPerTrait An array of matcher's reimbursement that will be sent if a Trait type is matched
+     */
     function donationsForMatchableNoun()
         public
         view
@@ -672,7 +700,12 @@ contract NounSeek is Ownable2Step, Pausable {
     //------------------------------------------//
 
     /**
-     * @return donationsByTraitId Total donations for a given Noun and trait keyed by traitId and doneeId. Example: `donationsForNounIdByTrait(3, 25) `queries for all requests that are seeking Head #5 for Noun #25. The value in `donations[5][2]` is the total donations for Donee #3 if Noun #25 had Head #5
+     * @notice Get cumulative donation amounts scoped to Noun Id and Trait type.
+     * @dev Example: `donationsForNounIdByTrait(3, 25)` queries for all requests that are seeking heads for Noun #25. The value in `donations[5][2]`is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5
+     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+     * @param trait The trait type to scope requests to (See Traits Enum)
+     * @param nounId The Noun Id to scope requests to
+     * @return donationsByTraitId Total donations for a given Noun and trait keyed by traitId and doneeId.
      */
     function donationsForNounIdByTrait(Traits trait, uint16 nounId)
         public
