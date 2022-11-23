@@ -26,12 +26,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 103, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 102);
-        uint16 nonces3 = nounSeek.nonceForTraits(HEAD, 8, ANY_ID);
-        uint16 nonces4 = nounSeek.nonceForTraits(HEAD, 8, 102);
-        uint16 nonces5 = nounSeek.nonceForTraits(HEAD, 9, 103);
-        uint16 nonces6 = nounSeek.nonceForTraits(HEAD, 9, 101);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 102);
+        uint16 nonces3 = nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID);
+        uint16 nonces4 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 102);
+        uint16 nonces5 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 103);
+        uint16 nonces6 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 101);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -62,14 +62,17 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces2 + 1);
+        assertEq(
+            nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID),
+            nonces1 + 1
+        );
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces2 + 1);
 
         // nonces remain for non-matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, 102), nonces4);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 103), nonces5);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 101), nonces6);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, 102), nonces4);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 103), nonces5);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 101), nonces6);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -89,12 +92,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 101);
-        uint16 nonces3 = nounSeek.nonceForTraits(HEAD, 8, ANY_ID);
-        uint16 nonces4 = nounSeek.nonceForTraits(HEAD, 8, 101);
-        uint16 nonces5 = nounSeek.nonceForTraits(HEAD, 9, 102);
-        uint16 nonces6 = nounSeek.nonceForTraits(HEAD, 9, 99);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 101);
+        uint16 nonces3 = nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID);
+        uint16 nonces4 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 101);
+        uint16 nonces5 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 102);
+        uint16 nonces6 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 99);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -125,14 +128,17 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 101), nonces2 + 1);
+        assertEq(
+            nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID),
+            nonces1 + 1
+        );
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 101), nonces2 + 1);
 
         // nonces remain for non-matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, 101), nonces4);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces5);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 99), nonces6);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, 101), nonces4);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces5);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 99), nonces6);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -152,12 +158,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 100);
-        uint16 nonces3 = nounSeek.nonceForTraits(HEAD, 8, ANY_ID);
-        uint16 nonces4 = nounSeek.nonceForTraits(HEAD, 8, 101);
-        uint16 nonces5 = nounSeek.nonceForTraits(HEAD, 9, 102);
-        uint16 nonces6 = nounSeek.nonceForTraits(HEAD, 9, 99);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 100);
+        uint16 nonces3 = nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID);
+        uint16 nonces4 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 101);
+        uint16 nonces5 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 102);
+        uint16 nonces6 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 99);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -189,14 +195,17 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 100), nonces2 + 1);
+        assertEq(
+            nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID),
+            nonces1 + 1
+        );
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 100), nonces2 + 1);
 
         // nonces remain for non-matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, 101), nonces4);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces5);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 99), nonces6);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, 101), nonces4);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces5);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 99), nonces6);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -216,12 +225,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, 100);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces3 = nounSeek.nonceForTraits(HEAD, 8, ANY_ID);
-        uint16 nonces4 = nounSeek.nonceForTraits(HEAD, 8, 101);
-        uint16 nonces5 = nounSeek.nonceForTraits(HEAD, 9, 101);
-        uint16 nonces6 = nounSeek.nonceForTraits(HEAD, 9, 99);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 100);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces3 = nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID);
+        uint16 nonces4 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 101);
+        uint16 nonces5 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 101);
+        uint16 nonces6 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 99);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -254,14 +263,14 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 100), nonces1 + 1);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 100), nonces1 + 1);
 
         // nonces remain for non-matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces2);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, 101), nonces4);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces5);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 99), nonces6);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID), nonces2);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID), nonces3);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, 101), nonces4);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces5);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 99), nonces6);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -281,12 +290,12 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 99);
-        uint16 nonces3 = nounSeek.nonceForTraits(HEAD, 8, 100);
-        uint16 nonces4 = nounSeek.nonceForTraits(HEAD, 8, ANY_ID);
-        uint16 nonces5 = nounSeek.nonceForTraits(HEAD, 9, 101);
-        uint16 nonces6 = nounSeek.nonceForTraits(HEAD, 9, 100);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 99);
+        uint16 nonces3 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 100);
+        uint16 nonces4 = nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID);
+        uint16 nonces5 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 101);
+        uint16 nonces6 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 100);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -319,15 +328,18 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 99), nonces2 + 1);
+        assertEq(
+            nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID),
+            nonces1 + 1
+        );
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 99), nonces2 + 1);
 
         // nonces remain for non-matches
 
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, 100), nonces3);
-        assertEq(nounSeek.nonceForTraits(HEAD, 8, ANY_ID), nonces4);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 101), nonces5);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 100), nonces6);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, 100), nonces3);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 8, ANY_ID), nonces4);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 101), nonces5);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 100), nonces6);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -477,8 +489,8 @@ contract MatchAndDonate is BaseNounSeekTest {
         // 2 Should match
         nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
 
-        uint16 nonces1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
-        uint16 nonces2 = nounSeek.nonceForTraits(HEAD, 9, 102);
+        uint16 nonces1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonces2 = nounSeekViewUtils.nonceForTraits(HEAD, 9, 102);
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -503,8 +515,11 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for matches
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, ANY_ID), nonces1 + 1);
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces2);
+        assertEq(
+            nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID),
+            nonces1 + 1
+        );
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces2);
 
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 0), 0), 0);
 
@@ -531,7 +546,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD);
 
         // nonces increase for active donee match
-        assertEq(nounSeek.nonceForTraits(HEAD, 9, 102), nonces2 + 1);
+        assertEq(nounSeekViewUtils.nonceForTraits(HEAD, 9, 102), nonces2 + 1);
 
         // donnee1 amounts are 0
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);

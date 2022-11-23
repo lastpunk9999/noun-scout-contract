@@ -175,6 +175,99 @@ contract NounSeekViewUtils {
     }
 
     /**
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * UTILITY FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
+    /**
+     * @notice Evaluate if the provided Request parameters matches the specified Noun
+     * @param requestTrait The trait type to compare the given Noun ID with
+     * @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
+     * @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
+     * @param onChainNounId Noun ID to fetch the attributes of to compare against the given request properties
+     * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
+     */
+    function requestParamsMatchNounParams(
+        NounSeek.Traits requestTrait,
+        uint16 requestTraitId,
+        uint16 requestNounId,
+        uint16 onChainNounId
+    ) public view returns (bool) {
+        return
+            nounSeek.requestMatchesNoun(
+                NounSeek.Request({
+                    nonce: 0,
+                    doneeId: 0,
+                    trait: requestTrait,
+                    traitId: requestTraitId,
+                    nounId: requestNounId,
+                    amount: 0
+                }),
+                onChainNounId
+            );
+    }
+
+    /**
+     * @notice The amount a given donee will receive (before fees) if a Noun with specific trait parameters is minted
+     * @param trait The trait enum
+     * @param traitId The ID of the trait
+     * @param nounId The Noun ID
+     * @param doneeId The donee ID
+     * @return amount The amount before fees
+     */
+    function amountForDoneeByTrait(
+        NounSeek.Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint16 doneeId
+    ) public view returns (uint256 amount) {
+        bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
+        amount = nounSeek.amounts(hash, doneeId);
+    }
+
+    /**
+     * @notice Get the current nonce for a set of request parameters
+     * @param trait The trait enum
+     * @param traitId The ID of the trait
+     * @param nounId The Noun ID
+     * @return nonce The current nonce
+     */
+    function nonceForTraits(
+        NounSeek.Traits trait,
+        uint16 traitId,
+        uint16 nounId
+    ) public view returns (uint16 nonce) {
+        nonce = nounSeek.nonces(nounSeek.traitHash(trait, traitId, nounId));
+    }
+
+    /**
+     * @notice Get a set of nonces for request parameters
+     * @dev The length of the `traits` array is used as the returned array length
+     * @param traits Array of trait Enums
+     * @param traitIds Array of trait IDs
+     * @param nounIds Array of Noun IDs
+     * @return noncesList Array of corresponding nonces
+     */
+    function noncesForTraits(
+        NounSeek.Traits[] calldata traits,
+        uint16[] calldata traitIds,
+        uint16[] calldata nounIds
+    ) public view returns (uint16[] memory noncesList) {
+        uint256 length = traits.length;
+        noncesList = new uint16[](length);
+        for (uint256 i; i < length; i++) {
+            noncesList[i] = nonceForTraits(traits[i], traitIds[i], nounIds[i]);
+        }
+    }
+
+    /**
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     * INTERNAL FUNCTIONS
+     * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+     */
+
+    /**
      * @notice Was the specified Noun ID not auctioned
      */
     function _isNonAuctionedNoun(uint256 nounId) internal pure returns (bool) {

@@ -56,7 +56,7 @@ contract NounSeekTest is BaseNounSeekTest {
     function test_TOGGLEDONNEACTIVE() public {}
 
     function test_ADD_happyCase() public {
-        uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonce1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
 
         vm.expectEmit(true, true, true, true);
         // expect the event to have the an empty message and the correct donation value
@@ -120,7 +120,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         assertEq(requestsUser1.length, 2);
 
-        amount = nounSeek.amountForDoneeByTrait(HEAD, 9, ANY_ID, 1);
+        amount = nounSeekViewUtils.amountForDoneeByTrait(HEAD, 9, ANY_ID, 1);
 
         assertEq(amount, minValue * 2);
 
@@ -133,7 +133,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // - adds additional request for different HEAD, specific noun Id, different donee
         vm.expectEmit(true, true, true, true);
 
-        uint16 nonce2 = nounSeek.nonceForTraits(HEAD, 8, 99);
+        uint16 nonce2 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 99);
 
         // expect the event to have the an empty message and the correct donation value
         emit RequestAdded(
@@ -221,7 +221,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
     function test_ADDWITHMESSAGE_happyCase() public {
         uint256 donation = 1 ether;
-        uint16 nonce1 = nounSeek.nonceForTraits(HEAD, 9, ANY_ID);
+        uint16 nonce1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
         vm.expectEmit(true, true, true, true);
         // expect the event to have the "hello" message and the correct donation value
         emit RequestAdded(

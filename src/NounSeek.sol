@@ -336,41 +336,6 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Get the current nonce for a set of request parameters
-     * @param trait The trait enum
-     * @param traitId The ID of the trait
-     * @param nounId The Noun ID
-     * @return nonce The current nonce
-     */
-    function nonceForTraits(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId
-    ) public view returns (uint16 nonce) {
-        nonce = nonces[traitHash(trait, traitId, nounId)];
-    }
-
-    /**
-     * @notice Get a set of nonces for request parameters
-     * @dev The length of the `traits` array is used as the returned array length
-     * @param traits Array of trait Enums
-     * @param traitIds Array of trait IDs
-     * @param nounIds Array of Noun IDs
-     * @return noncesList Array of corresponding nonces
-     */
-    function noncesForTraits(
-        Traits[] calldata traits,
-        uint16[] calldata traitIds,
-        uint16[] calldata nounIds
-    ) public view returns (uint16[] memory noncesList) {
-        uint256 length = traits.length;
-        noncesList = new uint16[](length);
-        for (uint256 i; i < length; i++) {
-            noncesList[i] = nonceForTraits(traits[i], traitIds[i], nounIds[i]);
-        }
-    }
-
-    /**
      * @notice The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
      * @dev Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
      * @param trait The trait enum
@@ -391,24 +356,6 @@ contract NounSeek is Ownable2Step, Pausable {
     //----------------//
 
     /**
-     * @notice The amount a given donee will receive (before fees) if a Noun with specific trait parameters is minted
-     * @param trait The trait enum
-     * @param traitId The ID of the trait
-     * @param nounId The Noun ID
-     * @param doneeId The donee ID
-     * @return amount The amount before fees
-     */
-    function amountForDoneeByTrait(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        uint16 doneeId
-    ) public view returns (uint256 amount) {
-        bytes32 hash = traitHash(trait, traitId, nounId);
-        amount = amounts[hash][doneeId];
-    }
-
-    /**
      * @notice Given a donation total, derive the reimbursement fee and basis points used to calculate it
      * @param total A donation amount
      * @return effectiveBPS The basis point used to cacluate the reimbursement fee
@@ -424,34 +371,6 @@ contract NounSeek is Ownable2Step, Pausable {
             reimbursement
         ) = _effectiveHighPrecisionBPSForDonationTotal(total);
         effectiveBPS = effectiveBPS / 100;
-    }
-
-    /**
-     * @notice Evaluate if the provided Request parameters matches the specified Noun
-     * @param requestTrait The trait type to compare the given Noun ID with
-     * @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
-     * @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
-     * @param onChainNounId Noun ID to fetch the attributes of to compare against the given request properties
-     * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
-     */
-    function requestParamsMatchNounParams(
-        Traits requestTrait,
-        uint16 requestTraitId,
-        uint16 requestNounId,
-        uint16 onChainNounId
-    ) public view returns (bool) {
-        return
-            requestMatchesNoun(
-                Request({
-                    nonce: 0,
-                    doneeId: 0,
-                    trait: requestTrait,
-                    traitId: requestTraitId,
-                    nounId: requestNounId,
-                    amount: 0
-                }),
-                onChainNounId
-            );
     }
 
     /**
@@ -475,12 +394,9 @@ contract NounSeek is Ownable2Step, Pausable {
             return false;
         }
 
-        return request.traitId == _fetchTraitId(request.trait, nounId);
+        return
+            request.traitId == _fetchOnChainNounTraitId(request.trait, nounId);
     }
-
-    //-----------------------------------------//
-    //---Combine donations across all traits---//
-    //-----------------------------------------//
 
     /**
      * @notice For a given Noun Id, get cumulative donation amounts for each donee scoped by Trait type and Trait ID.
@@ -519,6 +435,110 @@ contract NounSeek is Ownable2Step, Pausable {
 
             donations[trait] = new uint256[][](traitCount);
             donations[trait] = donationsForNounIdByTrait(traitEnum, nounId);
+        }
+    }
+
+    /**
+     * @notice Get cumulative donation amounts scoped to Noun Id and Trait type.
+     * @dev Example: `donationsForNounIdByTrait(3, 25)` queries for all requests that are seeking heads for Noun #25. The value in `donations[5][2]`is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5
+     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+     * @param trait The trait type to scope requests to (See Traits Enum)
+     * @param nounId The Noun Id to scope requests to
+     * @return donationsByTraitId Total donations for a given Noun and trait keyed by traitId and doneeId.
+     */
+    function donationsForNounIdByTrait(Traits trait, uint16 nounId)
+        public
+        view
+        returns (uint256[][] memory donationsByTraitId)
+    {
+        unchecked {
+            uint16 traitCount;
+            if (trait == Traits.BACKGROUND) {
+                traitCount = backgroundCount;
+            } else if (trait == Traits.BODY) {
+                traitCount = bodyCount;
+            } else if (trait == Traits.ACCESSORY) {
+                traitCount = accessoryCount;
+            } else if (trait == Traits.HEAD) {
+                traitCount = headCount;
+            } else if (trait == Traits.GLASSES) {
+                traitCount = glassesCount;
+            }
+
+            uint256 doneesCount = _donees.length;
+            donationsByTraitId = new uint256[][](traitCount);
+
+            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
+
+            for (uint16 traitId; traitId < traitCount; traitId++) {
+                donationsByTraitId[traitId] = donationsForNounIdByTraitId(
+                    trait,
+                    traitId,
+                    nounId,
+                    processAnyId,
+                    doneesCount
+                );
+            }
+        }
+    }
+
+    /**
+     * @notice Get cumulative donation amounts scoped by Noun Id and Trait Id
+     */
+    function donationsForNounIdByTraitId(
+        Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        bool processAnyId,
+        uint256 doneesCount
+    ) public view returns (uint256[] memory donations) {
+        unchecked {
+            bool[] memory isActive = _mapDoneeActive(doneesCount);
+
+            bytes32 hash = traitHash(trait, traitId, nounId);
+            bytes32 anyIdHash;
+            if (processAnyId) {
+                anyIdHash = traitHash(trait, traitId, ANY_ID);
+            }
+            donations = new uint256[](doneesCount);
+            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
+                if (!isActive[doneeId]) continue;
+                uint256 anyIdAmount = processAnyId
+                    ? amounts[anyIdHash][doneeId]
+                    : 0;
+                donations[doneeId] = amounts[hash][doneeId] + anyIdAmount;
+            }
+        }
+    }
+
+    function donationsForOnChainNoun(
+        uint16 nounId,
+        bool processAnyId,
+        uint256 doneesCount
+    ) public view returns (uint256[][5] memory donations) {
+        INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
+        for (uint256 trait; trait < 5; trait++) {
+            Traits traitEnum = Traits(trait);
+            uint16 traitId;
+            if (traitEnum == Traits.BACKGROUND) {
+                traitId = uint16(seed.background);
+            } else if (traitEnum == Traits.BODY) {
+                traitId = uint16(seed.body);
+            } else if (traitEnum == Traits.ACCESSORY) {
+                traitId = uint16(seed.accessory);
+            } else if (traitEnum == Traits.HEAD) {
+                traitId = uint16(seed.head);
+            } else if (traitEnum == Traits.GLASSES) {
+                traitId = uint16(seed.glasses);
+            }
+
+            donations[trait] = donationsForNounIdByTraitId(
+                traitEnum,
+                traitId,
+                nounId,
+                processAnyId,
+                doneesCount
+            );
         }
     }
 
@@ -581,7 +601,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
             uint256 doneesCount = _donees.length;
 
-            currentAuctionDonations = _donationsForOnChainNoun({
+            currentAuctionDonations = donationsForOnChainNoun({
                 nounId: currentAuctionId,
                 processAnyId: true,
                 doneesCount: doneesCount
@@ -590,7 +610,7 @@ contract NounSeek is Ownable2Step, Pausable {
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
 
-                prevNonAuctionDonations = _donationsForOnChainNoun({
+                prevNonAuctionDonations = donationsForOnChainNoun({
                     nounId: prevNonAuctionId,
                     processAnyId: false,
                     doneesCount: doneesCount
@@ -657,7 +677,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
         uint256 doneesCount = _donees.length;
 
-        auctionedNounDonations = _donationsForOnChainNoun({
+        auctionedNounDonations = donationsForOnChainNoun({
             nounId: auctionedNounId,
             processAnyId: true,
             doneesCount: doneesCount
@@ -666,7 +686,7 @@ contract NounSeek is Ownable2Step, Pausable {
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
 
         if (includeNonAuctionedNoun) {
-            nonAuctionedNounDonations = _donationsForOnChainNoun({
+            nonAuctionedNounDonations = donationsForOnChainNoun({
                 nounId: nonAuctionedNounId,
                 processAnyId: false,
                 doneesCount: doneesCount
@@ -692,54 +712,6 @@ contract NounSeek is Ownable2Step, Pausable {
                 totalDonationsPerTrait[trait]
             );
             totalDonationsPerTrait[trait] -= reimbursementPerTrait[trait];
-        }
-    }
-
-    //------------------------------------------//
-    //---Combine Donations for specific trait---//
-    //------------------------------------------//
-
-    /**
-     * @notice Get cumulative donation amounts scoped to Noun Id and Trait type.
-     * @dev Example: `donationsForNounIdByTrait(3, 25)` queries for all requests that are seeking heads for Noun #25. The value in `donations[5][2]`is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5
-     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
-     * @param trait The trait type to scope requests to (See Traits Enum)
-     * @param nounId The Noun Id to scope requests to
-     * @return donationsByTraitId Total donations for a given Noun and trait keyed by traitId and doneeId.
-     */
-    function donationsForNounIdByTrait(Traits trait, uint16 nounId)
-        public
-        view
-        returns (uint256[][] memory donationsByTraitId)
-    {
-        unchecked {
-            uint16 traitCount;
-            if (trait == Traits.BACKGROUND) {
-                traitCount = backgroundCount;
-            } else if (trait == Traits.BODY) {
-                traitCount = bodyCount;
-            } else if (trait == Traits.ACCESSORY) {
-                traitCount = accessoryCount;
-            } else if (trait == Traits.HEAD) {
-                traitCount = headCount;
-            } else if (trait == Traits.GLASSES) {
-                traitCount = glassesCount;
-            }
-
-            uint256 doneesCount = _donees.length;
-            donationsByTraitId = new uint256[][](traitCount);
-
-            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
-
-            for (uint16 traitId; traitId < traitCount; traitId++) {
-                donationsByTraitId[traitId] = _donationsForNounIdWithTraitId(
-                    trait,
-                    traitId,
-                    nounId,
-                    processAnyId,
-                    doneesCount
-                );
-            }
         }
     }
 
@@ -884,12 +856,12 @@ contract NounSeek is Ownable2Step, Pausable {
 
         nounIds[0] = auctionedNounId;
         nounIds[1] = ANY_ID;
-        traitIds[0] = _fetchTraitId(trait, auctionedNounId);
+        traitIds[0] = _fetchOnChainNounTraitId(trait, auctionedNounId);
         traitIds[1] = traitIds[0];
 
         if (nonAuctionedNounId < UINT16_MAX) {
             nounIds[2] = nonAuctionedNounId;
-            traitIds[2] = _fetchTraitId(trait, nonAuctionedNounId);
+            traitIds[2] = _fetchOnChainNounTraitId(trait, nonAuctionedNounId);
         }
 
         uint256[] memory donations;
@@ -1260,7 +1232,7 @@ contract NounSeek is Ownable2Step, Pausable {
         return nounId % 10 > 0 || nounId > 1820;
     }
 
-    function _fetchTraitId(Traits trait, uint16 nounId)
+    function _fetchOnChainNounTraitId(Traits trait, uint16 nounId)
         internal
         view
         returns (uint16 traitId)
@@ -1316,63 +1288,6 @@ contract NounSeek is Ownable2Step, Pausable {
             for (uint256 i; i < doneesCount; i++) {
                 isActive[i] = _donees[i].active;
             }
-        }
-    }
-
-    function _donationsForNounIdWithTraitId(
-        Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        bool processAnyId,
-        uint256 doneesCount
-    ) internal view returns (uint256[] memory donations) {
-        unchecked {
-            bool[] memory isActive = _mapDoneeActive(doneesCount);
-
-            bytes32 hash = traitHash(trait, traitId, nounId);
-            bytes32 anyIdHash;
-            if (processAnyId) {
-                anyIdHash = traitHash(trait, traitId, ANY_ID);
-            }
-            donations = new uint256[](doneesCount);
-            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
-                if (!isActive[doneeId]) continue;
-                uint256 anyIdAmount = processAnyId
-                    ? amounts[anyIdHash][doneeId]
-                    : 0;
-                donations[doneeId] = amounts[hash][doneeId] + anyIdAmount;
-            }
-        }
-    }
-
-    function _donationsForOnChainNoun(
-        uint16 nounId,
-        bool processAnyId,
-        uint256 doneesCount
-    ) internal view returns (uint256[][5] memory donations) {
-        INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
-        for (uint256 trait; trait < 5; trait++) {
-            Traits traitEnum = Traits(trait);
-            uint16 traitId;
-            if (traitEnum == Traits.BACKGROUND) {
-                traitId = uint16(seed.background);
-            } else if (traitEnum == Traits.BODY) {
-                traitId = uint16(seed.body);
-            } else if (traitEnum == Traits.ACCESSORY) {
-                traitId = uint16(seed.accessory);
-            } else if (traitEnum == Traits.HEAD) {
-                traitId = uint16(seed.head);
-            } else if (traitEnum == Traits.GLASSES) {
-                traitId = uint16(seed.glasses);
-            }
-
-            donations[trait] = _donationsForNounIdWithTraitId(
-                traitEnum,
-                traitId,
-                nounId,
-                processAnyId,
-                doneesCount
-            );
         }
     }
 
