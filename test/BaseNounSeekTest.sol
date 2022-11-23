@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 import "../src/NounSeek.sol";
+import "../src/NounSeekViewUtils.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
 
@@ -22,6 +23,7 @@ contract BaseNounSeekTest is EnhancedTest {
     MockNouns mockNouns;
     MockAuctionHouse mockAuctionHouse;
     MockDescriptor mockDescriptor;
+    NounSeekViewUtils nounSeekViewUtils;
 
     address user1 = mkaddr("user1");
     address user2 = mkaddr("user2");
@@ -46,6 +48,7 @@ contract BaseNounSeekTest is EnhancedTest {
         mockDescriptor = new MockDescriptor();
         mockNouns = new MockNouns(address(mockDescriptor));
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
+        nounSeekViewUtils = new NounSeekViewUtils(nounSeek);
 
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         ANY_ID = nounSeek.ANY_ID();

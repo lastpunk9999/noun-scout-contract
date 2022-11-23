@@ -188,7 +188,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionId,
             uint256[][] memory nextAuctionDonations,
 
-        ) = nounSeek.donationsForUpcomingNounByTrait(HEAD);
+        ) = nounSeekViewUtils.donationsForUpcomingNounByTrait(HEAD);
 
         assertEq(nextAuctionId, 101);
         assertEq(nextNonAuctionId, 100);
