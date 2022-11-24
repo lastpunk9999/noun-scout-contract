@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 ---
 
 # NounSeek.sol
@@ -58,9 +58,8 @@ function _rawRequestsByAddress(address requester) external view returns (struct 
 function acceptOwnership() external nonpayable
 ```
 
-:::note Details
-The new owner accepts the ownership transfer.
-:::
+##### Details
+> The new owner accepts the ownership transfer.
 
 ### accessoryCount
 the total number of accessory traits, fetched and cached via `updateTraitCounts()`
@@ -78,9 +77,8 @@ Create a request for the specific trait and specific or open Noun ID payable to 
 function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId) external payable returns (uint256 requestId)
 ```
 
-:::note Details
-`msg.value` is used as the pledged Request amount
-:::
+##### Details
+> `msg.value` is used as the pledged Request amount
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
@@ -96,9 +94,8 @@ Add a Donee by specifying the name and address funds should be sent to
 function addDonee(string name, address to, string description) external nonpayable
 ```
 
-:::note Details
-Adds a Donee to the donees set and activates the Donee
-:::
+##### Details
+> Adds a Donee to the donees set and activates the Donee
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | name | string | The Donee&#39;s name that should be displayed to users/consumers |
@@ -110,9 +107,8 @@ Create a request with a logged message for the specific trait and specific or op
 function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId, string message) external payable returns (uint256 requestId)
 ```
 
-:::note Details
-The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request.
-:::
+##### Details
+> The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request.
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
@@ -182,9 +178,8 @@ For the Noun that is eligible to be matched with pledged donations (and the prev
 function donationsForMatchableNoun() external view returns (uint16 auctionedNounId, uint16 nonAuctionedNounId, uint256[][5] auctionedNounDonations, uint256[][5] nonAuctionedNounDonations, uint256[5] totalDonationsPerTrait, uint256[5] reimbursementPerTrait)
 ```
 
-:::note Details
-Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns
-:::
+##### Details
+> Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns
 
 #### Returns | Name | Type | Description | |---|---|---|
 | auctionedNounId | uint16 | The ID of the Noun that is was auctioned |
@@ -200,9 +195,8 @@ For a given Noun ID, get cumulative donation amounts for each Donee scoped by Tr
 function donationsForNounId(uint16 nounId) external view returns (uint256[][][5] donations)
 ```
 
-:::note Details
-The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
-:::
+##### Details
+> The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | nounId | uint16 | The ID of the Noun requests should match. |
@@ -215,9 +209,8 @@ Get cumulative donation amounts scoped to Noun ID and Trait Type.
 function donationsForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] donationsByTraitId)
 ```
 
-:::note Details
-Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
-:::
+##### Details
+> Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
@@ -231,9 +224,8 @@ Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID
 function donationsForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] donations)
 ```
 
-:::note Details
-Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
-:::
+##### Details
+> Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
@@ -248,9 +240,8 @@ For the Noun that is currently on auction (and the previous non-auctioned Noun i
 function donationsForNounOnAuction() external view returns (uint16 currentAuctionId, uint16 prevNonAuctionId, uint256[][5] currentAuctionDonations, uint256[][5] prevNonAuctionDonations)
 ```
 
-:::note Details
-Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated
-:::
+##### Details
+> Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated
 
 #### Returns | Name | Type | Description | |---|---|---|
 | currentAuctionId | uint16 | The ID of the Noun that is currently being auctioned |
@@ -264,9 +255,8 @@ For an existing on-chain Noun, use its seed to find matching donations
 function donationsForOnChainNoun(uint16 nounId) external view returns (uint256[][5] donations)
 ```
 
-:::note Details
-Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
-:::
+##### Details
+> Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | nounId | uint16 | Noun ID of an existing on-chain Noun |
@@ -279,9 +269,8 @@ Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in 
 function donationsForUpcomingNoun() external view returns (uint16 nextAuctionId, uint16 nextNonAuctionId, uint256[][][5] nextAuctionDonations, uint256[][][5] nextNonAuctionDonations)
 ```
 
-:::note Details
-See { donationsForNounId } for detailed documentation of the nested array structure
-:::
+##### Details
+> See { donationsForNounId } for detailed documentation of the nested array structure
 
 #### Returns | Name | Type | Description | |---|---|---|
 | nextAuctionId | uint16 | The ID of the next Noun that will be auctioned |
@@ -338,9 +327,8 @@ Match and send all pledged amounts for the previous Noun(s).
 function matchAndDonate(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)
 ```
 
-:::note Details
-Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
-:::
+##### Details
+> Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | The Trait Type to match with the previous Noun (see `Traits` Enum) |
@@ -406,9 +394,8 @@ function nouns() external view returns (contract INounsTokenLike)
 function owner() external view returns (address)
 ```
 
-:::note Details
-Returns the address of the current owner.
-:::
+##### Details
+> Returns the address of the current owner.
 
 #### Returns | Name | Type | Description | |---|---|---|
 | _0 | address | undefined |
@@ -426,9 +413,8 @@ function pause() external nonpayable
 function paused() external view returns (bool)
 ```
 
-:::note Details
-Returns true if the contract is paused, and false otherwise.
-:::
+##### Details
+> Returns true if the contract is paused, and false otherwise.
 
 #### Returns | Name | Type | Description | |---|---|---|
 | _0 | bool | undefined |
@@ -439,9 +425,8 @@ Returns true if the contract is paused, and false otherwise.
 function pendingOwner() external view returns (address)
 ```
 
-:::note Details
-Returns the address of the pending owner.
-:::
+##### Details
+> Returns the address of the pending owner.
 
 #### Returns | Name | Type | Description | |---|---|---|
 | _0 | address | undefined |
@@ -452,9 +437,8 @@ Remove the specified request and return the associated amount.
 function remove(uint256 requestId) external nonpayable returns (uint256 amount)
 ```
 
-:::note Details
-Must be called by the Requester&#39;s address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately
-:::
+##### Details
+> Must be called by the Requester&#39;s address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | requestId | uint256 | Request Id |
@@ -467,9 +451,8 @@ Must be called by the Requester&#39;s address. If the Request has already been m
 function renounceOwnership() external nonpayable
 ```
 
-:::note Details
-Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
-:::
+##### Details
+> Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
 
 ### requestMatchesNoun
 
@@ -490,9 +473,8 @@ Get requests, augemented with status, for non-removed Requests
 function requestsByAddress(address requester) external view returns (struct NounSeek.RequestWithStatus[] requests)
 ```
 
-:::note Details
-Removes Requests marked as REMOVED, and includes Requests that have been previously matched. Do not rely on array index; use `request.id` to specify a Request when calling `remove()` See { _getRequestStatusAndParams } for calculations
-:::
+##### Details
+> Removes Requests marked as REMOVED, and includes Requests that have been previously matched. Do not rely on array index; use `request.id` to specify a Request when calling `remove()` See { _getRequestStatusAndParams } for calculations
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | requester | address | The address of the requester |
@@ -505,9 +487,8 @@ Toggles a Donee&#39;s active state by its index within the set, reverts if Donee
 function setDoneeActive(uint256 doneeId, bool active) external nonpayable
 ```
 
-:::note Details
-If the Done is not configured, a revert will be triggered
-:::
+##### Details
+> If the Done is not configured, a revert will be triggered
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | doneeId | uint256 | Donee id based on its index within the donees set |
@@ -554,9 +535,8 @@ The canonical key for requests that target the same `trait`, `traitId`, and `nou
 function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external pure returns (bytes32 hash)
 ```
 
-:::note Details
-Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
-:::
+##### Details
+> Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait | enum NounSeek.Traits | The trait enum |
@@ -571,9 +551,8 @@ Used to (1) group requests by their parameters in the `amounts` mapping and (2)k
 function transferOwnership(address newOwner) external nonpayable
 ```
 
-:::note Details
-Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one. Can only be called by the current owner.
-:::
+##### Details
+> Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one. Can only be called by the current owner.
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | newOwner | address | undefined |
@@ -652,9 +631,8 @@ Emitted when an eligible Noun matches one or more Requests
 event Matched(enum NounSeek.Traits indexed trait, uint16 traitId, uint16 indexed nounId, bytes32 indexed traitsHash, uint16 newNonce)
 ```
 
-:::note Details
-Used to update and/or invalidate Requests stored off-chain for these parameters
-:::
+##### Details
+> Used to update and/or invalidate Requests stored off-chain for these parameters
 
 #### Parameters | Name | Type | Description | |---|---|---|
 | trait `indexed` | enum NounSeek.Traits |
