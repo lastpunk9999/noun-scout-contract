@@ -12,13 +12,40 @@ contract NounSeek is Ownable2Step, Pausable {
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    /**
+     * @notice Thrown when an attempting to remove a Request within `AUCTION_END_LIMIT` (5 minutes) of auction end.
+     */
     error AuctionEndingSoon();
+
+    /**
+     * @notice Thrown when an attempting to remove a Request that matches the current or previous Noun
+     */
     error MatchFound(uint16 nounId);
+
+    /**
+     * @notice Thrown when an attempting to remove a Request that was previously matched
+     */
     error DonationAlreadySent();
-    error NoMatch();
-    error InactiveDonee();
-    error ValueTooLow();
+
+    /**
+     * @notice Thrown when attempting to remove a Request that was previously removed.
+     */
     error AlreadyRemoved();
+
+    /**
+     * @notice Thrown when an attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
+     */
+    error NoMatch();
+
+    /**
+     * @notice Thrown when an attempting to add a Request that pledges an amount to an inactive Donee
+     */
+    error InactiveDonee();
+
+    /**
+     * @notice Thrown when an attempting to add a Request with value below `minValue`
+     */
+    error ValueTooLow();
 
     /**
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -26,6 +53,9 @@ contract NounSeek is Ownable2Step, Pausable {
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
 
+    /**
+     * @notice Emitted when a Request is added
+     */
     event RequestAdded(
         uint256 requestId,
         address indexed requester,
@@ -38,6 +68,10 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 nonce,
         string message
     );
+
+    /**
+     * @notice Emitted when a Request is removed
+     */
     event RequestRemoved(
         uint256 requestId,
         address indexed requester,
@@ -48,13 +82,31 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 indexed traitsHash,
         uint256 amount
     );
+
+    /**
+     * @notice Emitted when a Donee is added
+     */
     event DoneeAdded(
         uint256 doneeId,
         string name,
         address to,
         string description
     );
+
+    /**
+     * @notice Emitted when a Donee status has changed
+     */
     event DoneeisActivetatusChanged(uint256 doneeId, bool active);
+
+    /**
+     * @notice Emitted when an eligible Noun matches one or more Requests
+     * @dev Used to update and/or invalidate Requests stored off-chain for these parameters
+     * @param trait Trait Type that matched
+     * @param traitId Trait ID that matched
+     * @param nounId Noun Id that matched
+     * @param traitsHash Hash of trait, traitId, nounId
+     * @param newNonce new incremented nonce; used to invalidated Requests with the prior nonce
+     */
     event Matched(
         Traits indexed trait,
         uint16 traitId,
@@ -62,11 +114,38 @@ contract NounSeek is Ownable2Step, Pausable {
         bytes32 indexed traitsHash,
         uint16 newNonce
     );
+
+    /**
+     * @notice Emitted when an eligible Noun matches one or more Requests
+     * @param donations The array of amounts indexed by Donee ID sent to donees
+     */
     event Donated(uint256[] donations);
+
+    /**
+     * @notice Emitted when an eligible Noun matches one or more Requests
+     * @param matcher The addressed that performed the matching function
+     * @param amount The reimbursement amount
+     */
     event Reimbursed(address indexed matcher, uint256 amount);
+
+    /**
+     * @notice Emitted when the minValue changes
+     */
     event MinValueChanged(uint256 newMinValue);
+
+    /**
+     * @notice Emitted when the baseReimbursementBPS changes
+     */
     event ReimbursementBPSChanged(uint256 newReimbursementBPS);
+
+    /**
+     * @notice Emitted when the minReimbursement changes
+     */
     event MinReimbursementChanged(uint256 newMinReimbursement);
+
+    /**
+     * @notice Emitted when the maxReimbursement changes
+     */
     event MaxReimbursementChanged(uint256 newMaxReimbursement);
 
     /**
@@ -142,26 +221,31 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice Retreives historical mapping of Noun ID -> seed
+     * @return nouns contract address
      */
     INounsTokenLike public immutable nouns;
 
     /**
      * @notice Retreives the current auction data
+     * @return auctionHouse contract address
      */
     INounsAuctionHouseLike public immutable auctionHouse;
 
     /**
      * @notice The address of the WETH contract
+     * @return WETH contract address
      */
     IWETH public immutable weth;
 
     /**
      * @notice Time limit before an auction ends; requests cannot be removed during this time
+     * @return Set to 5 minutes
      */
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
 
     /**
      * @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID except non-auctioned Nouns
+     * @return Set to zero (0)
      */
     uint16 public constant ANY_ID = 0;
 
@@ -178,21 +262,25 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice A portion of donated funds are sent to the address performing a match; owner can update
+     * @return baseReimbursementBPS
      */
     uint16 public baseReimbursementBPS = 250;
 
     /**
      * @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; owner can update
+     * @return minReimbursement
      */
     uint256 public minReimbursement = 0.003 ether;
 
     /**
      * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations; owner can update
+     * @return maxReimbursement
      */
     uint256 public maxReimbursement = 0.1 ether;
 
     /**
      * @notice The minimum donation value; owner can update
+     * @return minValue
      */
     uint256 public minValue = 0.01 ether;
 
@@ -203,26 +291,31 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice the total number of background traits, fetched and cached via `updateTraitCounts()`
+     * @return backgroundCount
      */
     uint16 public backgroundCount;
 
     /**
      * @notice the total number of body traits, fetched and cached via `updateTraitCounts()`
+     * @return bodyCount
      */
     uint16 public bodyCount;
 
     /**
      * @notice the total number of accessory traits, fetched and cached via `updateTraitCounts()`
+     * @return accessoryCount
      */
     uint16 public accessoryCount;
 
     /**
      * @notice the total number of head traits, fetched and cached via `updateTraitCounts()`
+     * @return headCount
      */
     uint16 public headCount;
 
     /**
      * @notice the total number of glasses traits, fetched and cached via `updateTraitCounts()`
+     * @return glassesCount
      */
     uint16 public glassesCount;
 
