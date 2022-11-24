@@ -96,7 +96,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
      * @notice Emitted when a Donee status has changed
      */
-    event DoneeisActivetatusChanged(uint256 doneeId, bool active);
+    event DoneeActiveStatusChanged(uint256 doneeId, bool active);
 
     /**
      * @notice Emitted when an eligible Noun matches one or more Requests
@@ -797,11 +797,12 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Get all non-augment requests, including delete/blank requests, made by an address
+     * @notice Get all raw Requests (without status, includes deleted Requests)
+     * @dev Exists for low-level queries. The function { requestsByAddress } is better in most use-cases
      * @param requester The address of the requester
      * @return requests An array of Request structs
      */
-    function _rawRequestsByAddress(address requester)
+    function rawRequestsByAddress(address requester)
         public
         view
         returns (Request[] memory requests)
@@ -810,12 +811,13 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Get a specific non-augmented request by an address
+     * @notice Get a specific raw Request (without status, includes deleted Requests)
+     * @dev Exists for low-level queries. The function { requestsByAddress } is better in most use-cases
      * @param request The address of the requester
      * @param requestId The ID of the request
      * @return request The Request struct
      */
-    function _rawRequestById(address requester, uint256 requestId)
+    function rawRequestById(address requester, uint256 requestId)
         public
         view
         returns (Request memory request)
@@ -1063,7 +1065,7 @@ contract NounSeek is Ownable2Step, Pausable {
     function setDoneeActive(uint256 doneeId, bool active) external onlyOwner {
         if (active == _donees[doneeId].active) return;
         _donees[doneeId].active = active;
-        emit DoneeisActivetatusChanged({doneeId: doneeId, active: active});
+        emit DoneeActiveStatusChanged({doneeId: doneeId, active: active});
     }
 
     /**
