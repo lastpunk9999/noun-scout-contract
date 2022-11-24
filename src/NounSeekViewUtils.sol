@@ -69,8 +69,6 @@ contract NounSeekViewUtils {
 
             currentTraitId = _fetchTraitId(trait, currentAuctionId);
 
-            uint256 doneesCount = nounSeek.donees().length;
-
             currentAuctionDonations = nounSeek.donationsForNounIdByTraitId(
                 trait,
                 currentTraitId,

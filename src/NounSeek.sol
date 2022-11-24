@@ -88,9 +88,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Request with additional `id` and `status` parameters; Returned by `requestsActiveByAddress()`
+     * @notice Request with additional `id` and `status` parameters; Returned by `requestsByAddress()`
      */
-    struct ActiveRequest {
+    struct RequestWithStatus {
         uint256 id;
         uint16 nonce;
         Traits trait;
@@ -123,7 +123,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice Removal status types for a Request
-     * @dev If "CAN_REMOVE", `remove(uint16 requestId)` function will not revert
+     * @dev See { _getRequestStatusAndParams } for calculations
+     * A Request can only be removed if `status == CAN_REMOVE`
      */
     enum RequestStatus {
         CAN_REMOVE,
@@ -273,41 +274,17 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Get all requests, including delete/blank requests, made by an address
+     * @notice Get requests, augemented with status, for non-removed Requests
+     * @dev Removes Requests marked as REMOVED, and includes Requests that have been previously matched.
+     * Do not rely on array index; use `request.id` to specify a Request when calling `remove()`
+     * See { _getRequestStatusAndParams } for calculations
      * @param requester The address of the requester
-     * @return requests An array of Request structs
+     * @return requests An array of RequestWithStatus Structs
      */
     function requestsByAddress(address requester)
         public
         view
-        returns (Request[] memory requests)
-    {
-        requests = _requests[requester];
-    }
-
-    /**
-     * @notice Get a specific request by an address
-     * @param request The address of the requester
-     * @param requestId The ID of the request
-     * @return request The Request struct
-     */
-    function requestById(address requester, uint256 requestId)
-        public
-        view
-        returns (Request memory request)
-    {
-        request = _requests[requester][requestId];
-    }
-
-    /**
-     * @notice Get requests that have not deleted and include a status per request
-     * @param requester The address of the requester
-     * @return requests An array of ActiveRequests
-     */
-    function requestsActiveByAddress(address requester)
-        public
-        view
-        returns (ActiveRequest[] memory requests)
+        returns (RequestWithStatus[] memory requests)
     {
         unchecked {
             uint256 activeRequestCount;
@@ -332,12 +309,12 @@ contract NounSeek is Ownable2Step, Pausable {
                 activeRequestCount++;
             }
 
-            requests = new ActiveRequest[](activeRequestCount);
+            requests = new RequestWithStatus[](activeRequestCount);
             for (uint256 i; i < activeRequestCount; i++) {
                 Request memory request = _requests[requester][
                     activeRequestIds[i]
                 ];
-                requests[i] = ActiveRequest({
+                requests[i] = RequestWithStatus({
                     id: activeRequestIds[i],
                     nonce: request.nonce,
                     trait: request.trait,
@@ -727,6 +704,33 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
+     * @notice Get all non-augment requests, including delete/blank requests, made by an address
+     * @param requester The address of the requester
+     * @return requests An array of Request structs
+     */
+    function _rawRequestsByAddress(address requester)
+        public
+        view
+        returns (Request[] memory requests)
+    {
+        requests = _requests[requester];
+    }
+
+    /**
+     * @notice Get a specific non-augmented request by an address
+     * @param request The address of the requester
+     * @param requestId The ID of the request
+     * @return request The Request struct
+     */
+    function _rawRequestById(address requester, uint256 requestId)
+        public
+        view
+        returns (Request memory request)
+    {
+        request = _requests[requester][requestId];
+    }
+
+    /**
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * WRITE FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -789,9 +793,9 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Remove the specified request and return the associated ETH.
+     * @notice Remove the specified request and return the associated amount.
      * @dev Must be called by the Requester's address.
-     * If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See `_getRequestStatusAndParams`)
+     * If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations)
      * If the Donee of the Request is marked as inactive, the funds can be returned immediately
      * @param requestId Request Id
      * @param amount The amount sent to the requester
