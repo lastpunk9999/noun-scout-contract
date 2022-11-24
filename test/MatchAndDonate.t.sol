@@ -350,7 +350,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     function test_MATCHANDDONATE_HappyAboveMaxReimbursement() public {
         // The maximum amount that can be sent before reimburesement bps drops
         uint256 thresholdValue = (maxReimbursement * 10_000) /
-            maxReimbursementBPS;
+            baseReimbursementBPS;
 
         vm.prank(user1);
 
@@ -384,7 +384,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     function test_MATCHANDDONATE_HappyBelowMinReimbursement() public {
         // The minimum amount that can be sent before reimburesement bps is raised = 0.08 ETH
         uint256 thresholdValue = (minReimbursement * 10_000) /
-            maxReimbursementBPS;
+            baseReimbursementBPS;
 
         vm.prank(user1);
         // Send half the value of the threshold (0.08-1 ETH)
@@ -436,8 +436,9 @@ contract MatchAndDonate is BaseNounSeekTest {
         mockNouns.setSeed(seed, 102);
         mockAuctionHouse.setNounId(103);
 
-        // maxReimbursementBPS of 2.5% is applied to the total
-        uint256 reimbursement = (thresholdValue * maxReimbursementBPS) / 10_000;
+        // baseReimbursementBPS of 2.5% is applied to the total
+        uint256 reimbursement = (thresholdValue * baseReimbursementBPS) /
+            10_000;
 
         // Expect reimbursement deducted from the total
         vm.expectCall(address(donee0), thresholdValue - reimbursement, "");

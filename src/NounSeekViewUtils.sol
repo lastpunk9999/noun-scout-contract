@@ -71,23 +71,19 @@ contract NounSeekViewUtils {
 
             uint256 doneesCount = nounSeek.donees().length;
 
-            currentAuctionDonations = _donationsForNounIdWithTraitId(
+            currentAuctionDonations = nounSeek.donationsForNounIdByTraitId(
                 trait,
                 currentTraitId,
-                currentAuctionId,
-                true,
-                doneesCount
+                currentAuctionId
             );
 
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
                 prevTraitId = _fetchTraitId(trait, prevNonAuctionId);
-                prevNonAuctionDonations = _donationsForNounIdWithTraitId(
+                prevNonAuctionDonations = nounSeek.donationsForNounIdByTraitId(
                     trait,
                     prevTraitId,
-                    prevNonAuctionId,
-                    false,
-                    doneesCount
+                    prevNonAuctionId
                 );
             }
         }
@@ -140,23 +136,19 @@ contract NounSeekViewUtils {
 
         uint256 doneesCount = nounSeek.donees().length;
 
-        auctionedNounDonations = _donationsForNounIdWithTraitId({
+        auctionedNounDonations = nounSeek.donationsForNounIdByTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
-            nounId: auctionedNounId,
-            processAnyId: true,
-            doneesCount: doneesCount
+            nounId: auctionedNounId
         });
 
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
 
         if (includeNonAuctionedNoun) {
-            nonAuctionedNounDonations = _donationsForNounIdWithTraitId({
+            nonAuctionedNounDonations = nounSeek.donationsForNounIdByTraitId({
                 trait: trait,
                 traitId: _fetchTraitId(trait, nonAuctionedNounId),
-                nounId: nonAuctionedNounId,
-                processAnyId: false,
-                doneesCount: doneesCount
+                nounId: nonAuctionedNounId
             });
         }
 
@@ -296,34 +288,6 @@ contract NounSeekViewUtils {
             traitId = uint16(nouns.seeds(nounId).head);
         } else if (trait == NounSeek.Traits.GLASSES) {
             traitId = uint16(nouns.seeds(nounId).glasses);
-        }
-    }
-
-    function _donationsForNounIdWithTraitId(
-        NounSeek.Traits trait,
-        uint16 traitId,
-        uint16 nounId,
-        bool processAnyId,
-        uint256 doneesCount
-    ) internal view returns (uint256[] memory donations) {
-        unchecked {
-            bool[] memory isActive = _mapDoneeActive(doneesCount);
-
-            bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-            bytes32 anyIdHash;
-            if (processAnyId) {
-                anyIdHash = nounSeek.traitHash(trait, traitId, ANY_ID);
-            }
-            donations = new uint256[](doneesCount);
-            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
-                if (!isActive[doneeId]) continue;
-                uint256 anyIdAmount = processAnyId
-                    ? nounSeek.amounts(anyIdHash, doneeId)
-                    : 0;
-                donations[doneeId] =
-                    nounSeek.amounts(hash, doneeId) +
-                    anyIdAmount;
-            }
         }
     }
 
