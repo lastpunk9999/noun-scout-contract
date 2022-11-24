@@ -14,7 +14,9 @@ function ANY_ID() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | Set to zero (0) |
 
 ### AUCTION_END_LIMIT
@@ -24,7 +26,9 @@ function AUCTION_END_LIMIT() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | Set to 5 minutes |
 
 ### _rawRequestById
@@ -34,10 +38,14 @@ function _rawRequestById(address requester, uint256 requestId) external view ret
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requester | address | undefined |
 | requestId | uint256 | The ID of the request |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | request | NounSeek.Request | The Request struct |
 
 ### _rawRequestsByAddress
@@ -47,9 +55,13 @@ function _rawRequestsByAddress(address requester) external view returns (struct 
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requester | address | The address of the requester |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | requests | NounSeek.Request[] | An array of Request structs |
 
 ### acceptOwnership
@@ -68,7 +80,9 @@ function accessoryCount() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | accessoryCount |
 
 ### add
@@ -80,12 +94,16 @@ function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 d
 ##### Details
 > `msg.value` is used as the pledged Request amount
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
 | traitId | uint16 | ID of the specified Trait that the request is for |
 | nounId | uint16 | the Noun ID the request is targeted for (or the value of ANY_ID for open requests) |
 | doneeId | uint16 | the ID of the Donee that should receive the donation if a Noun matching the parameters is minted |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | requestId | uint256 | The ID of this requests for msg.sender&#39;s address |
 
 ### addDonee
@@ -97,7 +115,9 @@ function addDonee(string name, address to, string description) external nonpayab
 ##### Details
 > Adds a Donee to the donees set and activates the Donee
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | name | string | The Donee&#39;s name that should be displayed to users/consumers |
 | to | address | Address that funds should be sent to in order to fund the Donee |
 | description | string | undefined |
@@ -110,13 +130,17 @@ function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounI
 ##### Details
 > The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request.
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
 | traitId | uint16 | ID of the specified Trait that the request is for |
 | nounId | uint16 | the Noun ID the request is targeted for (or the value of ANY_ID for open requests) |
 | doneeId | uint16 | the ID of the Donee that should receive the donation if a Noun matching the parameters is minted |
 | message | string | The message to log |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | requestId | uint256 | The ID of this requests for msg.sender&#39;s address |
 
 ### amounts
@@ -126,10 +150,14 @@ function amounts(bytes32, uint16) external view returns (uint256)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | _0 | bytes32 | undefined |
 | _1 | uint16 | undefined |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint256 | undefined |
 
 ### auctionHouse
@@ -139,7 +167,9 @@ function auctionHouse() external view returns (contract INounsAuctionHouseLike)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | contract INounsAuctionHouseLike | auctionHouse contract address |
 
 ### backgroundCount
@@ -149,7 +179,9 @@ function backgroundCount() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | backgroundCount |
 
 ### baseReimbursementBPS
@@ -159,7 +191,9 @@ function baseReimbursementBPS() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | baseReimbursementBPS |
 
 ### bodyCount
@@ -169,7 +203,9 @@ function bodyCount() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | bodyCount |
 
 ### donationsForMatchableNoun
@@ -181,7 +217,9 @@ function donationsForMatchableNoun() external view returns (uint16 auctionedNoun
 ##### Details
 > Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | auctionedNounId | uint16 | The ID of the Noun that is was auctioned |
 | nonAuctionedNounId | uint16 | If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
 | auctionedNounDonations | uint256[][5] | Total donations for the eligible auctioned Noun as a nested arrays in the order Trait Type and Donee ID |
@@ -198,9 +236,13 @@ function donationsForNounId(uint16 nounId) external view returns (uint256[][][5]
 ##### Details
 > The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | nounId | uint16 | The ID of the Noun requests should match. |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | donations | uint256[][][5] | Cumulative amounts pledged for each Donee, indexed by Trait Type, Trait ID and Donee ID |
 
 ### donationsForNounIdByTrait
@@ -212,10 +254,14 @@ function donationsForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) ex
 ##### Details
 > Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
 | nounId | uint16 | The Noun ID to scope requests to |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | donationsByTraitId | uint256[][] | Cumulative amounts pledged for each Donee, indexed by Trait ID and Donee ID |
 
 ### donationsForNounIdByTraitId
@@ -227,11 +273,15 @@ function donationsForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId,
 ##### Details
 > Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
 | traitId | uint16 | The trait ID  of the trait to scope requests |
 | nounId | uint16 | The Noun ID to scope requests to |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | donations | uint256[] | Cumulative amounts pledged for each Donee, indexed by Donee ID |
 
 ### donationsForNounOnAuction
@@ -243,7 +293,9 @@ function donationsForNounOnAuction() external view returns (uint16 currentAuctio
 ##### Details
 > Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | currentAuctionId | uint16 | The ID of the Noun that is currently being auctioned |
 | prevNonAuctionId | uint16 | If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
 | currentAuctionDonations | uint256[][5] | Total donations for the current auctioned Noun as a nested arrays indexed by Trait Type and Donee ID |
@@ -258,9 +310,13 @@ function donationsForOnChainNoun(uint16 nounId) external view returns (uint256[]
 ##### Details
 > Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | nounId | uint16 | Noun ID of an existing on-chain Noun |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | donations | uint256[][5] | Cumulative amounts pledged for each Donee that matches the on-chain Noun seed indexed by Trait Type and Donee ID |
 
 ### donationsForUpcomingNoun
@@ -272,7 +328,9 @@ function donationsForUpcomingNoun() external view returns (uint16 nextAuctionId,
 ##### Details
 > See { donationsForNounId } for detailed documentation of the nested array structure
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | nextAuctionId | uint16 | The ID of the next Noun that will be auctioned |
 | nextNonAuctionId | uint16 | If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
 | nextAuctionDonations | uint256[][][5] | Total donations for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID |
@@ -285,7 +343,9 @@ function donees() external view returns (struct NounSeek.Donee[])
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | NounSeek.Donee[] | undefined |
 
 ### effectiveBPSAndReimbursementForDonationTotal
@@ -295,9 +355,13 @@ function effectiveBPSAndReimbursementForDonationTotal(uint256 total) external vi
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | total | uint256 | A donation amount |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | effectiveBPS | uint256 | The basis point used to cacluate the reimbursement fee |
 | reimbursement | uint256 | The reimbursement amount |
 
@@ -308,7 +372,9 @@ function glassesCount() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | glassesCount |
 
 ### headCount
@@ -318,7 +384,9 @@ function headCount() external view returns (uint16)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | headCount |
 
 ### matchAndDonate
@@ -330,9 +398,13 @@ function matchAndDonate(enum NounSeek.Traits trait) external nonpayable returns 
 ##### Details
 > Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | The Trait Type to match with the previous Noun (see `Traits` Enum) |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | total | uint256 | Total donated funds before reimbursement |
 | reimbursement | uint256 | Reimbursement amount |
 
@@ -343,7 +415,9 @@ function maxReimbursement() external view returns (uint256)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint256 | maxReimbursement |
 
 ### minReimbursement
@@ -353,7 +427,9 @@ function minReimbursement() external view returns (uint256)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint256 | minReimbursement |
 
 ### minValue
@@ -363,7 +439,9 @@ function minValue() external view returns (uint256)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint256 | minValue |
 
 ### nonces
@@ -373,9 +451,13 @@ function nonces(bytes32) external view returns (uint16)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | _0 | bytes32 | undefined |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | uint16 | undefined |
 
 ### nouns
@@ -385,7 +467,9 @@ function nouns() external view returns (contract INounsTokenLike)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | contract INounsTokenLike | nouns contract address |
 
 ### owner
@@ -397,7 +481,9 @@ function owner() external view returns (address)
 ##### Details
 > Returns the address of the current owner.
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | address | undefined |
 
 ### pause
@@ -416,7 +502,9 @@ function paused() external view returns (bool)
 ##### Details
 > Returns true if the contract is paused, and false otherwise.
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | bool | undefined |
 
 ### pendingOwner
@@ -428,7 +516,9 @@ function pendingOwner() external view returns (address)
 ##### Details
 > Returns the address of the pending owner.
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | address | undefined |
 
 ### remove
@@ -440,9 +530,13 @@ function remove(uint256 requestId) external nonpayable returns (uint256 amount)
 ##### Details
 > Must be called by the Requester&#39;s address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requestId | uint256 | Request Id |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | amount | uint256 | undefined |
 
 ### renounceOwnership
@@ -461,10 +555,14 @@ function requestMatchesNoun(NounSeek.Request request, uint16 nounId) external vi
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | request | NounSeek.Request | undefined |
 | nounId | uint16 | undefined |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | bool | undefined |
 
 ### requestsByAddress
@@ -476,9 +574,13 @@ function requestsByAddress(address requester) external view returns (struct Noun
 ##### Details
 > Removes Requests marked as REMOVED, and includes Requests that have been previously matched. Do not rely on array index; use `request.id` to specify a Request when calling `remove()` See { _getRequestStatusAndParams } for calculations
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requester | address | The address of the requester |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | requests | NounSeek.RequestWithStatus[] | An array of RequestWithStatus Structs |
 
 ### setDoneeActive
@@ -490,7 +592,9 @@ function setDoneeActive(uint256 doneeId, bool active) external nonpayable
 ##### Details
 > If the Done is not configured, a revert will be triggered
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | doneeId | uint256 | Donee id based on its index within the donees set |
 | active | bool | Active state |
 ### setMaxReimbursement
@@ -500,7 +604,9 @@ function setMaxReimbursement(uint256 newMaxReimbursement) external nonpayable
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMaxReimbursement | uint256 | new maximum value |
 ### setMinReimbursement
 Sets the minium reimbursement amount when matching
@@ -509,7 +615,9 @@ function setMinReimbursement(uint256 newMinReimbursement) external nonpayable
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMinReimbursement | uint256 | new minimum value |
 ### setMinValue
 Sets the minium value that can be pledged
@@ -518,7 +626,9 @@ function setMinValue(uint256 newMinValue) external nonpayable
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMinValue | uint256 | new minimum value |
 ### setReimbursementBPS
 Sets the standard reimbursement basis points
@@ -527,7 +637,9 @@ function setReimbursementBPS(uint16 newReimbursementBPS) external nonpayable
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newReimbursementBPS | uint16 | new basis point value |
 ### traitHash
 The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
@@ -538,11 +650,15 @@ function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) ex
 ##### Details
 > Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait | enum NounSeek.Traits | The trait enum |
 | traitId | uint16 | The ID of the trait |
 | nounId | uint16 | The Noun ID |
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | hash | bytes32 | The hashed value |
 
 ### transferOwnership
@@ -554,7 +670,9 @@ function transferOwnership(address newOwner) external nonpayable
 ##### Details
 > Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one. Can only be called by the current owner.
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newOwner | address | undefined |
 ### unpause
 Unpauses (resumes) the NounSeek contract. Unpausing can be reversed by pausing.
@@ -577,7 +695,9 @@ function weth() external view returns (contract IWETH)
 ```
 
 
-#### Returns | Name | Type | Description | |---|---|---|
+#### Returns
+| Name | Type | Description |
+|---|---|---|
 | _0 | contract IWETH | WETH contract address |
 
 
@@ -591,7 +711,9 @@ event Donated(uint256[] donations)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | donations  | uint256[] |
 The array of amounts indexed by Donee ID sent to donees |
 
@@ -602,7 +724,9 @@ event DoneeAdded(uint256 doneeId, string name, address to, string description)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | doneeId  | uint256 |
 undefined |
 | name  | string |
@@ -619,7 +743,9 @@ event DoneeisActivetatusChanged(uint256 doneeId, bool active)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | doneeId  | uint256 |
 undefined |
 | active  | bool |
@@ -634,7 +760,9 @@ event Matched(enum NounSeek.Traits indexed trait, uint16 traitId, uint16 indexed
 ##### Details
 > Used to update and/or invalidate Requests stored off-chain for these parameters
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | trait `indexed` | enum NounSeek.Traits |
 Trait Type that matched |
 | traitId  | uint16 |
@@ -653,7 +781,9 @@ event MaxReimbursementChanged(uint256 newMaxReimbursement)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMaxReimbursement  | uint256 |
 undefined |
 
@@ -664,7 +794,9 @@ event MinReimbursementChanged(uint256 newMinReimbursement)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMinReimbursement  | uint256 |
 undefined |
 
@@ -675,7 +807,9 @@ event MinValueChanged(uint256 newMinValue)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newMinValue  | uint256 |
 undefined |
 
@@ -686,7 +820,9 @@ event OwnershipTransferStarted(address indexed previousOwner, address indexed ne
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | previousOwner `indexed` | address |
 undefined |
 | newOwner `indexed` | address |
@@ -699,7 +835,9 @@ event OwnershipTransferred(address indexed previousOwner, address indexed newOwn
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | previousOwner `indexed` | address |
 undefined |
 | newOwner `indexed` | address |
@@ -712,7 +850,9 @@ event Paused(address account)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | account  | address |
 undefined |
 
@@ -723,7 +863,9 @@ event Reimbursed(address indexed matcher, uint256 amount)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | matcher `indexed` | address |
 The addressed that performed the matching function |
 | amount  | uint256 |
@@ -736,7 +878,9 @@ event ReimbursementBPSChanged(uint256 newReimbursementBPS)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | newReimbursementBPS  | uint256 |
 undefined |
 
@@ -747,7 +891,9 @@ event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.T
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requestId  | uint256 |
 undefined |
 | requester `indexed` | address |
@@ -776,7 +922,9 @@ event RequestRemoved(uint256 requestId, address indexed requester, enum NounSeek
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | requestId  | uint256 |
 undefined |
 | requester `indexed` | address |
@@ -801,7 +949,9 @@ event Unpaused(address account)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | account  | address |
 undefined |
 
@@ -848,7 +998,9 @@ error MatchFound(uint16 nounId)
 ```
 
 
-#### Parameters | Name | Type | Description | |---|---|---|
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
 | nounId | uint16 | undefined |
 
 ### NoMatch
