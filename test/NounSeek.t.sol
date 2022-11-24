@@ -84,7 +84,7 @@ contract NounSeekTest is BaseNounSeekTest {
             1
         );
 
-        NounSeek.Request memory request1 = nounSeek._rawRequestById(
+        NounSeek.Request memory request1 = nounSeek.rawRequestById(
             address(user1),
             requestIdUser1
         );
@@ -97,7 +97,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.nonce, nonce1);
 
         NounSeek.Request[] memory requestsUser1 = nounSeek
-            ._rawRequestsByAddress(address(user1));
+            .rawRequestsByAddress(address(user1));
 
         assertEq(requestsUser1.length, 1);
 
@@ -115,7 +115,7 @@ contract NounSeekTest is BaseNounSeekTest {
             nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1),
             requestIdUser1 + 1
         );
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
 
         assertEq(requestsUser1.length, 2);
 
@@ -124,7 +124,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(amount, minValue * 2);
 
         assertEq(
-            nounSeek._rawRequestById(address(user1), requestIdUser1 + 1).nonce,
+            nounSeek.rawRequestById(address(user1), requestIdUser1 + 1).nonce,
             nonce1
         );
 
@@ -151,7 +151,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.prank(user2);
         uint256 requestIdUser2 = nounSeek.add{value: minValue}(HEAD, 8, 99, 2);
 
-        NounSeek.Request memory request2 = nounSeek._rawRequestById(
+        NounSeek.Request memory request2 = nounSeek.rawRequestById(
             address(user2),
             requestIdUser2
         );
@@ -245,7 +245,7 @@ contract NounSeekTest is BaseNounSeekTest {
             value: donation + minValue
         }(HEAD, 9, ANY_ID, 1, "hello");
 
-        NounSeek.Request memory request1 = nounSeek._rawRequestById(
+        NounSeek.Request memory request1 = nounSeek.rawRequestById(
             address(user1),
             requestIdUser1
         );
@@ -258,7 +258,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.nonce, nonce1);
 
         NounSeek.Request[] memory requestsUser1 = nounSeek
-            ._rawRequestsByAddress(address(user1));
+            .rawRequestsByAddress(address(user1));
 
         assertEq(requestsUser1.length, 1);
 
@@ -297,7 +297,7 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
         NounSeek.Request[] memory requestsUser1 = nounSeek
-            ._rawRequestsByAddress(address(user1));
+            .rawRequestsByAddress(address(user1));
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -321,7 +321,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.expectCall(address(user1), minValue, "");
 
         nounSeek.remove(requestId1);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, minValue);
@@ -343,7 +343,7 @@ contract NounSeekTest is BaseNounSeekTest {
         );
         vm.expectCall(address(user1), minValue, "");
         nounSeek.remove(requestId2);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
@@ -362,7 +362,7 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
         NounSeek.Request[] memory requestsUser1 = nounSeek
-            ._rawRequestsByAddress(address(user1));
+            .rawRequestsByAddress(address(user1));
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -373,7 +373,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Remove first request
         vm.expectCall(address(user1), minValue, "");
         nounSeek.remove(requestId1);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, minValue);
@@ -384,7 +384,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Remove second request
         vm.expectCall(address(user1), minValue, "");
         nounSeek.remove(requestId2);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
@@ -403,7 +403,7 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
         NounSeek.Request[] memory requestsUser1 = nounSeek
-            ._rawRequestsByAddress(address(user1));
+            .rawRequestsByAddress(address(user1));
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -414,7 +414,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Remove first request
         vm.expectCall(address(user1), minValue, "");
         nounSeek.remove(requestId2);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, minValue);
         assertEq(requestsUser1[1].amount, 0);
@@ -425,7 +425,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Remove second request
         vm.expectCall(address(user1), minValue, "");
         nounSeek.remove(requestId1);
-        requestsUser1 = nounSeek._rawRequestsByAddress(address(user1));
+        requestsUser1 = nounSeek.rawRequestsByAddress(address(user1));
         assertEq(requestsUser1.length, 2);
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);

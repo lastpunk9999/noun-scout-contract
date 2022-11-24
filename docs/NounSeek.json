@@ -24,9 +24,9 @@
             },
             "notice": "Time limit before an auction ends; requests cannot be removed during this time"
         },
-        "_rawRequestById(address,uint256)": {
+        "rawRequestById(address,uint256)": {
             "stateMutability": "view",
-            "code": "function _rawRequestById(address requester, uint256 requestId) external view returns (struct NounSeek.Request request)",
+            "code": "function rawRequestById(address requester, uint256 requestId) external view returns (struct NounSeek.Request request)",
             "inputs": {
                 "requester": {
                     "type": "address"
@@ -44,9 +44,9 @@
             },
             "notice": "Get a specific non-augmented request by an address"
         },
-        "_rawRequestsByAddress(address)": {
+        "rawRequestsByAddress(address)": {
             "stateMutability": "view",
-            "code": "function _rawRequestsByAddress(address requester) external view returns (struct NounSeek.Request[] requests)",
+            "code": "function rawRequestsByAddress(address requester) external view returns (struct NounSeek.Request[] requests)",
             "inputs": {
                 "requester": {
                     "type": "address",
