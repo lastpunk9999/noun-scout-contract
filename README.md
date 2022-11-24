@@ -1,6 +1,8 @@
 # NounSeek
 ### Summary
 Allows anyone to put up a reward for minting a Noun with a specific trait and donates the funds to a charity/public good chosen by the requester from an approved list of addresses.
+### Contract Documentation
+[NounSeek.sol](/docs/NounSeek.md)
 ### Flow
 **Creating a Request**
 -  A user creates a `Request` by sending in funds along with data about the specific `trait` (e.g. Head), `traitId` (e.g. 54 aka 'Cone'), and charity/public good to donate to.
