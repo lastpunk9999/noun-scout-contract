@@ -96,8 +96,9 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.amount, minValue);
         assertEq(request1.nonce, nonce1);
 
-        NounSeek.Request[] memory requestsUser1 = nounSeek
-            .rawRequestsByAddress(address(user1));
+        NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
+            address(user1)
+        );
 
         assertEq(requestsUser1.length, 1);
 
@@ -257,8 +258,9 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.amount, donation);
         assertEq(request1.nonce, nonce1);
 
-        NounSeek.Request[] memory requestsUser1 = nounSeek
-            .rawRequestsByAddress(address(user1));
+        NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
+            address(user1)
+        );
 
         assertEq(requestsUser1.length, 1);
 
@@ -296,8 +298,9 @@ contract NounSeekTest is BaseNounSeekTest {
 
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
-        NounSeek.Request[] memory requestsUser1 = nounSeek
-            .rawRequestsByAddress(address(user1));
+        NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
+            address(user1)
+        );
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -361,8 +364,9 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
-        NounSeek.Request[] memory requestsUser1 = nounSeek
-            .rawRequestsByAddress(address(user1));
+        NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
+            address(user1)
+        );
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -402,8 +406,9 @@ contract NounSeekTest is BaseNounSeekTest {
         uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
         uint256[][] memory donationsByTraitId = nounSeek
             .donationsForNounIdByTrait(HEAD, ANY_ID);
-        NounSeek.Request[] memory requestsUser1 = nounSeek
-            .rawRequestsByAddress(address(user1));
+        NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
+            address(user1)
+        );
 
         // Sanity check
         assertEq(requestsUser1.length, 2);
@@ -1135,5 +1140,82 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(requests[2].traitId, 8);
         assertEq(requests[2].nounId, 0);
         assertEq(requests[2].doneeId, 0);
+    }
+
+    function test_REIMBURSEMENT_totalEqualToMinReimbursement() public {
+        nounSeek.setMinReimbursement(minValue);
+        vm.prank(user1);
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        // minReimbursement and total pledged amoutn are equal, so simple BPS calculation used
+        uint256 reimbursement = (minValue * nounSeek.baseReimbursementBPS()) /
+            10_000;
+
+        vm.expectCall(address(donee0), minValue - reimbursement, "");
+
+        vm.expectCall(address(user2), reimbursement, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    function test_REIMBURSEMENT_reimbursementLessThanMinReimbursement() public {
+        vm.prank(user1);
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        uint256 reimbursement = nounSeek.minReimbursement();
+        vm.expectCall(address(donee0), minValue - reimbursement, "");
+
+        vm.expectCall(address(user2), reimbursement, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
+    }
+
+    function test_REIMBURSEMENT_reimbursementGreaterThanMaxReimbursement()
+        public
+    {
+        uint256 value = 5 ether;
+
+        vm.prank(user1);
+        nounSeek.add{value: value}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        uint256 reimbursement = nounSeek.maxReimbursement();
+        vm.expectCall(address(donee0), value - reimbursement, "");
+
+        vm.expectCall(address(user2), reimbursement, "");
+
+        vm.prank(user2);
+        nounSeek.matchAndDonate(HEAD);
     }
 }

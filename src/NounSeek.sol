@@ -1073,6 +1073,8 @@ contract NounSeek is Ownable2Step, Pausable {
      * @param newMinValue new minimum value
      */
     function setMinValue(uint256 newMinValue) external onlyOwner {
+        // minimum Request value cannot be less than minimum reimbursement
+        if (newMinValue < minReimbursement) revert();
         minValue = newMinValue;
         emit MinValueChanged(newMinValue);
     }
@@ -1101,6 +1103,8 @@ contract NounSeek is Ownable2Step, Pausable {
         external
         onlyOwner
     {
+        // Reimbursement cannot be greater than minimum Request value
+        if (minReimbursement > minValue) revert();
         minReimbursement = newMinReimbursement;
         emit MinReimbursementChanged(newMinReimbursement);
     }
@@ -1469,7 +1473,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @notice Calculate the reimbursement amount and the basis point value for a total, bound to the maximum and minimum reimbursement amount.
      * @dev Use the `baseReimbursementBPS` to calculate a reimbursement amount.
      * If the amount is above the maximum reimbursement allowed, or below the minimum reimbursement allowed,
-     * set the the reimbursement amount to the max or min, and calculate the required basis point value to achieve the reimbrsement
+     * set the the reimbursement amount to the max or min, and calculate the required basis point value to achieve the reimbursement
      * @param total The total amount reimbursement should be based on
      * @return effectiveBPS The basis point value used to calculate the reimbursement given the total
      * @return reimbursement The amount to reimburse based on the total and effectiveBPS
@@ -1488,10 +1492,17 @@ contract NounSeek is Ownable2Step, Pausable {
         effectiveBPS = baseReimbursementBPS * 100;
         reimbursement = (total * effectiveBPS) / 1_000_000;
 
+        // When the default reimbursement is above the maximum reimbursement amount
         if (reimbursement > maxReimbursement) {
+            // set the reimbursement to the maximum amount and derive the effective basis point value
             effectiveBPS = (maxReimbursement * 1_000_000) / total;
             reimbursement = maxReimbursement;
-        } else if (reimbursement < minReimbursement) {
+            // When the default reimbursement is below the minimum reimbursement amount
+            // and the total is greater than the minimum reimbursement amount
+        } else if (
+            reimbursement < minReimbursement && total > minReimbursement
+        ) {
+            // set the reimbursement to the minimum amount and derive the effective basis point value
             effectiveBPS = (minReimbursement * 1_000_000) / total;
             reimbursement = minReimbursement;
         }
