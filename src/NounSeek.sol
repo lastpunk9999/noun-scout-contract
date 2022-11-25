@@ -434,7 +434,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 nounId
     ) public pure returns (bytes32 hash) {
-        hash = keccak256(abi.encodePacked(trait, traitId, nounId));
+        hash = keccak256(abi.encode(trait, traitId, nounId));
     }
 
     //----------------//
