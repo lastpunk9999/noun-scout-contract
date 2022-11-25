@@ -9,10 +9,11 @@ import "../src/Interfaces.sol";
 
 contract TestnetDeploy is Script {
     NounSeek nounSeek;
-    MockNouns mockNouns = MockNouns(0xE4573d025Ee6d53734D0492b93B56E24F03D6a93);
+    MockNouns mockNouns = MockNouns(0x84dF24AcbB4eB6ffC1e8E2F281bB43feee7E4254);
     MockAuctionHouse mockAuctionHouse =
-        MockAuctionHouse(0x6BEC3f14743529b22FF4c79534f7771288B91572);
-    MockDescriptor mockDescriptor;
+        MockAuctionHouse(0x37B8e93b956D4271a05A30CB56cfd2D1550ea816);
+
+    // MockDescriptor mockDescriptor;
 
     function setUp() public {}
 
@@ -78,8 +79,8 @@ contract TestnetDeploy is Script {
         // setup Traits
         // mockDescriptor.setHeadCount(242);
         // nounSeek.updateTraitCounts();
-        // mockAuctionHouse.setNounId(99);
-        // mockAuctionHouse.setEndTime(9999999999);
+        mockAuctionHouse.setNounId(99);
+        mockAuctionHouse.setEndTime(9999999999);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -92,8 +93,8 @@ contract TestnetDeploy is Script {
         mockNouns.setSeed(seed, 98);
 
         uint256 minValue = 0.0001 ether;
-        nounSeek.setMinValue(minValue);
         nounSeek.setMinReimbursement(minValue / 10);
+        nounSeek.setMinValue(minValue);
 
         for (uint16 i; i < 10; i++) {
             /*
@@ -162,7 +163,7 @@ contract TestnetDeploy is Script {
         vm.stopBroadcast();
 
         console2.log("mockAuctionHouse", address(mockAuctionHouse));
-        console2.log("mockDescriptor", address(mockDescriptor));
+        // console2.log("mockDescriptor", address(mockDescriptor));
         console2.log("mockNouns", address(mockNouns));
         console2.log("nounSeek", address(nounSeek));
     }
