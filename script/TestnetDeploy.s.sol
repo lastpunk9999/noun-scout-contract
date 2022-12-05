@@ -26,55 +26,56 @@ contract TestnetDeploy is Script {
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
         // Add Donees
         nounSeek.addDonee(
-            "Morris Animal Foundation",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Morris Animal Foundation is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Leukemia & Lymphoma Society",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Leukemia & Lymphoma Society is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Center for Biological Diversity",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Center for Biological Diversity is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "African Wildlife Foundation",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "African Wildlife Foundation is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Michael J. Fox Foundation for Parkinson's Research",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Michael J. Fox Foundation for Parkinson's Research is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Marine Mammal Center",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Marine Mammal Center is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Alzheimer's Association",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Alzheimer's Association is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "Breast Cancer Research Foundation",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Breast Cancer Research Foundation is a non-profit organization."
-        );
-        nounSeek.addDonee(
-            "National Kidney Foundation",
-            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "National Kidney Foundation is a non-profit organization."
-        );
-        nounSeek.addDonee(
             "Freedom Of The Press Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Freedom Of The Press Foundation is a non-profit organization."
         );
+        nounSeek.addDonee(
+            "Internet Archive",
+            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+            "Internet Archive is a non-profit organization."
+        );
+        nounSeek.addDonee(
+            "Rainforest Foundation US",
+            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+            "Rainforest Foundation US is a non-profit organization."
+        );
+        nounSeek.addDonee(
+            "Tor Project",
+            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+            "Tor Project is a non-profit organization."
+        );
+
+        nounSeek.addDonee(
+            "No logo Donee",
+            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+            "No logo Donee Center is a non-profit organization."
+        );
+         nounSeek.addDonee(
+            "Inactive Donee",
+            0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+            "Inactive Donee Center is a non-profit organization."
+        );
+        // nounSeek.addDonee(
+        //     "Alzheimer's Association",
+        //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+        //     "Alzheimer's Association is a non-profit organization."
+        // );
+        // nounSeek.addDonee(
+        //     "Breast Cancer Research Foundation",
+        //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+        //     "Breast Cancer Research Foundation is a non-profit organization."
+        // );
+        // nounSeek.addDonee(
+        //     "National Kidney Foundation",
+        //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+        //     "National Kidney Foundation is a non-profit organization."
+        // );
+        // nounSeek.addDonee(
+        //     "Freedom Of The Press Foundation",
+        //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
+        //     "Freedom Of The Press Foundation is a non-profit organization."
+        // );
 
         // setup Traits
         // mockDescriptor.setHeadCount(242);
@@ -95,7 +96,7 @@ contract TestnetDeploy is Script {
         uint256 minValue = 0.0001 ether;
         nounSeek.setMinReimbursement(minValue / 10);
         nounSeek.setMinValue(minValue);
-
+        nounSeek.setDoneeActive(5, false);
         for (uint16 i; i < 10; i++) {
             /*
             Traits trait,
@@ -106,7 +107,7 @@ contract TestnetDeploy is Script {
                 NounSeek.Traits.HEAD,
                 i,
                 0,
-                i % 10,
+                i % 4,
                 "Bowsprit crimp pillage weigh anchor rigging chantey quarter lee jack pirate"
             );
         }
@@ -121,7 +122,7 @@ contract TestnetDeploy is Script {
                 NounSeek.Traits.HEAD,
                 i + 10,
                 100,
-                i % 10,
+                i % 4,
                 "Stern ballast rope's end ahoy lookout scourge of the seven seas aye jolly boat log piracy"
             );
         }
@@ -136,7 +137,7 @@ contract TestnetDeploy is Script {
                 NounSeek.Traits.HEAD,
                 i + 20,
                 101,
-                i % 10,
+                i % 4,
                 "Coxswain fore starboard weigh anchor rope's end sutler hang the jib execution dock marooned yo-ho-ho"
             );
         }
@@ -148,14 +149,22 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 doneeId*/
-            uint16 trait = 1 + (i % 4);
-            if (trait == 3) trait = 4;
+            uint16 trait = i%4;
+            uint16 traitId = i % 7;
+            // background only has 2 ids
+            if (trait == 0){
+                traitId = i % 2;
+            }
+            // make sure there are no head requests
+            if (trait == 3) {
+                trait = 4;
+            }
             NounSeek.Traits traitEnum = NounSeek.Traits(trait);
             nounSeek.addWithMessage{value: minValue * 2}(
                 traitEnum,
-                i % 5,
+                traitId,
                 0,
-                i % 10,
+                i % 4,
                 "Chase Yellow Jack fathom pirate quarterdeck crow's nest heave to salmagundi piracy draught"
             );
         }
