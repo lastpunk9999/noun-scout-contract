@@ -18,7 +18,6 @@ contract NounSeekTest is BaseNounSeekTest {
         uint16 indexed nounId,
         bytes32 indexed traitsHash,
         uint256 amount,
-        uint16 nonce,
         string message
     );
     event RequestRemoved(
@@ -56,7 +55,6 @@ contract NounSeekTest is BaseNounSeekTest {
     function test_TOGGLEDONNEACTIVE() public {}
 
     function test_ADD_happyCase() public {
-        uint16 nonce1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
 
         vm.expectEmit(true, true, true, true);
         // expect the event to have the an empty message and the correct donation value
@@ -69,7 +67,7 @@ contract NounSeekTest is BaseNounSeekTest {
             ANY_ID,
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             minValue,
-            nonce1,
+
             ""
         );
 
@@ -94,7 +92,6 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.doneeId, 1);
         assertEq(request1.nounId, ANY_ID);
         assertEq(request1.amount, minValue);
-        assertEq(request1.nonce, nonce1);
 
         NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
             address(user1)
@@ -124,16 +121,11 @@ contract NounSeekTest is BaseNounSeekTest {
 
         assertEq(amount, minValue * 2);
 
-        assertEq(
-            nounSeek.rawRequestById(address(user1), requestIdUser1 + 1).nonce,
-            nonce1
-        );
 
         // USER 2
         // - adds additional request for different HEAD, specific noun Id, different donee
         vm.expectEmit(true, true, true, true);
 
-        uint16 nonce2 = nounSeekViewUtils.nonceForTraits(HEAD, 8, 99);
 
         // expect the event to have the an empty message and the correct donation value
         emit RequestAdded(
@@ -145,7 +137,6 @@ contract NounSeekTest is BaseNounSeekTest {
             99,
             nounSeek.traitHash(HEAD, 8, 99),
             minValue,
-            nonce2,
             ""
         );
 
@@ -162,7 +153,6 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request2.doneeId, 2);
         assertEq(request2.nounId, 99);
         assertEq(request2.amount, minValue, "request2.amount");
-        assertEq(request2.nonce, nonce2);
 
         // Should include user1 and user2 requests
         uint256[][] memory donationsByTraitId = nounSeek
@@ -221,7 +211,6 @@ contract NounSeekTest is BaseNounSeekTest {
 
     function test_ADDWITHMESSAGE_happyCase() public {
         uint256 donation = 1 ether;
-        uint16 nonce1 = nounSeekViewUtils.nonceForTraits(HEAD, 9, ANY_ID);
         vm.expectEmit(true, true, true, true);
         // expect the event to have the "hello" message and the correct donation value
         emit RequestAdded(
@@ -233,7 +222,6 @@ contract NounSeekTest is BaseNounSeekTest {
             ANY_ID,
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             donation,
-            nonce1,
             "hello"
         );
 
@@ -256,7 +244,6 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(request1.doneeId, 1);
         assertEq(request1.nounId, ANY_ID);
         assertEq(request1.amount, donation);
-        assertEq(request1.nonce, nonce1);
 
         NounSeek.Request[] memory requestsUser1 = nounSeek.rawRequestsByAddress(
             address(user1)
@@ -673,7 +660,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Sanity check match occured
         vm.expectCall(address(donee0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
 
         vm.startPrank(user1);
         vm.expectRevert(NounSeek.DonationAlreadySent.selector);
@@ -728,7 +715,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Sanity check match occured
         vm.expectCall(address(donee0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
 
         donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
         donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
@@ -802,7 +789,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Sanity check match occured
         vm.expectCall(address(donee0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
 
         donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
         donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
@@ -817,7 +804,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         vm.prank(user2);
         vm.expectCall(address(donee1), minValue - minReimbursement, "");
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
 
         donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
         assertEq(donee1Amount, 0);
@@ -870,7 +857,7 @@ contract NounSeekTest is BaseNounSeekTest {
         // Sanity check match occured
         vm.expectCall(address(donee0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
 
         donee0Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 0);
         donee1Amount = nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), 1);
@@ -1025,7 +1012,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // User2 performs the match; request 1 and 2 should match
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
 
         // Case 5
         // After Match
@@ -1166,7 +1153,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
     }
 
     function test_REIMBURSEMENT_reimbursementLessThanMinReimbursement() public {
@@ -1189,7 +1176,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
     }
 
     function test_REIMBURSEMENT_reimbursementGreaterThanMaxReimbursement()
@@ -1216,6 +1203,6 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
     }
 }

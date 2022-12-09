@@ -24,6 +24,7 @@ contract BaseNounSeekTest is EnhancedTest {
     MockAuctionHouse mockAuctionHouse;
     MockDescriptor mockDescriptor;
     NounSeekViewUtils nounSeekViewUtils;
+    uint16[] public allDoneeIds;
 
     address user1 = mkaddr("user1");
     address user2 = mkaddr("user2");
@@ -70,5 +71,13 @@ contract BaseNounSeekTest is EnhancedTest {
         mockDescriptor.setBackgroundCount(95);
         nounSeek.updateTraitCounts();
         mockAuctionHouse.setNounId(99);
+        allDoneeIds = doneeIds(nounSeek.donees().length, 0, 1);
+    }
+
+    function doneeIds(uint256 length, uint16 skip, uint16 mul) public pure returns(uint16[] memory _doneeIds){
+        _doneeIds = new uint16[](length);
+        for (uint16 i; i < length; i++){
+            _doneeIds[i]=(i*mul)+skip;
+        }
     }
 }

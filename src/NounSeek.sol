@@ -33,10 +33,14 @@ contract NounSeek is Ownable2Step, Pausable {
     error AlreadyRemoved();
 
     /**
-     * @notice Thrown when an attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
+     * @notice Thrown when attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
      */
     error NoMatch();
 
+    /**
+     * @notice Thrown when attempting to match an eligible Noun. Can only match a Noun previous to the current on auction
+     */
+    error IneligibleNounId();
     /**
      * @notice Thrown when an attempting to add a Request that pledges an amount to an inactive Donee
      */
@@ -65,7 +69,6 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 indexed nounId,
         bytes32 indexed traitsHash,
         uint256 amount,
-        uint16 nonce,
         string message
     );
 
@@ -105,14 +108,12 @@ contract NounSeek is Ownable2Step, Pausable {
      * @param traitId Trait ID that matched
      * @param nounId Noun Id that matched
      * @param traitsHash Hash of trait, traitId, nounId
-     * @param newNonce new incremented nonce; used to invalidated Requests with the prior nonce
      */
     event Matched(
         Traits indexed trait,
         uint16 traitId,
         uint16 indexed nounId,
-        bytes32 indexed traitsHash,
-        uint16 newNonce
+        bytes32 indexed traitsHash
     );
 
     /**
@@ -155,10 +156,9 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Stores deposited value, requested traits, donation target, and a nonce for marking stale requests
+     * @notice Stores deposited value, requested traits, donation target for marking stale requests
      */
     struct Request {
-        uint16 nonce;
         Traits trait;
         uint16 traitId;
         uint16 doneeId;
@@ -171,7 +171,6 @@ contract NounSeek is Ownable2Step, Pausable {
      */
     struct RequestWithStatus {
         uint256 id;
-        uint16 nonce;
         Traits trait;
         uint16 traitId;
         uint16 doneeId;
@@ -327,13 +326,6 @@ contract NounSeek is Ownable2Step, Pausable {
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
 
     /**
-     * @notice Keep track of matched trait parameters using a nonce.
-     * When a match is made the nonce is incremented nonce to invalidate
-     * request removal. The key can be generated with the `traitsHash` function
-     */
-    mapping(bytes32 => uint16) public nonces;
-
-    /**
      * @notice Array of requests against the address that created the request
      */
     mapping(address => Request[]) internal _requests;
@@ -409,7 +401,6 @@ contract NounSeek is Ownable2Step, Pausable {
                 ];
                 requests[i] = RequestWithStatus({
                     id: activeRequestIds[i],
-                    nonce: request.nonce,
                     trait: request.trait,
                     traitId: request.traitId,
                     doneeId: request.doneeId,
@@ -423,7 +414,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
-     * @dev Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
+     * @dev Used to group requests by their parameters in the `amounts` mapping
      * @param trait The trait enum
      * @param traitId The ID of the trait
      * @param nounId The Noun ID
@@ -926,10 +917,11 @@ contract NounSeek is Ownable2Step, Pausable {
      * @return total Total donated funds before reimbursement
      * @return reimbursement Reimbursement amount
      */
-    function matchAndDonate(Traits trait)
-        public
-        returns (uint256 total, uint256 reimbursement)
-    {
+    function matchAndDonate(
+        Traits trait,
+        uint16 nounId,
+        uint16[] memory doneeIds
+    ) public returns (uint256 total, uint256 reimbursement) {
         /**
          * Cases for eligible matched Nouns:
          *
@@ -962,32 +954,29 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint16[] memory traitIds = new uint16[](
-            nonAuctionedNounId < UINT16_MAX ? 3 : 2
-        );
-        uint16[] memory nounIds = new uint16[](
-            nonAuctionedNounId < UINT16_MAX ? 3 : 2
-        );
+        if (nounId != auctionedNounId && (nounId != nonAuctionedNounId || nonAuctionedNounId == UINT16_MAX)) revert IneligibleNounId();
 
-        nounIds[0] = auctionedNounId;
-        nounIds[1] = ANY_ID;
-        traitIds[0] = _fetchOnChainNounTraitId(trait, auctionedNounId);
-        traitIds[1] = traitIds[0];
+        uint16[] memory traitIds;
+        uint16[] memory nounIds;
 
-        if (nonAuctionedNounId < UINT16_MAX) {
-            nounIds[2] = nonAuctionedNounId;
-            traitIds[2] = _fetchOnChainNounTraitId(trait, nonAuctionedNounId);
+
+        if (_isNonAuctionedNoun(nounId)) {
+            traitIds=new uint16[](1);
+            nounIds=new uint16[](1);
+            nounIds[0] = nounId;
+            traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
+        } else {
+            traitIds=new uint16[](2);
+            nounIds=new uint16[](2);
+            nounIds[0] = nounId;
+            nounIds[1] = ANY_ID;
+            traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
+            traitIds[1] = traitIds[0];
         }
 
-        uint256[] memory donations;
-        uint256 doneesCount = _donees.length;
 
-        (donations, total) = _combineAmountsAndDelete(
-            trait,
-            traitIds,
-            nounIds,
-            doneesCount
-        );
+        uint256[] memory donations;
+        (donations, total) = _combineAmountsAndDelete(trait, traitIds, nounIds, doneeIds);
 
         if (total < 1) {
             revert NoMatch();
@@ -997,7 +986,7 @@ contract NounSeek is Ownable2Step, Pausable {
             total
         );
 
-        for (uint256 i; i < doneesCount; i++) {
+        for (uint256 i; i < _donees.length; i++) {
             uint256 amount = donations[i];
             if (amount < 1) {
                 continue;
@@ -1158,7 +1147,6 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         bytes32 hash = traitHash(trait, traitId, nounId);
-        uint16 nonce = nonces[hash];
 
         amounts[hash][doneeId] += amount;
 
@@ -1166,7 +1154,6 @@ contract NounSeek is Ownable2Step, Pausable {
 
         _requests[msg.sender].push(
             Request({
-                nonce: nonce,
                 doneeId: doneeId,
                 trait: trait,
                 traitId: traitId,
@@ -1184,7 +1171,6 @@ contract NounSeek is Ownable2Step, Pausable {
             nounId: nounId,
             traitsHash: hash,
             amount: amount,
-            nonce: nonce,
             message: message
         });
     }
@@ -1232,45 +1218,39 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16[] memory traitIds,
         uint16[] memory nounIds,
-        uint256 doneesCount
+        uint16[] memory doneeIds
     ) internal returns (uint256[] memory donations, uint256 total) {
-        donations = new uint256[](doneesCount);
+        donations = new uint256[](_donees.length);
 
-        // cache Donee active status; we will at lest need to check this once
-        bool[] memory isActive = _mapDoneeActive(doneesCount);
-
-        uint256 nounIdsLength = nounIds.length;
-
-        for (uint16 i; i < nounIdsLength; i++) {
-            bytes32 hash = traitHash(trait, traitIds[i], nounIds[i]);
+        for (uint16 i; i < nounIds.length; i++) {
+            uint16 traitId = traitIds[i];
+            uint16 nounId = nounIds[i];
+            bytes32 hash = traitHash(trait, traitId, nounId);
             uint256 traitTotal;
-            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
-                if (!isActive[doneeId]) continue;
 
-                uint256 amount = amounts[hash][doneeId];
+            for (uint16 j; j < doneeIds.length; j++) {
+                if (!_donees[doneeIds[j]].active) continue;
+
+                uint256 amount = amounts[hash][doneeIds[j]];
                 if (amount < 1) {
                     continue;
                 }
                 traitTotal += amount;
                 total += amount;
-                donations[doneeId] += amount;
+                donations[doneeIds[j]] += amount;
 
-                delete amounts[hash][doneeId];
+                delete amounts[hash][doneeIds[j]];
             }
 
             if (traitTotal < 1) {
                 continue;
             }
 
-            uint16 newNonce = nonces[hash] + 1;
-            nonces[hash] = newNonce;
-
             emit Matched({
                 trait: trait,
                 traitId: traitIds[i],
                 nounId: nounIds[i],
-                traitsHash: hash,
-                newNonce: newNonce
+                traitsHash: hash
             });
         }
     }
