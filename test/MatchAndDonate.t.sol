@@ -477,4 +477,108 @@ contract MatchAndDonate is BaseNounSeekTest {
         // donnee1 amounts are 0
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);
     }
+
+    function test_MATCHANDDONATE_failsIneligibleImmediateAuctionedNounId()
+        public
+    {
+        // only 99 is eligible
+        mockAuctionHouse.setNounId(101);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        // eligible
+        vm.expectRevert(NounSeek.NoMatch.selector);
+        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+    }
+
+    function test_MATCHANDDONATE_failsIneligibleNonAuctionedNounId() public {
+        // only 100 and 101 are eligible
+        mockAuctionHouse.setNounId(102);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        // eligible
+        vm.expectRevert(NounSeek.NoMatch.selector);
+        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        // eligible
+        vm.expectRevert(NounSeek.NoMatch.selector);
+        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        // ineligible
+        vm.expectRevert(NounSeek.IneligibleNounId.selector);
+        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+    }
+
+    function test_MATCHANDDONATE_matchesOnlySpecifiedDoneeIds() public {
+        vm.startPrank(user1);
+        // Each eligible Noun Id has a request for HEAD 9 sent to every donee Id
+        for (uint16 i = 0; i < allDoneeIds.length; i++) {
+            nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, i);
+            nounSeek.add{value: minValue}(HEAD, 9, 101, i);
+            nounSeek.add{value: minValue}(HEAD, 9, 100, i);
+        }
+
+        vm.stopPrank();
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 100);
+        mockNouns.setSeed(seed, 101);
+        mockAuctionHouse.setNounId(102);
+
+        uint16[] memory doneeIds = new uint16[](2);
+
+        // Only specify to donee0 and donee2
+        doneeIds[0] = 0;
+        doneeIds[1] = 2;
+
+        vm.startPrank(user2);
+        // donee0 has 2 matching requets, 1) ANY_ID, 2) specific 101
+        vm.expectCall(
+            address(donee0),
+            (minValue * 2) - (minReimbursement / 2),
+            ""
+        );
+        // donee2 has 2 matching requets, 1) ANY_ID, 2) specific 101
+        vm.expectCall(
+            address(donee2),
+            (minValue * 2) - (minReimbursement / 2),
+            ""
+        );
+        vm.expectCall(address(user2), minReimbursement, "");
+
+        nounSeek.matchAndDonate(HEAD, 101, doneeIds);
+
+        for (uint16 i; i < allDoneeIds.length; i++) {
+            uint256 amount = minValue;
+            if (i == 0 || i == 2) amount = 0;
+            assertEq(
+                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 101), i),
+                amount
+            );
+            assertEq(
+                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, ANY_ID), i),
+                amount
+            );
+            assertEq(
+                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), i),
+                minValue
+            );
+        }
+    }
 }
