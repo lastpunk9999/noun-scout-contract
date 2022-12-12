@@ -1,5 +1,5 @@
 ---
-description:
+description: 
 ---
 
 # NounSeek.sol
@@ -424,34 +424,14 @@ the total number of head traits, fetched and cached via `updateTraitCounts()`
 
 ---
 
-### *settle*
-
-```solidity title="Solidity"
-function settle(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)
-```
-Match and send all pledged amounts for the previous Noun(s).
-##### Details
-> Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
-
-#### Parameters
-| Name | Type | Description |
-|---|---|---|
-| trait | enum NounSeek.Traits | The Trait Type to match with the previous Noun (see `Traits` Enum) |
-#### Returns
-| Name | Type | Description |
-|---|---|---|
-| total | uint256 | Total donated funds before reimbursement |
-| reimbursement | uint256 | Reimbursement amount |
-
-
----
-
 ### *maxReimbursement*
 
 ```solidity title="Solidity"
 function maxReimbursement() external view returns (uint256)
 ```
-maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations; owner can update
+maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
+##### Details
+> Owner can update
 
 #### Returns
 | Name | Type | Description |
@@ -466,7 +446,9 @@ maximum reimbursement for matching; with default BPS value, this is reached at 4
 ```solidity title="Solidity"
 function minReimbursement() external view returns (uint256)
 ```
-minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; owner can update
+minimum reimbursement for matching
+##### Details
+> The default attempts to cover 10 donee matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas) Owner can update
 
 #### Returns
 | Name | Type | Description |
@@ -481,31 +463,14 @@ minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; ow
 ```solidity title="Solidity"
 function minValue() external view returns (uint256)
 ```
-The minimum donation value; owner can update
+The minimum donation value
+##### Details
+> Owner can update
 
 #### Returns
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | minValue |
-
-
----
-
-### *nonces*
-
-```solidity title="Solidity"
-function nonces(bytes32) external view returns (uint16)
-```
-Keep track of matched trait parameters using a nonce. When a match is made the nonce is incremented nonce to invalidate request removal. The key can be generated with the `traitsHash` function
-
-#### Parameters
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes32 | undefined |
-#### Returns
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint16 | undefined |
 
 
 ---
@@ -769,6 +734,30 @@ Sets the standard reimbursement basis points
 | newReimbursementBPS | uint16 | new basis point value |
 ---
 
+### *settle*
+
+```solidity title="Solidity"
+function settle(enum NounSeek.Traits trait, uint16 nounId, uint16[] doneeIds) external nonpayable returns (uint256 total, uint256 reimbursement)
+```
+Sends pledged amounts to donees by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
+##### Details
+> Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time. Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match. See function body for examples.
+
+#### Parameters
+| Name | Type | Description |
+|---|---|---|
+| trait | enum NounSeek.Traits | The Trait Type to fetch from an eligible Noun (see `Traits` Enum) |
+| nounId | uint16 | The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time. |
+| doneeIds | uint16[] | An array of donee IDs that have been pledged an amount if a Noun matches the specified trait. |
+#### Returns
+| Name | Type | Description |
+|---|---|---|
+| total | uint256 | Total donated funds before reimbursement |
+| reimbursement | uint256 | Reimbursement amount |
+
+
+---
+
 ### *traitHash*
 
 ```solidity title="Solidity"
@@ -776,7 +765,7 @@ function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) ex
 ```
 The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
 ##### Details
-> Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping
+> Used to group requests by their parameters in the `amounts` mapping
 
 #### Parameters
 | Name | Type | Description |
@@ -896,7 +885,7 @@ undefined |
 ### *Matched*
 
 ```solidity title="Solidity"
-event Matched(enum NounSeek.Traits indexed trait, uint16 traitId, uint16 indexed nounId, bytes32 indexed traitsHash, uint16 newNonce)
+event Matched(enum NounSeek.Traits indexed trait, uint16 traitId, uint16 indexed nounId, bytes32 indexed traitsHash)
 ```
 Emitted when an eligible Noun matches one or more Requests
 
@@ -914,8 +903,6 @@ Trait ID that matched |
 Noun Id that matched |
 | traitsHash `indexed` | bytes32 |
 Hash of trait, traitId, nounId |
-| newNonce  | uint16 |
-new incremented nonce; used to invalidated Requests with the prior nonce |
 ---
 ### *MaxReimbursementChanged*
 
@@ -1038,7 +1025,7 @@ undefined |
 ### *RequestAdded*
 
 ```solidity title="Solidity"
-event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 doneeId, uint16 indexed nounId, bytes32 indexed traitsHash, uint256 amount, uint16 nonce, string message)
+event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 doneeId, uint16 indexed nounId, bytes32 indexed traitsHash, uint256 amount, string message)
 ```
 Emitted when a Request is added
 
@@ -1061,8 +1048,6 @@ undefined |
 | traitsHash `indexed` | bytes32 |
 undefined |
 | amount  | uint256 |
-undefined |
-| nonce  | uint16 |
 undefined |
 | message  | string |
 undefined |
@@ -1153,6 +1138,16 @@ Thrown when an attempting to add a Request that pledges an amount to an inactive
 
 
 ---
+### *IneligibleNounId*
+
+```solidity title="Solidity"
+error IneligibleNounId()
+```
+Thrown when attempting to match an eligible Noun. Can only match a Noun previous to the current on auction
+
+
+
+---
 ### *MatchFound*
 
 ```solidity title="Solidity"
@@ -1172,7 +1167,7 @@ Thrown when an attempting to remove a Request that matches the current or previo
 ```solidity title="Solidity"
 error NoMatch()
 ```
-Thrown when an attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
+Thrown when attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
 
 
 
