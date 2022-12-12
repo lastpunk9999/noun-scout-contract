@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 ---
 
 # NounSeek.sol
@@ -424,10 +424,10 @@ the total number of head traits, fetched and cached via `updateTraitCounts()`
 
 ---
 
-### *matchAndDonate*
+### *settle*
 
 ```solidity title="Solidity"
-function matchAndDonate(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)
+function settle(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)
 ```
 Match and send all pledged amounts for the previous Noun(s).
 ##### Details

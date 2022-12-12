@@ -1,770 +1,770 @@
 {
     "methods": {
-        "ANY_ID()": {
-            "stateMutability": "view",
-            "code": "function ANY_ID() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "Set to zero (0)"
-                }
-            },
-            "notice": "The value of \"open Noun ID\" which allows trait matches to be performed against any Noun ID except non-auctioned Nouns"
+      "ANY_ID()": {
+        "stateMutability": "view",
+        "code": "function ANY_ID() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "Set to zero (0)"
+          }
         },
-        "AUCTION_END_LIMIT()": {
-            "stateMutability": "view",
-            "code": "function AUCTION_END_LIMIT() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "Set to 5 minutes"
-                }
-            },
-            "notice": "Time limit before an auction ends; requests cannot be removed during this time"
+        "notice": "The value of \"open Noun ID\" which allows trait matches to be performed against any Noun ID except non-auctioned Nouns"
+      },
+      "AUCTION_END_LIMIT()": {
+        "stateMutability": "view",
+        "code": "function AUCTION_END_LIMIT() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "Set to 5 minutes"
+          }
         },
-        "rawRequestById(address,uint256)": {
-            "stateMutability": "view",
-            "code": "function rawRequestById(address requester, uint256 requestId) external view returns (struct NounSeek.Request request)",
-            "inputs": {
-                "requester": {
-                    "type": "address"
-                },
-                "requestId": {
-                    "type": "uint256",
-                    "description": "The ID of the request"
-                }
-            },
-            "outputs": {
-                "request": {
-                    "type": "NounSeek.Request",
-                    "description": "The Request struct"
-                }
-            },
-            "notice": "Get a specific non-augmented request by an address"
+        "notice": "Time limit before an auction ends; requests cannot be removed during this time"
+      },
+      "rawRequestById(address,uint256)": {
+        "stateMutability": "view",
+        "code": "function rawRequestById(address requester, uint256 requestId) external view returns (struct NounSeek.Request request)",
+        "inputs": {
+          "requester": {
+            "type": "address"
+          },
+          "requestId": {
+            "type": "uint256",
+            "description": "The ID of the request"
+          }
         },
-        "rawRequestsByAddress(address)": {
-            "stateMutability": "view",
-            "code": "function rawRequestsByAddress(address requester) external view returns (struct NounSeek.Request[] requests)",
-            "inputs": {
-                "requester": {
-                    "type": "address",
-                    "description": "The address of the requester"
-                }
-            },
-            "outputs": {
-                "requests": {
-                    "type": "NounSeek.Request[]",
-                    "description": "An array of Request structs"
-                }
-            },
-            "notice": "Get all non-augment requests, including delete/blank requests, made by an address"
+        "outputs": {
+          "request": {
+            "type": "NounSeek.Request",
+            "description": "The Request struct"
+          }
         },
-        "acceptOwnership()": {
-            "stateMutability": "nonpayable",
-            "code": "function acceptOwnership() external nonpayable",
-            "inputs": {},
-            "outputs": {},
-            "details": "The new owner accepts the ownership transfer."
+        "notice": "Get a specific non-augmented request by an address"
+      },
+      "rawRequestsByAddress(address)": {
+        "stateMutability": "view",
+        "code": "function rawRequestsByAddress(address requester) external view returns (struct NounSeek.Request[] requests)",
+        "inputs": {
+          "requester": {
+            "type": "address",
+            "description": "The address of the requester"
+          }
         },
-        "accessoryCount()": {
-            "stateMutability": "view",
-            "code": "function accessoryCount() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "accessoryCount"
-                }
-            },
-            "notice": "the total number of accessory traits, fetched and cached via `updateTraitCounts()`"
+        "outputs": {
+          "requests": {
+            "type": "NounSeek.Request[]",
+            "description": "An array of Request structs"
+          }
         },
-        "add(uint8,uint16,uint16,uint16)": {
-            "stateMutability": "payable",
-            "code": "function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId) external payable returns (uint256 requestId)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "Trait Type the request is for (see `Traits` Enum)"
-                },
-                "traitId": {
-                    "type": "uint16",
-                    "description": "ID of the specified Trait that the request is for"
-                },
-                "nounId": {
-                    "type": "uint16",
-                    "description": "the Noun ID the request is targeted for (or the value of ANY_ID for open requests)"
-                },
-                "doneeId": {
-                    "type": "uint16",
-                    "description": "the ID of the Donee that should receive the donation if a Noun matching the parameters is minted"
-                }
-            },
-            "outputs": {
-                "requestId": {
-                    "type": "uint256",
-                    "description": "The ID of this requests for msg.sender's address"
-                }
-            },
-            "notice": "Create a request for the specific trait and specific or open Noun ID payable to the specified Donee.",
-            "details": "`msg.value` is used as the pledged Request amount"
+        "notice": "Get all non-augment requests, including delete/blank requests, made by an address"
+      },
+      "acceptOwnership()": {
+        "stateMutability": "nonpayable",
+        "code": "function acceptOwnership() external nonpayable",
+        "inputs": {},
+        "outputs": {},
+        "details": "The new owner accepts the ownership transfer."
+      },
+      "accessoryCount()": {
+        "stateMutability": "view",
+        "code": "function accessoryCount() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "accessoryCount"
+          }
         },
-        "addDonee(string,address,string)": {
-            "stateMutability": "nonpayable",
-            "code": "function addDonee(string name, address to, string description) external nonpayable",
-            "inputs": {
-                "name": {
-                    "type": "string",
-                    "description": "The Donee's name that should be displayed to users/consumers"
-                },
-                "to": {
-                    "type": "address",
-                    "description": "Address that funds should be sent to in order to fund the Donee"
-                },
-                "description": {
-                    "type": "string"
-                }
-            },
-            "outputs": {},
-            "notice": "Add a Donee by specifying the name and address funds should be sent to",
-            "details": "Adds a Donee to the donees set and activates the Donee"
+        "notice": "the total number of accessory traits, fetched and cached via `updateTraitCounts()`"
+      },
+      "add(uint8,uint16,uint16,uint16)": {
+        "stateMutability": "payable",
+        "code": "function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId) external payable returns (uint256 requestId)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "Trait Type the request is for (see `Traits` Enum)"
+          },
+          "traitId": {
+            "type": "uint16",
+            "description": "ID of the specified Trait that the request is for"
+          },
+          "nounId": {
+            "type": "uint16",
+            "description": "the Noun ID the request is targeted for (or the value of ANY_ID for open requests)"
+          },
+          "doneeId": {
+            "type": "uint16",
+            "description": "the ID of the Donee that should receive the donation if a Noun matching the parameters is minted"
+          }
         },
-        "addWithMessage(uint8,uint16,uint16,uint16,string)": {
-            "stateMutability": "payable",
-            "code": "function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId, string message) external payable returns (uint256 requestId)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "Trait Type the request is for (see `Traits` Enum)"
-                },
-                "traitId": {
-                    "type": "uint16",
-                    "description": "ID of the specified Trait that the request is for"
-                },
-                "nounId": {
-                    "type": "uint16",
-                    "description": "the Noun ID the request is targeted for (or the value of ANY_ID for open requests)"
-                },
-                "doneeId": {
-                    "type": "uint16",
-                    "description": "the ID of the Donee that should receive the donation if a Noun matching the parameters is minted"
-                },
-                "message": {
-                    "type": "string",
-                    "description": "The message to log"
-                }
-            },
-            "outputs": {
-                "requestId": {
-                    "type": "uint256",
-                    "description": "The ID of this requests for msg.sender's address"
-                }
-            },
-            "notice": "Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee.",
-            "details": "The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request."
+        "outputs": {
+          "requestId": {
+            "type": "uint256",
+            "description": "The ID of this requests for msg.sender's address"
+          }
         },
-        "amounts(bytes32,uint16)": {
-            "stateMutability": "view",
-            "code": "function amounts(bytes32, uint16) external view returns (uint256)",
-            "inputs": {
-                "_0": {
-                    "type": "bytes32"
-                },
-                "_1": {
-                    "type": "uint16"
-                }
-            },
-            "outputs": {
-                "_0": {
-                    "type": "uint256"
-                }
-            },
-            "notice": "Cumulative funds for trait parameters send to a specific donee. The first mapping key is can be generated with the `traitsHash` function and the second is doneeId"
+        "notice": "Create a request for the specific trait and specific or open Noun ID payable to the specified Donee.",
+        "details": "`msg.value` is used as the pledged Request amount"
+      },
+      "addDonee(string,address,string)": {
+        "stateMutability": "nonpayable",
+        "code": "function addDonee(string name, address to, string description) external nonpayable",
+        "inputs": {
+          "name": {
+            "type": "string",
+            "description": "The Donee's name that should be displayed to users/consumers"
+          },
+          "to": {
+            "type": "address",
+            "description": "Address that funds should be sent to in order to fund the Donee"
+          },
+          "description": {
+            "type": "string"
+          }
         },
-        "auctionHouse()": {
-            "stateMutability": "view",
-            "code": "function auctionHouse() external view returns (contract INounsAuctionHouseLike)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "contract INounsAuctionHouseLike",
-                    "description": "auctionHouse contract address"
-                }
-            },
-            "notice": "Retreives the current auction data"
+        "outputs": {},
+        "notice": "Add a Donee by specifying the name and address funds should be sent to",
+        "details": "Adds a Donee to the donees set and activates the Donee"
+      },
+      "addWithMessage(uint8,uint16,uint16,uint16,string)": {
+        "stateMutability": "payable",
+        "code": "function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId, string message) external payable returns (uint256 requestId)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "Trait Type the request is for (see `Traits` Enum)"
+          },
+          "traitId": {
+            "type": "uint16",
+            "description": "ID of the specified Trait that the request is for"
+          },
+          "nounId": {
+            "type": "uint16",
+            "description": "the Noun ID the request is targeted for (or the value of ANY_ID for open requests)"
+          },
+          "doneeId": {
+            "type": "uint16",
+            "description": "the ID of the Donee that should receive the donation if a Noun matching the parameters is minted"
+          },
+          "message": {
+            "type": "string",
+            "description": "The message to log"
+          }
         },
-        "backgroundCount()": {
-            "stateMutability": "view",
-            "code": "function backgroundCount() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "backgroundCount"
-                }
-            },
-            "notice": "the total number of background traits, fetched and cached via `updateTraitCounts()`"
+        "outputs": {
+          "requestId": {
+            "type": "uint256",
+            "description": "The ID of this requests for msg.sender's address"
+          }
         },
-        "baseReimbursementBPS()": {
-            "stateMutability": "view",
-            "code": "function baseReimbursementBPS() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "baseReimbursementBPS"
-                }
-            },
-            "notice": "A portion of donated funds are sent to the address performing a match; owner can update"
+        "notice": "Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee.",
+        "details": "The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request."
+      },
+      "amounts(bytes32,uint16)": {
+        "stateMutability": "view",
+        "code": "function amounts(bytes32, uint16) external view returns (uint256)",
+        "inputs": {
+          "_0": {
+            "type": "bytes32"
+          },
+          "_1": {
+            "type": "uint16"
+          }
         },
-        "bodyCount()": {
-            "stateMutability": "view",
-            "code": "function bodyCount() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "bodyCount"
-                }
-            },
-            "notice": "the total number of body traits, fetched and cached via `updateTraitCounts()`"
+        "outputs": {
+          "_0": {
+            "type": "uint256"
+          }
         },
-        "donationsForMatchableNoun()": {
-            "stateMutability": "view",
-            "code": "function donationsForMatchableNoun() external view returns (uint16 auctionedNounId, uint16 nonAuctionedNounId, uint256[][5] auctionedNounDonations, uint256[][5] nonAuctionedNounDonations, uint256[5] totalDonationsPerTrait, uint256[5] reimbursementPerTrait)",
-            "inputs": {},
-            "outputs": {
-                "auctionedNounId": {
-                    "type": "uint16",
-                    "description": "The ID of the Noun that is was auctioned"
-                },
-                "nonAuctionedNounId": {
-                    "type": "uint16",
-                    "description": "If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
-                },
-                "auctionedNounDonations": {
-                    "type": "uint256[][5]",
-                    "description": "Total donations for the eligible auctioned Noun as a nested arrays in the order Trait Type and Donee ID"
-                },
-                "nonAuctionedNounDonations": {
-                    "type": "uint256[][5]",
-                    "description": "If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Donee ID"
-                },
-                "totalDonationsPerTrait": {
-                    "type": "uint256[5]",
-                    "description": "An array of total donation pledged minus reimbursement across all Donees, indexed by Trait Type"
-                },
-                "reimbursementPerTrait": {
-                    "type": "uint256[5]",
-                    "description": "An array of matcher's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type"
-                }
-            },
-            "notice": "For the Noun that is eligible to be matched with pledged donations (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each Donee using requests that match the Noun's seed.",
-            "details": "Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns"
+        "notice": "Cumulative funds for trait parameters send to a specific donee. The first mapping key is can be generated with the `traitsHash` function and the second is doneeId"
+      },
+      "auctionHouse()": {
+        "stateMutability": "view",
+        "code": "function auctionHouse() external view returns (contract INounsAuctionHouseLike)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "contract INounsAuctionHouseLike",
+            "description": "auctionHouse contract address"
+          }
         },
-        "donationsForNounId(uint16)": {
-            "stateMutability": "view",
-            "code": "function donationsForNounId(uint16 nounId) external view returns (uint256[][][5] donations)",
-            "inputs": {
-                "nounId": {
-                    "type": "uint16",
-                    "description": "The ID of the Noun requests should match."
-                }
-            },
-            "outputs": {
-                "donations": {
-                    "type": "uint256[][][5]",
-                    "description": "Cumulative amounts pledged for each Donee, indexed by Trait Type, Trait ID and Donee ID"
-                }
-            },
-            "notice": "For a given Noun ID, get cumulative donation amounts for each Donee scoped by Trait Type and Trait ID.",
-            "details": "The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101."
+        "notice": "Retreives the current auction data"
+      },
+      "backgroundCount()": {
+        "stateMutability": "view",
+        "code": "function backgroundCount() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "backgroundCount"
+          }
         },
-        "donationsForNounIdByTrait(uint8,uint16)": {
-            "stateMutability": "view",
-            "code": "function donationsForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] donationsByTraitId)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "The trait type to scope requests to (See `Traits` Enum)"
-                },
-                "nounId": {
-                    "type": "uint16",
-                    "description": "The Noun ID to scope requests to"
-                }
-            },
-            "outputs": {
-                "donationsByTraitId": {
-                    "type": "uint256[][]",
-                    "description": "Cumulative amounts pledged for each Donee, indexed by Trait ID and Donee ID"
-                }
-            },
-            "notice": "Get cumulative donation amounts scoped to Noun ID and Trait Type.",
-            "details": "Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+        "notice": "the total number of background traits, fetched and cached via `updateTraitCounts()`"
+      },
+      "baseReimbursementBPS()": {
+        "stateMutability": "view",
+        "code": "function baseReimbursementBPS() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "baseReimbursementBPS"
+          }
         },
-        "donationsForNounIdByTraitId(uint8,uint16,uint16)": {
-            "stateMutability": "view",
-            "code": "function donationsForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] donations)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "The trait type to scope requests to (See `Traits` Enum)"
-                },
-                "traitId": {
-                    "type": "uint16",
-                    "description": "The trait ID  of the trait to scope requests"
-                },
-                "nounId": {
-                    "type": "uint16",
-                    "description": "The Noun ID to scope requests to"
-                }
-            },
-            "outputs": {
-                "donations": {
-                    "type": "uint256[]",
-                    "description": "Cumulative amounts pledged for each Donee, indexed by Donee ID"
-                }
-            },
-            "notice": "Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID",
-            "details": "Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+        "notice": "A portion of donated funds are sent to the address performing a match; owner can update"
+      },
+      "bodyCount()": {
+        "stateMutability": "view",
+        "code": "function bodyCount() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "bodyCount"
+          }
         },
-        "donationsForNounOnAuction()": {
-            "stateMutability": "view",
-            "code": "function donationsForNounOnAuction() external view returns (uint16 currentAuctionId, uint16 prevNonAuctionId, uint256[][5] currentAuctionDonations, uint256[][5] prevNonAuctionDonations)",
-            "inputs": {},
-            "outputs": {
-                "currentAuctionId": {
-                    "type": "uint16",
-                    "description": "The ID of the Noun that is currently being auctioned"
-                },
-                "prevNonAuctionId": {
-                    "type": "uint16",
-                    "description": "If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
-                },
-                "currentAuctionDonations": {
-                    "type": "uint256[][5]",
-                    "description": "Total donations for the current auctioned Noun as a nested arrays indexed by Trait Type and Donee ID"
-                },
-                "prevNonAuctionDonations": {
-                    "type": "uint256[][5]",
-                    "description": "If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Donee ID"
-                }
-            },
-            "notice": "For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts pledged for each Donee using requests that match the Noun's seed.",
-            "details": "Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated"
+        "notice": "the total number of body traits, fetched and cached via `updateTraitCounts()`"
+      },
+      "donationsForMatchableNoun()": {
+        "stateMutability": "view",
+        "code": "function donationsForMatchableNoun() external view returns (uint16 auctionedNounId, uint16 nonAuctionedNounId, uint256[][5] auctionedNounDonations, uint256[][5] nonAuctionedNounDonations, uint256[5] totalDonationsPerTrait, uint256[5] reimbursementPerTrait)",
+        "inputs": {},
+        "outputs": {
+          "auctionedNounId": {
+            "type": "uint16",
+            "description": "The ID of the Noun that is was auctioned"
+          },
+          "nonAuctionedNounId": {
+            "type": "uint16",
+            "description": "If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
+          },
+          "auctionedNounDonations": {
+            "type": "uint256[][5]",
+            "description": "Total donations for the eligible auctioned Noun as a nested arrays in the order Trait Type and Donee ID"
+          },
+          "nonAuctionedNounDonations": {
+            "type": "uint256[][5]",
+            "description": "If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Donee ID"
+          },
+          "totalDonationsPerTrait": {
+            "type": "uint256[5]",
+            "description": "An array of total donation pledged minus reimbursement across all Donees, indexed by Trait Type"
+          },
+          "reimbursementPerTrait": {
+            "type": "uint256[5]",
+            "description": "An array of matcher's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type"
+          }
         },
-        "donationsForOnChainNoun(uint16)": {
-            "stateMutability": "view",
-            "code": "function donationsForOnChainNoun(uint16 nounId) external view returns (uint256[][5] donations)",
-            "inputs": {
-                "nounId": {
-                    "type": "uint16",
-                    "description": "Noun ID of an existing on-chain Noun"
-                }
-            },
-            "outputs": {
-                "donations": {
-                    "type": "uint256[][5]",
-                    "description": "Cumulative amounts pledged for each Donee that matches the on-chain Noun seed indexed by Trait Type and Donee ID"
-                }
-            },
-            "notice": "For an existing on-chain Noun, use its seed to find matching donations",
-            "details": "Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+        "notice": "For the Noun that is eligible to be matched with pledged donations (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each Donee using requests that match the Noun's seed.",
+        "details": "Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns"
+      },
+      "donationsForNounId(uint16)": {
+        "stateMutability": "view",
+        "code": "function donationsForNounId(uint16 nounId) external view returns (uint256[][][5] donations)",
+        "inputs": {
+          "nounId": {
+            "type": "uint16",
+            "description": "The ID of the Noun requests should match."
+          }
         },
-        "donationsForUpcomingNoun()": {
-            "stateMutability": "view",
-            "code": "function donationsForUpcomingNoun() external view returns (uint16 nextAuctionId, uint16 nextNonAuctionId, uint256[][][5] nextAuctionDonations, uint256[][][5] nextNonAuctionDonations)",
-            "inputs": {},
-            "outputs": {
-                "nextAuctionId": {
-                    "type": "uint16",
-                    "description": "The ID of the next Noun that will be auctioned"
-                },
-                "nextNonAuctionId": {
-                    "type": "uint16",
-                    "description": "If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
-                },
-                "nextAuctionDonations": {
-                    "type": "uint256[][][5]",
-                    "description": "Total donations for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID"
-                },
-                "nextNonAuctionDonations": {
-                    "type": "uint256[][][5]",
-                    "description": "If two Nouns are due to be minted, this will contain the total donations for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID"
-                }
-            },
-            "notice": "Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative donation amounts for each Donee scoped by possible Trait Type and Trait ID.",
-            "details": "See { donationsForNounId } for detailed documentation of the nested array structure"
+        "outputs": {
+          "donations": {
+            "type": "uint256[][][5]",
+            "description": "Cumulative amounts pledged for each Donee, indexed by Trait Type, Trait ID and Donee ID"
+          }
         },
-        "donees()": {
-            "stateMutability": "view",
-            "code": "function donees() external view returns (struct NounSeek.Donee[])",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "NounSeek.Donee[]"
-                }
-            },
-            "notice": "All donees as Donee structs"
+        "notice": "For a given Noun ID, get cumulative donation amounts for each Donee scoped by Trait Type and Trait ID.",
+        "details": "The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101."
+      },
+      "donationsForNounIdByTrait(uint8,uint16)": {
+        "stateMutability": "view",
+        "code": "function donationsForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] donationsByTraitId)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "The trait type to scope requests to (See `Traits` Enum)"
+          },
+          "nounId": {
+            "type": "uint16",
+            "description": "The Noun ID to scope requests to"
+          }
         },
-        "effectiveBPSAndReimbursementForDonationTotal(uint256)": {
-            "stateMutability": "view",
-            "code": "function effectiveBPSAndReimbursementForDonationTotal(uint256 total) external view returns (uint256 effectiveBPS, uint256 reimbursement)",
-            "inputs": {
-                "total": {
-                    "type": "uint256",
-                    "description": "A donation amount"
-                }
-            },
-            "outputs": {
-                "effectiveBPS": {
-                    "type": "uint256",
-                    "description": "The basis point used to cacluate the reimbursement fee"
-                },
-                "reimbursement": {
-                    "type": "uint256",
-                    "description": "The reimbursement amount"
-                }
-            },
-            "notice": "Given a donation total, derive the reimbursement fee and basis points used to calculate it"
+        "outputs": {
+          "donationsByTraitId": {
+            "type": "uint256[][]",
+            "description": "Cumulative amounts pledged for each Donee, indexed by Trait ID and Donee ID"
+          }
         },
-        "glassesCount()": {
-            "stateMutability": "view",
-            "code": "function glassesCount() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "glassesCount"
-                }
-            },
-            "notice": "the total number of glasses traits, fetched and cached via `updateTraitCounts()`"
+        "notice": "Get cumulative donation amounts scoped to Noun ID and Trait Type.",
+        "details": "Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+      },
+      "donationsForNounIdByTraitId(uint8,uint16,uint16)": {
+        "stateMutability": "view",
+        "code": "function donationsForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] donations)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "The trait type to scope requests to (See `Traits` Enum)"
+          },
+          "traitId": {
+            "type": "uint16",
+            "description": "The trait ID  of the trait to scope requests"
+          },
+          "nounId": {
+            "type": "uint16",
+            "description": "The Noun ID to scope requests to"
+          }
         },
-        "headCount()": {
-            "stateMutability": "view",
-            "code": "function headCount() external view returns (uint16)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint16",
-                    "description": "headCount"
-                }
-            },
-            "notice": "the total number of head traits, fetched and cached via `updateTraitCounts()`"
+        "outputs": {
+          "donations": {
+            "type": "uint256[]",
+            "description": "Cumulative amounts pledged for each Donee, indexed by Donee ID"
+          }
         },
-        "matchAndDonate(uint8)": {
-            "stateMutability": "nonpayable",
-            "code": "function matchAndDonate(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "The Trait Type to match with the previous Noun (see `Traits` Enum)"
-                }
-            },
-            "outputs": {
-                "total": {
-                    "type": "uint256",
-                    "description": "Total donated funds before reimbursement"
-                },
-                "reimbursement": {
-                    "type": "uint256",
-                    "description": "Reimbursement amount"
-                }
-            },
-            "notice": "Match and send all pledged amounts for the previous Noun(s).",
-            "details": "Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match"
+        "notice": "Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID",
+        "details": "Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+      },
+      "donationsForNounOnAuction()": {
+        "stateMutability": "view",
+        "code": "function donationsForNounOnAuction() external view returns (uint16 currentAuctionId, uint16 prevNonAuctionId, uint256[][5] currentAuctionDonations, uint256[][5] prevNonAuctionDonations)",
+        "inputs": {},
+        "outputs": {
+          "currentAuctionId": {
+            "type": "uint16",
+            "description": "The ID of the Noun that is currently being auctioned"
+          },
+          "prevNonAuctionId": {
+            "type": "uint16",
+            "description": "If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
+          },
+          "currentAuctionDonations": {
+            "type": "uint256[][5]",
+            "description": "Total donations for the current auctioned Noun as a nested arrays indexed by Trait Type and Donee ID"
+          },
+          "prevNonAuctionDonations": {
+            "type": "uint256[][5]",
+            "description": "If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Donee ID"
+          }
         },
-        "maxReimbursement()": {
-            "stateMutability": "view",
-            "code": "function maxReimbursement() external view returns (uint256)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint256",
-                    "description": "maxReimbursement"
-                }
-            },
-            "notice": "maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations; owner can update"
+        "notice": "For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts pledged for each Donee using requests that match the Noun's seed.",
+        "details": "Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated"
+      },
+      "donationsForOnChainNoun(uint16)": {
+        "stateMutability": "view",
+        "code": "function donationsForOnChainNoun(uint16 nounId) external view returns (uint256[][5] donations)",
+        "inputs": {
+          "nounId": {
+            "type": "uint16",
+            "description": "Noun ID of an existing on-chain Noun"
+          }
         },
-        "minReimbursement()": {
-            "stateMutability": "view",
-            "code": "function minReimbursement() external view returns (uint256)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint256",
-                    "description": "minReimbursement"
-                }
-            },
-            "notice": "minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; owner can update"
+        "outputs": {
+          "donations": {
+            "type": "uint256[][5]",
+            "description": "Cumulative amounts pledged for each Donee that matches the on-chain Noun seed indexed by Trait Type and Donee ID"
+          }
         },
-        "minValue()": {
-            "stateMutability": "view",
-            "code": "function minValue() external view returns (uint256)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "uint256",
-                    "description": "minValue"
-                }
-            },
-            "notice": "The minimum donation value; owner can update"
+        "notice": "For an existing on-chain Noun, use its seed to find matching donations",
+        "details": "Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations"
+      },
+      "donationsForUpcomingNoun()": {
+        "stateMutability": "view",
+        "code": "function donationsForUpcomingNoun() external view returns (uint16 nextAuctionId, uint16 nextNonAuctionId, uint256[][][5] nextAuctionDonations, uint256[][][5] nextNonAuctionDonations)",
+        "inputs": {},
+        "outputs": {
+          "nextAuctionId": {
+            "type": "uint16",
+            "description": "The ID of the next Noun that will be auctioned"
+          },
+          "nextNonAuctionId": {
+            "type": "uint16",
+            "description": "If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)"
+          },
+          "nextAuctionDonations": {
+            "type": "uint256[][][5]",
+            "description": "Total donations for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID"
+          },
+          "nextNonAuctionDonations": {
+            "type": "uint256[][][5]",
+            "description": "If two Nouns are due to be minted, this will contain the total donations for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID"
+          }
         },
-        "nonces(bytes32)": {
-            "stateMutability": "view",
-            "code": "function nonces(bytes32) external view returns (uint16)",
-            "inputs": {
-                "_0": {
-                    "type": "bytes32"
-                }
-            },
-            "outputs": {
-                "_0": {
-                    "type": "uint16"
-                }
-            },
-            "notice": "Keep track of matched trait parameters using a nonce. When a match is made the nonce is incremented nonce to invalidate request removal. The key can be generated with the `traitsHash` function"
+        "notice": "Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative donation amounts for each Donee scoped by possible Trait Type and Trait ID.",
+        "details": "See { donationsForNounId } for detailed documentation of the nested array structure"
+      },
+      "donees()": {
+        "stateMutability": "view",
+        "code": "function donees() external view returns (struct NounSeek.Donee[])",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "NounSeek.Donee[]"
+          }
         },
-        "nouns()": {
-            "stateMutability": "view",
-            "code": "function nouns() external view returns (contract INounsTokenLike)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "contract INounsTokenLike",
-                    "description": "nouns contract address"
-                }
-            },
-            "notice": "Retreives historical mapping of Noun ID -> seed"
+        "notice": "All donees as Donee structs"
+      },
+      "effectiveBPSAndReimbursementForDonationTotal(uint256)": {
+        "stateMutability": "view",
+        "code": "function effectiveBPSAndReimbursementForDonationTotal(uint256 total) external view returns (uint256 effectiveBPS, uint256 reimbursement)",
+        "inputs": {
+          "total": {
+            "type": "uint256",
+            "description": "A donation amount"
+          }
         },
-        "owner()": {
-            "stateMutability": "view",
-            "code": "function owner() external view returns (address)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "address"
-                }
-            },
-            "details": "Returns the address of the current owner."
+        "outputs": {
+          "effectiveBPS": {
+            "type": "uint256",
+            "description": "The basis point used to cacluate the reimbursement fee"
+          },
+          "reimbursement": {
+            "type": "uint256",
+            "description": "The reimbursement amount"
+          }
         },
-        "pause()": {
-            "stateMutability": "nonpayable",
-            "code": "function pause() external nonpayable",
-            "inputs": {},
-            "outputs": {},
-            "notice": "Pauses the NounSeek contract. Pausing can be reversed by unpausing."
+        "notice": "Given a donation total, derive the reimbursement fee and basis points used to calculate it"
+      },
+      "glassesCount()": {
+        "stateMutability": "view",
+        "code": "function glassesCount() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "glassesCount"
+          }
         },
-        "paused()": {
-            "stateMutability": "view",
-            "code": "function paused() external view returns (bool)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "bool"
-                }
-            },
-            "details": "Returns true if the contract is paused, and false otherwise."
+        "notice": "the total number of glasses traits, fetched and cached via `updateTraitCounts()`"
+      },
+      "headCount()": {
+        "stateMutability": "view",
+        "code": "function headCount() external view returns (uint16)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint16",
+            "description": "headCount"
+          }
         },
-        "pendingOwner()": {
-            "stateMutability": "view",
-            "code": "function pendingOwner() external view returns (address)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "address"
-                }
-            },
-            "details": "Returns the address of the pending owner."
+        "notice": "the total number of head traits, fetched and cached via `updateTraitCounts()`"
+      },
+      "settle(uint8)": {
+        "stateMutability": "nonpayable",
+        "code": "function settle(enum NounSeek.Traits trait) external nonpayable returns (uint256 total, uint256 reimbursement)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "The Trait Type to match with the previous Noun (see `Traits` Enum)"
+          }
         },
-        "remove(uint256)": {
-            "stateMutability": "nonpayable",
-            "code": "function remove(uint256 requestId) external nonpayable returns (uint256 amount)",
-            "inputs": {
-                "requestId": {
-                    "type": "uint256",
-                    "description": "Request Id"
-                }
-            },
-            "outputs": {
-                "amount": {
-                    "type": "uint256"
-                }
-            },
-            "notice": "Remove the specified request and return the associated amount.",
-            "details": "Must be called by the Requester's address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately"
+        "outputs": {
+          "total": {
+            "type": "uint256",
+            "description": "Total donated funds before reimbursement"
+          },
+          "reimbursement": {
+            "type": "uint256",
+            "description": "Reimbursement amount"
+          }
         },
-        "renounceOwnership()": {
-            "stateMutability": "nonpayable",
-            "code": "function renounceOwnership() external nonpayable",
-            "inputs": {},
-            "outputs": {},
-            "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+        "notice": "Match and send all pledged amounts for the previous Noun(s).",
+        "details": "Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match"
+      },
+      "maxReimbursement()": {
+        "stateMutability": "view",
+        "code": "function maxReimbursement() external view returns (uint256)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint256",
+            "description": "maxReimbursement"
+          }
         },
-        "requestMatchesNoun(tuple,uint16)": {
-            "stateMutability": "view",
-            "code": "function requestMatchesNoun(NounSeek.Request request, uint16 nounId) external view returns (bool)",
-            "inputs": {
-                "request": {
-                    "type": "NounSeek.Request"
-                },
-                "nounId": {
-                    "type": "uint16"
-                }
-            },
-            "outputs": {
-                "_0": {
-                    "type": "bool"
-                }
-            }
+        "notice": "maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations; owner can update"
+      },
+      "minReimbursement()": {
+        "stateMutability": "view",
+        "code": "function minReimbursement() external view returns (uint256)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint256",
+            "description": "minReimbursement"
+          }
         },
-        "requestsByAddress(address)": {
-            "stateMutability": "view",
-            "code": "function requestsByAddress(address requester) external view returns (struct NounSeek.RequestWithStatus[] requests)",
-            "inputs": {
-                "requester": {
-                    "type": "address",
-                    "description": "The address of the requester"
-                }
-            },
-            "outputs": {
-                "requests": {
-                    "type": "NounSeek.RequestWithStatus[]",
-                    "description": "An array of RequestWithStatus Structs"
-                }
-            },
-            "notice": "Get requests, augemented with status, for non-removed Requests",
-            "details": "Removes Requests marked as REMOVED, and includes Requests that have been previously matched. Do not rely on array index; use `request.id` to specify a Request when calling `remove()` See { _getRequestStatusAndParams } for calculations"
+        "notice": "minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; owner can update"
+      },
+      "minValue()": {
+        "stateMutability": "view",
+        "code": "function minValue() external view returns (uint256)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "uint256",
+            "description": "minValue"
+          }
         },
-        "setDoneeActive(uint256,bool)": {
-            "stateMutability": "nonpayable",
-            "code": "function setDoneeActive(uint256 doneeId, bool active) external nonpayable",
-            "inputs": {
-                "doneeId": {
-                    "type": "uint256",
-                    "description": "Donee id based on its index within the donees set"
-                },
-                "active": {
-                    "type": "bool",
-                    "description": "Active state"
-                }
-            },
-            "outputs": {},
-            "notice": "Toggles a Donee's active state by its index within the set, reverts if Donee is not configured",
-            "details": "If the Done is not configured, a revert will be triggered"
+        "notice": "The minimum donation value; owner can update"
+      },
+      "nonces(bytes32)": {
+        "stateMutability": "view",
+        "code": "function nonces(bytes32) external view returns (uint16)",
+        "inputs": {
+          "_0": {
+            "type": "bytes32"
+          }
         },
-        "setMaxReimbursement(uint256)": {
-            "stateMutability": "nonpayable",
-            "code": "function setMaxReimbursement(uint256 newMaxReimbursement) external nonpayable",
-            "inputs": {
-                "newMaxReimbursement": {
-                    "type": "uint256",
-                    "description": "new maximum value"
-                }
-            },
-            "outputs": {},
-            "notice": "Sets the maximum reimbursement amount when matching"
+        "outputs": {
+          "_0": {
+            "type": "uint16"
+          }
         },
-        "setMinReimbursement(uint256)": {
-            "stateMutability": "nonpayable",
-            "code": "function setMinReimbursement(uint256 newMinReimbursement) external nonpayable",
-            "inputs": {
-                "newMinReimbursement": {
-                    "type": "uint256",
-                    "description": "new minimum value"
-                }
-            },
-            "outputs": {},
-            "notice": "Sets the minium reimbursement amount when matching"
+        "notice": "Keep track of matched trait parameters using a nonce. When a match is made the nonce is incremented nonce to invalidate request removal. The key can be generated with the `traitsHash` function"
+      },
+      "nouns()": {
+        "stateMutability": "view",
+        "code": "function nouns() external view returns (contract INounsTokenLike)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "contract INounsTokenLike",
+            "description": "nouns contract address"
+          }
         },
-        "setMinValue(uint256)": {
-            "stateMutability": "nonpayable",
-            "code": "function setMinValue(uint256 newMinValue) external nonpayable",
-            "inputs": {
-                "newMinValue": {
-                    "type": "uint256",
-                    "description": "new minimum value"
-                }
-            },
-            "outputs": {},
-            "notice": "Sets the minium value that can be pledged"
+        "notice": "Retreives historical mapping of Noun ID -> seed"
+      },
+      "owner()": {
+        "stateMutability": "view",
+        "code": "function owner() external view returns (address)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "address"
+          }
         },
-        "setReimbursementBPS(uint16)": {
-            "stateMutability": "nonpayable",
-            "code": "function setReimbursementBPS(uint16 newReimbursementBPS) external nonpayable",
-            "inputs": {
-                "newReimbursementBPS": {
-                    "type": "uint16",
-                    "description": "new basis point value"
-                }
-            },
-            "outputs": {},
-            "notice": "Sets the standard reimbursement basis points"
+        "details": "Returns the address of the current owner."
+      },
+      "pause()": {
+        "stateMutability": "nonpayable",
+        "code": "function pause() external nonpayable",
+        "inputs": {},
+        "outputs": {},
+        "notice": "Pauses the NounSeek contract. Pausing can be reversed by unpausing."
+      },
+      "paused()": {
+        "stateMutability": "view",
+        "code": "function paused() external view returns (bool)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "bool"
+          }
         },
-        "traitHash(uint8,uint16,uint16)": {
-            "stateMutability": "pure",
-            "code": "function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external pure returns (bytes32 hash)",
-            "inputs": {
-                "trait": {
-                    "type": "enum NounSeek.Traits",
-                    "description": "The trait enum"
-                },
-                "traitId": {
-                    "type": "uint16",
-                    "description": "The ID of the trait"
-                },
-                "nounId": {
-                    "type": "uint16",
-                    "description": "The Noun ID"
-                }
-            },
-            "outputs": {
-                "hash": {
-                    "type": "bytes32",
-                    "description": "The hashed value"
-                }
-            },
-            "notice": "The canonical key for requests that target the same `trait`, `traitId`, and `nounId`",
-            "details": "Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping"
+        "details": "Returns true if the contract is paused, and false otherwise."
+      },
+      "pendingOwner()": {
+        "stateMutability": "view",
+        "code": "function pendingOwner() external view returns (address)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "address"
+          }
         },
-        "transferOwnership(address)": {
-            "stateMutability": "nonpayable",
-            "code": "function transferOwnership(address newOwner) external nonpayable",
-            "inputs": {
-                "newOwner": {
-                    "type": "address"
-                }
-            },
-            "outputs": {},
-            "details": "Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one. Can only be called by the current owner."
+        "details": "Returns the address of the pending owner."
+      },
+      "remove(uint256)": {
+        "stateMutability": "nonpayable",
+        "code": "function remove(uint256 requestId) external nonpayable returns (uint256 amount)",
+        "inputs": {
+          "requestId": {
+            "type": "uint256",
+            "description": "Request Id"
+          }
         },
-        "unpause()": {
-            "stateMutability": "nonpayable",
-            "code": "function unpause() external nonpayable",
-            "inputs": {},
-            "outputs": {},
-            "notice": "Unpauses (resumes) the NounSeek contract. Unpausing can be reversed by pausing."
+        "outputs": {
+          "amount": {
+            "type": "uint256"
+          }
         },
-        "updateTraitCounts()": {
-            "stateMutability": "nonpayable",
-            "code": "function updateTraitCounts() external nonpayable",
-            "inputs": {},
-            "outputs": {},
-            "notice": "Update local Trait counts based on Noun Descriptor totals"
+        "notice": "Remove the specified request and return the associated amount.",
+        "details": "Must be called by the Requester's address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately"
+      },
+      "renounceOwnership()": {
+        "stateMutability": "nonpayable",
+        "code": "function renounceOwnership() external nonpayable",
+        "inputs": {},
+        "outputs": {},
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "requestMatchesNoun(tuple,uint16)": {
+        "stateMutability": "view",
+        "code": "function requestMatchesNoun(NounSeek.Request request, uint16 nounId) external view returns (bool)",
+        "inputs": {
+          "request": {
+            "type": "NounSeek.Request"
+          },
+          "nounId": {
+            "type": "uint16"
+          }
         },
-        "weth()": {
-            "stateMutability": "view",
-            "code": "function weth() external view returns (contract IWETH)",
-            "inputs": {},
-            "outputs": {
-                "_0": {
-                    "type": "contract IWETH",
-                    "description": "WETH contract address"
-                }
-            },
-            "notice": "The address of the WETH contract"
+        "outputs": {
+          "_0": {
+            "type": "bool"
+          }
         }
+      },
+      "requestsByAddress(address)": {
+        "stateMutability": "view",
+        "code": "function requestsByAddress(address requester) external view returns (struct NounSeek.RequestWithStatus[] requests)",
+        "inputs": {
+          "requester": {
+            "type": "address",
+            "description": "The address of the requester"
+          }
+        },
+        "outputs": {
+          "requests": {
+            "type": "NounSeek.RequestWithStatus[]",
+            "description": "An array of RequestWithStatus Structs"
+          }
+        },
+        "notice": "Get requests, augemented with status, for non-removed Requests",
+        "details": "Removes Requests marked as REMOVED, and includes Requests that have been previously matched. Do not rely on array index; use `request.id` to specify a Request when calling `remove()` See { _getRequestStatusAndParams } for calculations"
+      },
+      "setDoneeActive(uint256,bool)": {
+        "stateMutability": "nonpayable",
+        "code": "function setDoneeActive(uint256 doneeId, bool active) external nonpayable",
+        "inputs": {
+          "doneeId": {
+            "type": "uint256",
+            "description": "Donee id based on its index within the donees set"
+          },
+          "active": {
+            "type": "bool",
+            "description": "Active state"
+          }
+        },
+        "outputs": {},
+        "notice": "Toggles a Donee's active state by its index within the set, reverts if Donee is not configured",
+        "details": "If the Done is not configured, a revert will be triggered"
+      },
+      "setMaxReimbursement(uint256)": {
+        "stateMutability": "nonpayable",
+        "code": "function setMaxReimbursement(uint256 newMaxReimbursement) external nonpayable",
+        "inputs": {
+          "newMaxReimbursement": {
+            "type": "uint256",
+            "description": "new maximum value"
+          }
+        },
+        "outputs": {},
+        "notice": "Sets the maximum reimbursement amount when matching"
+      },
+      "setMinReimbursement(uint256)": {
+        "stateMutability": "nonpayable",
+        "code": "function setMinReimbursement(uint256 newMinReimbursement) external nonpayable",
+        "inputs": {
+          "newMinReimbursement": {
+            "type": "uint256",
+            "description": "new minimum value"
+          }
+        },
+        "outputs": {},
+        "notice": "Sets the minium reimbursement amount when matching"
+      },
+      "setMinValue(uint256)": {
+        "stateMutability": "nonpayable",
+        "code": "function setMinValue(uint256 newMinValue) external nonpayable",
+        "inputs": {
+          "newMinValue": {
+            "type": "uint256",
+            "description": "new minimum value"
+          }
+        },
+        "outputs": {},
+        "notice": "Sets the minium value that can be pledged"
+      },
+      "setReimbursementBPS(uint16)": {
+        "stateMutability": "nonpayable",
+        "code": "function setReimbursementBPS(uint16 newReimbursementBPS) external nonpayable",
+        "inputs": {
+          "newReimbursementBPS": {
+            "type": "uint16",
+            "description": "new basis point value"
+          }
+        },
+        "outputs": {},
+        "notice": "Sets the standard reimbursement basis points"
+      },
+      "traitHash(uint8,uint16,uint16)": {
+        "stateMutability": "pure",
+        "code": "function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external pure returns (bytes32 hash)",
+        "inputs": {
+          "trait": {
+            "type": "enum NounSeek.Traits",
+            "description": "The trait enum"
+          },
+          "traitId": {
+            "type": "uint16",
+            "description": "The ID of the trait"
+          },
+          "nounId": {
+            "type": "uint16",
+            "description": "The Noun ID"
+          }
+        },
+        "outputs": {
+          "hash": {
+            "type": "bytes32",
+            "description": "The hashed value"
+          }
+        },
+        "notice": "The canonical key for requests that target the same `trait`, `traitId`, and `nounId`",
+        "details": "Used to (1) group requests by their parameters in the `amounts` mapping and (2)keep track of matched requests in the `nonces` mapping"
+      },
+      "transferOwnership(address)": {
+        "stateMutability": "nonpayable",
+        "code": "function transferOwnership(address newOwner) external nonpayable",
+        "inputs": {
+          "newOwner": {
+            "type": "address"
+          }
+        },
+        "outputs": {},
+        "details": "Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one. Can only be called by the current owner."
+      },
+      "unpause()": {
+        "stateMutability": "nonpayable",
+        "code": "function unpause() external nonpayable",
+        "inputs": {},
+        "outputs": {},
+        "notice": "Unpauses (resumes) the NounSeek contract. Unpausing can be reversed by pausing."
+      },
+      "updateTraitCounts()": {
+        "stateMutability": "nonpayable",
+        "code": "function updateTraitCounts() external nonpayable",
+        "inputs": {},
+        "outputs": {},
+        "notice": "Update local Trait counts based on Noun Descriptor totals"
+      },
+      "weth()": {
+        "stateMutability": "view",
+        "code": "function weth() external view returns (contract IWETH)",
+        "inputs": {},
+        "outputs": {
+          "_0": {
+            "type": "contract IWETH",
+            "description": "WETH contract address"
+          }
+        },
+        "notice": "The address of the WETH contract"
+      }
     },
     "events": {
         "Donated": {

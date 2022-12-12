@@ -914,18 +914,18 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Match and send amounts to specific donees for an eligible previous Noun.
+     * @notice Sends pledged amounts to donees by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
      * @dev Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
      * Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
      * If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
      * See function body for examples.
-     * @param trait The Trait Type to match (see `Traits` Enum)
-     * @param nounId The Noun Id to match. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
-     * @param doneeIds An array of donee IDs to match. Only the IDs that are passed will be evaluated.
+     * @param trait The Trait Type to fetch from an eligible Noun (see `Traits` Enum)
+     * @param nounId The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
+     * @param doneeIds An array of donee IDs that have been pledged an amount if a Noun matches the specified trait.
      * @return total Total donated funds before reimbursement
      * @return reimbursement Reimbursement amount
      */
-    function matchAndDonate(
+    function settle(
         Traits trait,
         uint16 nounId,
         uint16[] memory doneeIds

@@ -14,7 +14,7 @@ contract MatchAndDonate is BaseNounSeekTest {
     }
 
     // Auctioned is immediate previous
-    function test_MATCHANDDONATE_happyMatchCase1() public {
+    function test_SETTLE_happyMatchCase1() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -41,7 +41,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
 
         mockAuctionHouse.setNounId(103);
 
@@ -52,15 +52,15 @@ contract MatchAndDonate is BaseNounSeekTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
     }
 
     // Auctioned Noun matches with non-auctioned non-match immediately before
-    function test_MATCHANDDONATE_happyMatchCase2() public {
+    function test_SETTLE_happyMatchCase2() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -87,21 +87,21 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
 
         // Cannot match previous non-auctioned Noun
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         // Cannot match uint16.max
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        nounSeek.settle(HEAD, type(uint16).max, allDoneeIds);
 
         mockAuctionHouse.setNounId(102);
 
         // No matches for non-auctioned Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         // reqeust 1
         vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
@@ -110,15 +110,15 @@ contract MatchAndDonate is BaseNounSeekTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
     }
 
     // Auctioned Noun matches with non-auctioned match immediately before
-    function test_MATCHANDDONATE_happyMatchCase3() public {
+    function test_SETTLE_happyMatchCase3() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -146,15 +146,15 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
 
         // Cannot match previous non-auctioned Noun
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         // Cannot match uint16.max
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        nounSeek.settle(HEAD, type(uint16).max, allDoneeIds);
 
         mockAuctionHouse.setNounId(102);
 
@@ -162,24 +162,24 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(donee0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
 
         // Only request 2 matches 100
         vm.expectCall(address(donee1), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
     }
 
     // Auctioned Noun non-match with non-auctioned match immediately before
-    function test_MATCHANDDONATE_happyMatchCase4() public {
+    function test_SETTLE_happyMatchCase4() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, 100, 0);
@@ -208,7 +208,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
 
         // reqeust 1
         vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
@@ -217,15 +217,15 @@ contract MatchAndDonate is BaseNounSeekTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
     }
 
     // Previous Noun is non-auctioned, previous auctioned matches
-    function test_MATCHANDDONATE_happyMatchCase5() public {
+    function test_SETTLE_happyMatchCase5() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -255,7 +255,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
 
-        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+        nounSeek.settle(HEAD, 99, allDoneeIds);
 
         mockAuctionHouse.setNounId(101);
 
@@ -266,15 +266,15 @@ contract MatchAndDonate is BaseNounSeekTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+        nounSeek.settle(HEAD, 99, allDoneeIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+        nounSeek.settle(HEAD, 99, allDoneeIds);
     }
 
     // If the amount sent produces reimburesement greater than `maxReimbursement`
-    function test_MATCHANDDONATE_HappyAboveMaxReimbursement() public {
+    function test_SETTLE_HappyAboveMaxReimbursement() public {
         // The maximum amount that can be sent before reimburesement bps drops
         uint256 thresholdValue = (maxReimbursement * 10_000) /
             baseReimbursementBPS;
@@ -305,10 +305,10 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(user2), maxReimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_HappyBelowMinReimbursement() public {
+    function test_SETTLE_HappyBelowMinReimbursement() public {
         // The minimum amount that can be sent before reimburesement bps is raised = 0.08 ETH
         uint256 thresholdValue = (minReimbursement * 10_000) /
             baseReimbursementBPS;
@@ -339,10 +339,10 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_HappyAboveMinReimbursementBelowMaxReimbursement()
+    function test_SETTLE_HappyAboveMinReimbursementBelowMaxReimbursement()
         public
     {
         // above 0.08 ETH minimum total, below 4 ETH maximum total
@@ -374,10 +374,10 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_allDoneesInactive() public {
+    function test_SETTLE_allDoneesInactive() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -407,10 +407,10 @@ contract MatchAndDonate is BaseNounSeekTest {
         // No donations to send; all donees inactive
         vm.expectRevert(NounSeek.NoMatch.selector);
 
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_oneDoneeInactive() public {
+    function test_SETTLE_oneDoneeInactive() public {
         vm.startPrank(user1);
         // 1 Should match
         nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
@@ -437,7 +437,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
 
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 0), 0), 0);
 
@@ -449,7 +449,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
 
         // Set donee1 active
         nounSeek.setDoneeActive(1, true);
@@ -461,55 +461,55 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // can re-match noun
         vm.prank(user2);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
 
         // donnee1 amounts are 0
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);
     }
 
-    function test_MATCHANDDONATE_failsIneligibleImmediateAuctionedNounId()
+    function test_SETTLE_failsIneligibleImmediateAuctionedNounId()
         public
     {
         // only 99 is eligible
         mockAuctionHouse.setNounId(101);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        nounSeek.settle(HEAD, type(uint16).max, allDoneeIds);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
         // eligible
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+        nounSeek.settle(HEAD, 99, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_failsIneligibleNonAuctionedNounId() public {
+    function test_SETTLE_failsIneligibleNonAuctionedNounId() public {
         // only 100 and 101 are eligible
         mockAuctionHouse.setNounId(102);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
+        nounSeek.settle(HEAD, type(uint16).max, allDoneeIds);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
+        nounSeek.settle(HEAD, 102, allDoneeIds);
         // eligible
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
+        nounSeek.settle(HEAD, 101, allDoneeIds);
         // eligible
         vm.expectRevert(NounSeek.NoMatch.selector);
-        nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
+        nounSeek.settle(HEAD, 100, allDoneeIds);
         // ineligible
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, 99, allDoneeIds);
+        nounSeek.settle(HEAD, 99, allDoneeIds);
     }
 
-    function test_MATCHANDDONATE_matchesOnlySpecifiedDoneeIds() public {
+    function test_SETTLE_matchesOnlySpecifiedDoneeIds() public {
         vm.startPrank(user1);
         // Each eligible Noun Id has a request for HEAD 9 sent to every donee Id
         for (uint16 i = 0; i < allDoneeIds.length; i++) {
@@ -551,7 +551,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         );
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounSeek.matchAndDonate(HEAD, 101, doneeIds);
+        nounSeek.settle(HEAD, 101, doneeIds);
 
         for (uint16 i; i < allDoneeIds.length; i++) {
             uint256 amount = minValue;
