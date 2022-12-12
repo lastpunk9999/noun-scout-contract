@@ -97,7 +97,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot match uint16.max
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16). max, allDoneeIds);
+        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
 
 
         mockAuctionHouse.setNounId(102);
@@ -157,7 +157,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         // Cannot match uint16.max
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
-        nounSeek.matchAndDonate(HEAD, type(uint16). max, allDoneeIds);
+        nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
 
         mockAuctionHouse.setNounId(102);
 
