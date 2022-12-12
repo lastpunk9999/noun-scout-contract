@@ -266,19 +266,23 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public baseReimbursementBPS = 250;
 
     /**
-     * @notice minimum reimbursement for matching; targets up to 150_000 gas at 20 Gwei/gas; owner can update
+     * @notice minimum reimbursement for matching
+     * @dev The default attempts to cover 10 donee matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas)
+     * Owner can update
      * @return minReimbursement
      */
     uint256 public minReimbursement = 0.003 ether;
 
     /**
-     * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations; owner can update
+     * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
+     * @dev Owner can update
      * @return maxReimbursement
      */
     uint256 public maxReimbursement = 0.1 ether;
 
     /**
-     * @notice The minimum donation value; owner can update
+     * @notice The minimum donation value
+     * @dev Owner can update
      * @return minValue
      */
     uint256 public minValue = 0.01 ether;
@@ -910,10 +914,14 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Match and send all pledged amounts for the previous Noun(s).
-     * @dev Matches will made against the previously auctioned Noun using requests that have an open ID (ANY_ID) or specific ID.
-     * If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match
-     * @param trait The Trait Type to match with the previous Noun (see `Traits` Enum)
+     * @notice Match and send amounts to specific donees for an eligible previous Noun.
+     * @dev Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
+     * Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
+     * If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
+     * See function body for examples.
+     * @param trait The Trait Type to match (see `Traits` Enum)
+     * @param nounId The Noun Id to match. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
+     * @param doneeIds An array of donee IDs to match. Only the IDs that are passed will be evaluated.
      * @return total Total donated funds before reimbursement
      * @return reimbursement Reimbursement amount
      */
