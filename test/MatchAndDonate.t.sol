@@ -59,7 +59,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
     }
 
-   // Auctioned Noun matches with non-auctioned non-match immediately before
+    // Auctioned Noun matches with non-auctioned non-match immediately before
     function test_MATCHANDDONATE_happyMatchCase2() public {
         vm.startPrank(user1);
         // 1 Should match
@@ -71,8 +71,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 8, 101, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
-
-
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -98,7 +96,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         // Cannot match uint16.max
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
         nounSeek.matchAndDonate(HEAD, type(uint16).max, allDoneeIds);
-
 
         mockAuctionHouse.setNounId(102);
 
@@ -147,7 +144,7 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         vm.startPrank(user2);
 
-               // Cannot match Noun on auction
+        // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
         nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
 
@@ -194,7 +191,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
 
-
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -208,13 +204,11 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         mockAuctionHouse.setNounId(102);
 
-
         vm.startPrank(user2);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
         nounSeek.matchAndDonate(HEAD, 101, allDoneeIds);
-
 
         // reqeust 1
         vm.expectCall(address(donee0), minValue - minReimbursement / 2, "");
@@ -224,7 +218,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.matchAndDonate(HEAD, 100, allDoneeIds);
-
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -243,8 +236,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 8, ANY_ID, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
         nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
-
-
 
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -426,7 +417,6 @@ contract MatchAndDonate is BaseNounSeekTest {
         // 2 Should match
         nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
 
-
         vm.stopPrank();
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -448,7 +438,6 @@ contract MatchAndDonate is BaseNounSeekTest {
 
         vm.prank(user2);
         nounSeek.matchAndDonate(HEAD, 102, allDoneeIds);
-
 
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 0), 0), 0);
 
