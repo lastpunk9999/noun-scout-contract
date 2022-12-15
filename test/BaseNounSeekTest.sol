@@ -37,6 +37,7 @@ contract BaseNounSeekTest is EnhancedTest {
     uint256 AUCTION_END_LIMIT;
     uint16 ANY_ID;
     uint256 minValue;
+    uint256 messageValue;
     uint256 baseReimbursementBPS;
 
     uint256 maxReimbursement;
@@ -54,6 +55,7 @@ contract BaseNounSeekTest is EnhancedTest {
         AUCTION_END_LIMIT = nounSeek.AUCTION_END_LIMIT();
         ANY_ID = nounSeek.ANY_ID();
         minValue = nounSeek.minValue();
+        messageValue = nounSeek.messageValue();
         baseReimbursementBPS = nounSeek.baseReimbursementBPS();
         maxReimbursement = nounSeek.maxReimbursement();
         minReimbursement = nounSeek.minReimbursement();

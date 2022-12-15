@@ -135,6 +135,11 @@ contract NounSeek is Ownable2Step, Pausable {
     event MinValueChanged(uint256 newMinValue);
 
     /**
+     * @notice Emitted when the messageValue changes
+     */
+    event MessageValueChanged(uint256 newMessageValue);
+
+    /**
      * @notice Emitted when the baseReimbursementBPS changes
      */
     event ReimbursementBPSChanged(uint256 newReimbursementBPS);
@@ -286,6 +291,13 @@ contract NounSeek is Ownable2Step, Pausable {
      * @return minValue
      */
     uint256 public minValue = 0.01 ether;
+
+    /**
+     * @notice The cost to register a message
+     * @dev Owner can update
+     * @return messageValue
+     */
+    uint256 public messageValue = 10 ether;
 
     /**
      * @notice Array of Donee details
@@ -866,7 +878,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 doneeId,
         string memory message
     ) public payable whenNotPaused returns (uint256 requestId) {
-        if (msg.value < minValue * 2) {
+        if (msg.value < minValue + messageValue) {
             revert ValueTooLow();
         }
 
@@ -875,11 +887,12 @@ contract NounSeek is Ownable2Step, Pausable {
             traitId,
             nounId,
             doneeId,
-            msg.value - minValue,
+            msg.value - messageValue, // Registered pledged amount that does not include `messageValue`
             message
         );
 
-        _safeTransferETHWithFallback(_donees[doneeId].to, minValue);
+        // Immediately send `messageValue` to donee
+        _safeTransferETHWithFallback(_donees[doneeId].to, messageValue);
     }
 
     /**
@@ -1076,6 +1089,14 @@ contract NounSeek is Ownable2Step, Pausable {
         emit MinValueChanged(newMinValue);
     }
 
+    /**
+     * @notice Sets the cost of registering a message
+     * @param newMessageValue new message cost
+     */
+    function setMessageValue(uint256 newMessageValue) external onlyOwner {
+        messageValue = newMessageValue;
+        emit MessageValueChanged(newMessageValue);
+    }
     /**
      * @notice Sets the standard reimbursement basis points
      * @param newReimbursementBPS new basis point value

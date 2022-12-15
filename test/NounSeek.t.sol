@@ -210,7 +210,7 @@ contract NounSeekTest is BaseNounSeekTest {
     }
 
     function test_ADDWITHMESSAGE_happyCase() public {
-        uint256 donation = 1 ether;
+        uint256 donation = 9 ether;
         vm.expectEmit(true, true, true, true);
         // expect the event to have the "hello" message and the correct donation value
         emit RequestAdded(
@@ -226,12 +226,12 @@ contract NounSeekTest is BaseNounSeekTest {
         );
 
         // expect the minValue to pay for the message to be transferred to the donnee
-        vm.expectCall(address(donee1), minValue, "");
+        vm.expectCall(address(donee1), messageValue, "");
 
         vm.prank(user1);
 
         uint256 requestIdUser1 = nounSeek.addWithMessage{
-            value: donation + minValue
+            value: donation + messageValue
         }(HEAD, 9, ANY_ID, 1, "hello");
 
         NounSeek.Request memory request1 = nounSeek.rawRequestById(
@@ -272,7 +272,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.warp(timestamp);
         vm.startPrank(user1);
         // addWithMessage()
-        uint256 requestId1 = nounSeek.addWithMessage{value: minValue * 2}(
+        uint256 requestId1 = nounSeek.addWithMessage{value: minValue + messageValue}(
             HEAD,
             9,
             ANY_ID,
