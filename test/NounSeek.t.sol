@@ -426,7 +426,7 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(donationsByTraitId[9][1], 0);
     }
 
-    function test_REMOVE_failsAuctionEndingSoon() public {
+    function test_REMOVE_revertsAuctionEndingSoon() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + AUCTION_END_LIMIT);
         vm.warp(timestamp);
@@ -437,7 +437,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId1);
     }
 
-    function test_REMOVE_failsAuctionEnded() public {
+    function test_REMOVE_revertsAuctionEnded() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp);
         vm.warp(timestamp);
@@ -448,7 +448,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId1);
     }
 
-    function test_REMOVE_failsAlreadyRemoved() public {
+    function test_REMOVE_revertsAlreadyRemoved() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -461,7 +461,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId1);
     }
 
-    function test_REMOVE_failsNotRequester() public {
+    function test_REMOVE_revertsNotRequester() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -474,8 +474,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId1);
     }
 
-    // Case 1: see NounSeek.sol comments
-    function test_REMOVE_failsCase1() public {
+    function test_REMOVE_revertsCurrentMatchFound() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -516,8 +515,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId6);
     }
 
-    // Case 3: see NounSeek.sol comments
-    function test_REMOVE_failsCase3() public {
+    function test_REMOVE_revertsPreviousMatchFound() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -558,16 +556,15 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId6);
     }
 
-    // Case 2: see NounSeek.sol comments
-    function test_REMOVE_failsCase2() public {
+    function test_REMOVE_revertsPreviousDoubleMintAuctionedMatchFound() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.startPrank(user1);
 
         uint256 requestId1 = nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 1);
-        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
-        uint256 requestId3 = nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
+        uint256 requestId2 = nounSeek.add{value: minValue}(HEAD, 9, 101, 1);
+        uint256 requestId3 = nounSeek.add{value: minValue}(HEAD, 9, 102, 1);
         uint256 requestId4 = nounSeek.add{value: minValue}(HEAD, 8, ANY_ID, 1);
         uint256 requestId5 = nounSeek.add{value: minValue}(HEAD, 8, 102, 1);
         uint256 requestId6 = nounSeek.add{value: minValue}(HEAD, 8, 101, 1);
@@ -581,15 +578,15 @@ contract NounSeekTest is BaseNounSeekTest {
         );
 
         // Previous auctioned Noun has seed
-        mockNouns.setSeed(seed, 102);
-        mockAuctionHouse.setNounId(103);
+        mockNouns.setSeed(seed, 101);
+        mockAuctionHouse.setNounId(102);
         vm.expectRevert(
-            abi.encodeWithSelector(NounSeek.MatchFound.selector, 102)
+            abi.encodeWithSelector(NounSeek.MatchFound.selector, 101)
         );
         nounSeek.remove(requestId1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(NounSeek.MatchFound.selector, 102)
+            abi.encodeWithSelector(NounSeek.MatchFound.selector, 101)
         );
         nounSeek.remove(requestId2);
 
@@ -600,8 +597,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId6);
     }
 
-    // Case 2b: see NounSeek.sol comments
-    function test_REMOVE_failsCase2b() public {
+    function test_REMOVE_revertsPreviousNonAuctionedMatchFound() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -638,7 +634,7 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.remove(requestId6);
     }
 
-    function test_REMOVE_revertsAlreadyMatched() public {
+    function test_REMOVE_revertsAlreadySent() public {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
