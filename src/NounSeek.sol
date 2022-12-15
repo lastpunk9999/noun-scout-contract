@@ -161,7 +161,7 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Stores deposited value, requested traits, donation target for marking stale requests
+     * @notice Stores pledged value, requested traits, donation target
      */
     struct Request {
         Traits trait;
@@ -265,7 +265,8 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice A portion of donated funds are sent to the address performing a match; owner can update
+     * @notice A portion of donated funds are sent to the address performing a match
+     * @dev Owner can update
      * @return baseReimbursementBPS
      */
     uint16 public baseReimbursementBPS = 250;
@@ -286,7 +287,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public maxReimbursement = 0.1 ether;
 
     /**
-     * @notice The minimum donation value
+     * @notice The minimum pledged value
      * @dev Owner can update
      * @return minValue
      */
@@ -305,38 +306,43 @@ contract NounSeek is Ownable2Step, Pausable {
     Donee[] internal _donees;
 
     /**
-     * @notice the total number of background traits, fetched and cached via `updateTraitCounts()`
+     * @notice the total number of background traits
+     * @dev Fetched and cached via `updateTraitCounts()`
      * @return backgroundCount
      */
     uint16 public backgroundCount;
 
     /**
-     * @notice the total number of body traits, fetched and cached via `updateTraitCounts()`
+     * @notice the total number of body traits
+     * @dev Fetched and cached via `updateTraitCounts()`
      * @return bodyCount
      */
     uint16 public bodyCount;
 
     /**
-     * @notice the total number of accessory traits, fetched and cached via `updateTraitCounts()`
+     * @notice the total number of accessory traits
+     * @dev Fetched and cached via `updateTraitCounts()`
      * @return accessoryCount
      */
     uint16 public accessoryCount;
 
     /**
-     * @notice the total number of head traits, fetched and cached via `updateTraitCounts()`
+     * @notice the total number of head traits,
+     * @dev Ftched and cached via `updateTraitCounts()`
      * @return headCount
      */
     uint16 public headCount;
 
     /**
-     * @notice the total number of glasses traits, fetched and cached via `updateTraitCounts()`
+     * @notice the total number of glasses traits
+     * @dev Fetched and cached via `updateTraitCounts()`
      * @return glassesCount
      */
     uint16 public glassesCount;
 
     /**
      * @notice Cumulative funds for trait parameters send to a specific donee.
-     * The first mapping key is can be generated with the `traitsHash` function
+     * @dev The first mapping key is can be generated with the `traitsHash` function
      * and the second is doneeId
      */
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
@@ -844,7 +850,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
      * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
-     * @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
+     * @param doneeId the ID of the Donee that should receive the pledged amount if a Noun matching the parameters is minted
      * @return requestId The ID of this requests for msg.sender's address
      */
     function add(
@@ -863,7 +869,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
      * @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee.
      * @dev The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee.
-     * The remaining value is stored as the pledged Request amount request.
+     * The remaining value is stored as the pledged Request amount.
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
      * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
@@ -975,29 +981,37 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        if (nounId != auctionedNounId && (nounId != nonAuctionedNounId || nonAuctionedNounId == UINT16_MAX)) revert IneligibleNounId();
+        if (
+            nounId != auctionedNounId &&
+            (nounId != nonAuctionedNounId || nonAuctionedNounId == UINT16_MAX)
+        ) {
+            revert IneligibleNounId();
+        }
 
         uint16[] memory traitIds;
         uint16[] memory nounIds;
 
-
         if (_isNonAuctionedNoun(nounId)) {
-            traitIds=new uint16[](1);
-            nounIds=new uint16[](1);
+            traitIds = new uint16[](1);
+            nounIds = new uint16[](1);
             nounIds[0] = nounId;
             traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
         } else {
-            traitIds=new uint16[](2);
-            nounIds=new uint16[](2);
+            traitIds = new uint16[](2);
+            nounIds = new uint16[](2);
             nounIds[0] = nounId;
             nounIds[1] = ANY_ID;
             traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
             traitIds[1] = traitIds[0];
         }
 
-
         uint256[] memory donations;
-        (donations, total) = _combineAmountsAndDelete(trait, traitIds, nounIds, doneeIds);
+        (donations, total) = _combineAmountsAndDelete(
+            trait,
+            traitIds,
+            nounIds,
+            doneeIds
+        );
 
         if (total < 1) {
             revert NoMatch();
@@ -1097,6 +1111,7 @@ contract NounSeek is Ownable2Step, Pausable {
         messageValue = newMessageValue;
         emit MessageValueChanged(newMessageValue);
     }
+
     /**
      * @notice Sets the standard reimbursement basis points
      * @param newReimbursementBPS new basis point value
@@ -1236,7 +1251,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubesement amounts, then removes the requests from storage.
+     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubersement amounts, then removes the requests from storage.
      * @param trait The trait type requests should match (see `Traits` Enum)
      * @param traitIds Specific trait ID
      * @param nounIds Specific Noun ID
@@ -1251,6 +1266,8 @@ contract NounSeek is Ownable2Step, Pausable {
     ) internal returns (uint256[] memory donations, uint256 total) {
         donations = new uint256[](_donees.length);
 
+        // Equal number of `nounIds` and `traitIds`s
+        // Loop through `nounIds` (hashing the `nounId`, `trait`, and `traitId`) to then inner loop through `doneeIds` to lookup pledged amounts
         for (uint16 i; i < nounIds.length; i++) {
             uint16 traitId = traitIds[i];
             uint16 nounId = nounIds[i];
@@ -1258,9 +1275,11 @@ contract NounSeek is Ownable2Step, Pausable {
             uint256 traitTotal;
 
             for (uint16 j; j < doneeIds.length; j++) {
+                // Inactive donees cannot be sent funds
                 if (!_donees[doneeIds[j]].active) continue;
 
                 uint256 amount = amounts[hash][doneeIds[j]];
+                // Request was previously matched, funds were previously sent to this donee
                 if (amount < 1) {
                     continue;
                 }
