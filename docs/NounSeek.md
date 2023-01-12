@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 ---
 
 # NounSeek.sol
@@ -67,9 +67,9 @@ the total number of accessory traits, fetched and cached via `updateTraitCounts(
 ### *add*
 
 ```solidity title="Solidity"
-function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId) external payable returns (uint256 requestId)
+function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId) external payable returns (uint256 requestId)
 ```
-Create a request for the specific trait and specific or open Noun ID payable to the specified Donee.
+Create a request for the specific trait and specific or open Noun ID payable to the specified Recipient.
 ##### Details
 > `msg.value` is used as the pledged Request amount
 
@@ -79,7 +79,7 @@ Create a request for the specific trait and specific or open Noun ID payable to 
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
 | traitId | uint16 | ID of the specified Trait that the request is for |
 | nounId | uint16 | the Noun ID the request is targeted for (or the value of ANY_ID for open requests) |
-| doneeId | uint16 | the ID of the Donee that should receive the donation if a Noun matching the parameters is minted |
+| recipientId | uint16 | the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted |
 #### Returns
 | Name | Type | Description |
 |---|---|---|
@@ -88,31 +88,31 @@ Create a request for the specific trait and specific or open Noun ID payable to 
 
 ---
 
-### *addDonee*
+### *addRecipient*
 
 ```solidity title="Solidity"
-function addDonee(string name, address to, string description) external nonpayable
+function addRecipient(string name, address to, string description) external nonpayable
 ```
-Add a Donee by specifying the name and address funds should be sent to
+Add a Recipient by specifying the name and address funds should be sent to
 ##### Details
-> Adds a Donee to the donees set and activates the Donee
+> Adds a Recipient to the recipients set and activates the Recipient
 
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| name | string | The Donee&#39;s name that should be displayed to users/consumers |
-| to | address | Address that funds should be sent to in order to fund the Donee |
+| name | string | The Recipient&#39;s name that should be displayed to users/consumers |
+| to | address | Address that funds should be sent to in order to fund the Recipient |
 | description | string | undefined |
 ---
 
 ### *addWithMessage*
 
 ```solidity title="Solidity"
-function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 doneeId, string message) external payable returns (uint256 requestId)
+function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId, string message) external payable returns (uint256 requestId)
 ```
-Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee.
+Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Recipient.
 ##### Details
-> The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee. The remaining value is stored as the pledged Request amount request.
+> The message cost is subtracted from `msg.value` and transfered immediately to the specified Recipient. The remaining value is stored as the pledged Request amount request.
 
 #### Parameters
 | Name | Type | Description |
@@ -120,7 +120,7 @@ Create a request with a logged message for the specific trait and specific or op
 | trait | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum) |
 | traitId | uint16 | ID of the specified Trait that the request is for |
 | nounId | uint16 | the Noun ID the request is targeted for (or the value of ANY_ID for open requests) |
-| doneeId | uint16 | the ID of the Donee that should receive the donation if a Noun matching the parameters is minted |
+| recipientId | uint16 | the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted |
 | message | string | The message to log |
 #### Returns
 | Name | Type | Description |
@@ -135,7 +135,7 @@ Create a request with a logged message for the specific trait and specific or op
 ```solidity title="Solidity"
 function amounts(bytes32, uint16) external view returns (uint256)
 ```
-Cumulative funds for trait parameters send to a specific donee. The first mapping key is can be generated with the `traitsHash` function and the second is doneeId
+Cumulative funds for trait parameters send to a specific recipient. The first mapping key is can be generated with the `traitsHash` function and the second is recipientId
 
 #### Parameters
 | Name | Type | Description |
@@ -210,36 +210,36 @@ the total number of body traits, fetched and cached via `updateTraitCounts()`
 
 ---
 
-### *donationsForMatchableNoun*
+### *pledgesForMatchableNoun*
 
 ```solidity title="Solidity"
-function donationsForMatchableNoun() external view returns (uint16 auctionedNounId, uint16 nonAuctionedNounId, uint256[][5] auctionedNounDonations, uint256[][5] nonAuctionedNounDonations, uint256[5] totalDonationsPerTrait, uint256[5] reimbursementPerTrait)
+function pledgesForMatchableNoun() external view returns (uint16 auctionedNounId, uint16 nonAuctionedNounId, uint256[][5] auctionedNounPledges, uint256[][5] nonAuctionedNounPledges, uint256[5] totalPledgesPerTrait, uint256[5] reimbursementPerTrait)
 ```
-For the Noun that is eligible to be matched with pledged donations (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each Donee using requests that match the Noun&#39;s seed.
+For the Noun that is eligible to be matched with pledged pledges (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts for each Recipient using requests that match the Noun&#39;s seed.
 ##### Details
-> Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed. `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated See the documentation in the function body for the cases used to match eligible Nouns
+> Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `pledgesForMatchableNoun()` returns cumulative matching pledges for each trait that matches the seed. `auctionedNounPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounPledges` would be populated See the documentation in the function body for the cases used to match eligible Nouns
 
 #### Returns
 | Name | Type | Description |
 |---|---|---|
 | auctionedNounId | uint16 | The ID of the Noun that is was auctioned |
 | nonAuctionedNounId | uint16 | If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
-| auctionedNounDonations | uint256[][5] | Total donations for the eligible auctioned Noun as a nested arrays in the order Trait Type and Donee ID |
-| nonAuctionedNounDonations | uint256[][5] | If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Donee ID |
-| totalDonationsPerTrait | uint256[5] | An array of total donation pledged minus reimbursement across all Donees, indexed by Trait Type |
+| auctionedNounPledges | uint256[][5] | Total pledges for the eligible auctioned Noun as a nested arrays in the order Trait Type and Recipient ID |
+| nonAuctionedNounPledges | uint256[][5] | If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Recipient ID |
+| totalPledgesPerTrait | uint256[5] | An array of total pledge pledged minus reimbursement across all Recipients, indexed by Trait Type |
 | reimbursementPerTrait | uint256[5] | An array of matcher&#39;s reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type |
 
 
 ---
 
-### *donationsForNounId*
+### *pledgesForNounId*
 
 ```solidity title="Solidity"
-function donationsForNounId(uint16 nounId) external view returns (uint256[][][5] donations)
+function pledgesForNounId(uint16 nounId) external view returns (uint256[][][5] pledges)
 ```
-For a given Noun ID, get cumulative donation amounts for each Donee scoped by Trait Type and Trait ID.
+For a given Noun ID, get cumulative pledge amounts for each Recipient scoped by Trait Type and Trait ID.
 ##### Details
-> The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of donees added to this contract. Example lengths: - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background. Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:` - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
+> The pledges array is a nested structure of 3 arrays of Trait Type, Trait ID, and Recipient ID. The length of the first array is 5 (five) representing all Trait Types. The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads). The length of the third is dependant on the number of recipients added to this contract. Example lengths: - `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1) - `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background. Calling `pledgesForNounId(101) returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:` - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1) Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges. E.g. `pledgesForNounId(101)` fetches all pledges for the open ID value `ANY_ID` as well as specified pledges for Noun ID 101.
 
 #### Parameters
 | Name | Type | Description |
@@ -248,19 +248,19 @@ For a given Noun ID, get cumulative donation amounts for each Donee scoped by Tr
 #### Returns
 | Name | Type | Description |
 |---|---|---|
-| donations | uint256[][][5] | Cumulative amounts pledged for each Donee, indexed by Trait Type, Trait ID and Donee ID |
+| pledges | uint256[][][5] | Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID |
 
 
 ---
 
-### *donationsForNounIdByTrait*
+### *pledgesForNounIdByTrait*
 
 ```solidity title="Solidity"
-function donationsForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] donationsByTraitId)
+function pledgesForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] pledgesByTraitId)
 ```
-Get cumulative donation amounts scoped to Noun ID and Trait Type.
+Get cumulative pledge amounts scoped to Noun ID and Trait Type.
 ##### Details
-> Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25. The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+> Example: `pledgesForNounIdByTrait(3, 25)` accumulates all pledged pledges amounts for heads and Noun ID 25. The returned value in `pledges[5][2]` is in the total amount that has been pledged to Recipient ID 2 if Noun ID 25 is minted with a head of Trait ID 5 Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
 
 #### Parameters
 | Name | Type | Description |
@@ -270,19 +270,19 @@ Get cumulative donation amounts scoped to Noun ID and Trait Type.
 #### Returns
 | Name | Type | Description |
 |---|---|---|
-| donationsByTraitId | uint256[][] | Cumulative amounts pledged for each Donee, indexed by Trait ID and Donee ID |
+| pledgesByTraitId | uint256[][] | Cumulative amounts pledged for each Recipient, indexed by Trait ID and Recipient ID |
 
 
 ---
 
-### *donationsForNounIdByTraitId*
+### *pledgesForNounIdByTraitId*
 
 ```solidity title="Solidity"
-function donationsForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] donations)
+function pledgesForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] pledges)
 ```
-Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID
+Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
 ##### Details
-> Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+> Example: `pledgesForNounIdByTraitId(0, 1, 25)` accumulates all pledged pledge amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `pledges[2]` is in the total amount that has been pledged to Recipient ID 2 Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
 
 #### Parameters
 | Name | Type | Description |
@@ -293,39 +293,39 @@ Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID
 #### Returns
 | Name | Type | Description |
 |---|---|---|
-| donations | uint256[] | Cumulative amounts pledged for each Donee, indexed by Donee ID |
+| pledges | uint256[] | Cumulative amounts pledged for each Recipient, indexed by Recipient ID |
 
 
 ---
 
-### *donationsForNounOnAuction*
+### *pledgesForNounOnAuction*
 
 ```solidity title="Solidity"
-function donationsForNounOnAuction() external view returns (uint16 currentAuctionId, uint16 prevNonAuctionId, uint256[][5] currentAuctionDonations, uint256[][5] prevNonAuctionDonations)
+function pledgesForNounOnAuction() external view returns (uint16 currentAuctionId, uint16 prevNonAuctionId, uint256[][5] currentAuctionPledges, uint256[][5] prevNonAuctionPledges)
 ```
-For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts pledged for each Donee using requests that match the Noun&#39;s seed.
+For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts pledged for each Recipient using requests that match the Noun&#39;s seed.
 ##### Details
-> Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that: - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated
+> Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `pledgesForNounOnAuction()` returns cumulative matching pledges for each trait that matches the seed such that: - `currentAuctionPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2. If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionPledges` would be populated
 
 #### Returns
 | Name | Type | Description |
 |---|---|---|
 | currentAuctionId | uint16 | The ID of the Noun that is currently being auctioned |
 | prevNonAuctionId | uint16 | If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
-| currentAuctionDonations | uint256[][5] | Total donations for the current auctioned Noun as a nested arrays indexed by Trait Type and Donee ID |
-| prevNonAuctionDonations | uint256[][5] | If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Donee ID |
+| currentAuctionPledges | uint256[][5] | Total pledges for the current auctioned Noun as a nested arrays indexed by Trait Type and Recipient ID |
+| prevNonAuctionPledges | uint256[][5] | If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Recipient ID |
 
 
 ---
 
-### *donationsForOnChainNoun*
+### *pledgesForOnChainNoun*
 
 ```solidity title="Solidity"
-function donationsForOnChainNoun(uint16 nounId) external view returns (uint256[][5] donations)
+function pledgesForOnChainNoun(uint16 nounId) external view returns (uint256[][5] pledges)
 ```
-For an existing on-chain Noun, use its seed to find matching donations
+For an existing on-chain Noun, use its seed to find matching pledges
 ##### Details
-> Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that: - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2 Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+> Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs. Calling `pledgesForOnChainNoun(1)` returns cumulative matching pledges for each trait that matches the seed such that: - `pledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2 Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
 
 #### Parameters
 | Name | Type | Description |
@@ -334,57 +334,57 @@ For an existing on-chain Noun, use its seed to find matching donations
 #### Returns
 | Name | Type | Description |
 |---|---|---|
-| donations | uint256[][5] | Cumulative amounts pledged for each Donee that matches the on-chain Noun seed indexed by Trait Type and Donee ID |
+| pledges | uint256[][5] | Cumulative amounts pledged for each Recipient that matches the on-chain Noun seed indexed by Trait Type and Recipient ID |
 
 
 ---
 
-### *donationsForUpcomingNoun*
+### *pledgesForUpcomingNoun*
 
 ```solidity title="Solidity"
-function donationsForUpcomingNoun() external view returns (uint16 nextAuctionId, uint16 nextNonAuctionId, uint256[][][5] nextAuctionDonations, uint256[][][5] nextNonAuctionDonations)
+function pledgesForUpcomingNoun() external view returns (uint16 nextAuctionId, uint16 nextNonAuctionId, uint256[][][5] nextAuctionPledges, uint256[][][5] nextNonAuctionPledges)
 ```
-Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative donation amounts for each Donee scoped by possible Trait Type and Trait ID.
+Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative pledge amounts for each Recipient scoped by possible Trait Type and Trait ID.
 ##### Details
-> See { donationsForNounId } for detailed documentation of the nested array structure
+> See { pledgesForNounId } for detailed documentation of the nested array structure
 
 #### Returns
 | Name | Type | Description |
 |---|---|---|
 | nextAuctionId | uint16 | The ID of the next Noun that will be auctioned |
 | nextNonAuctionId | uint16 | If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535) |
-| nextAuctionDonations | uint256[][][5] | Total donations for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID |
-| nextNonAuctionDonations | uint256[][][5] | If two Nouns are due to be minted, this will contain the total donations for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID |
+| nextAuctionPledges | uint256[][][5] | Total pledges for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Recipient ID |
+| nextNonAuctionPledges | uint256[][][5] | If two Nouns are due to be minted, this will contain the total pledges for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Recipient ID |
 
 
 ---
 
-### *donees*
+### *recipients*
 
 ```solidity title="Solidity"
-function donees() external view returns (struct NounSeek.Donee[])
+function recipients() external view returns (struct NounSeek.Recipient[])
 ```
-All donees as Donee structs
+All recipients as Recipient structs
 
 #### Returns
 | Name | Type | Description |
 |---|---|---|
-| _0 | NounSeek.Donee[] | undefined |
+| _0 | NounSeek.Recipient[] | undefined |
 
 
 ---
 
-### *effectiveBPSAndReimbursementForDonationTotal*
+### *effectiveBPSAndReimbursementForPledgeTotal*
 
 ```solidity title="Solidity"
-function effectiveBPSAndReimbursementForDonationTotal(uint256 total) external view returns (uint256 effectiveBPS, uint256 reimbursement)
+function effectiveBPSAndReimbursementForPledgeTotal(uint256 total) external view returns (uint256 effectiveBPS, uint256 reimbursement)
 ```
-Given a donation total, derive the reimbursement fee and basis points used to calculate it
+Given a pledge total, derive the reimbursement fee and basis points used to calculate it
 
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| total | uint256 | A donation amount |
+| total | uint256 | A pledge amount |
 #### Returns
 | Name | Type | Description |
 |---|---|---|
@@ -429,7 +429,7 @@ the total number of head traits, fetched and cached via `updateTraitCounts()`
 ```solidity title="Solidity"
 function maxReimbursement() external view returns (uint256)
 ```
-maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
+maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total pledges
 ##### Details
 > Owner can update
 
@@ -448,7 +448,7 @@ function minReimbursement() external view returns (uint256)
 ```
 minimum reimbursement for matching
 ##### Details
-> The default attempts to cover 10 donee matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas) Owner can update
+> The default attempts to cover 10 recipient matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas) Owner can update
 
 #### Returns
 | Name | Type | Description |
@@ -463,7 +463,7 @@ minimum reimbursement for matching
 ```solidity title="Solidity"
 function minValue() external view returns (uint256)
 ```
-The minimum donation value
+The minimum pledge value
 ##### Details
 > Owner can update
 
@@ -600,7 +600,7 @@ function remove(uint256 requestId) external nonpayable returns (uint256 amount)
 ```
 Remove the specified request and return the associated amount.
 ##### Details
-> Must be called by the Requester&#39;s address. If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Donee of the Request is marked as inactive, the funds can be returned immediately
+> Must be called by the Requester&#39;s address. If the Request has already been matched/sent to the Recipient or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations) If the Recipient of the Request is marked as inactive, the funds can be returned immediately
 
 #### Parameters
 | Name | Type | Description |
@@ -666,19 +666,19 @@ Get requests, augemented with status, for non-removed Requests
 
 ---
 
-### *setDoneeActive*
+### *setRecipientActive*
 
 ```solidity title="Solidity"
-function setDoneeActive(uint256 doneeId, bool active) external nonpayable
+function setRecipientActive(uint256 recipientId, bool active) external nonpayable
 ```
-Toggles a Donee&#39;s active state by its index within the set, reverts if Donee is not configured
+Toggles a Recipient&#39;s active state by its index within the set, reverts if Recipient is not configured
 ##### Details
 > If the Done is not configured, a revert will be triggered
 
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| doneeId | uint256 | Donee id based on its index within the donees set |
+| recipientId | uint256 | Recipient id based on its index within the recipients set |
 | active | bool | Active state |
 ---
 
@@ -737,9 +737,9 @@ Sets the standard reimbursement basis points
 ### *settle*
 
 ```solidity title="Solidity"
-function settle(enum NounSeek.Traits trait, uint16 nounId, uint16[] doneeIds) external nonpayable returns (uint256 total, uint256 reimbursement)
+function settle(enum NounSeek.Traits trait, uint16 nounId, uint16[] recipientIds) external nonpayable returns (uint256 total, uint256 reimbursement)
 ```
-Sends pledged amounts to donees by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
+Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
 ##### Details
 > Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time. Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID. If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match. See function body for examples.
 
@@ -748,7 +748,7 @@ Sends pledged amounts to donees by matching a requested trait to an eligible Nou
 |---|---|---|
 | trait | enum NounSeek.Traits | The Trait Type to fetch from an eligible Noun (see `Traits` Enum) |
 | nounId | uint16 | The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time. |
-| doneeIds | uint16[] | An array of donee IDs that have been pledged an amount if a Noun matches the specified trait. |
+| recipientIds | uint16[] | An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait. |
 #### Returns
 | Name | Type | Description |
 |---|---|---|
@@ -843,37 +843,37 @@ Emitted when an eligible Noun matches one or more Requests
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| donations  | uint256[] |
-The array of amounts indexed by Donee ID sent to donees |
+| pledges  | uint256[] |
+The array of amounts indexed by Recipient ID sent to recipients |
 ---
-### *DoneeActiveStatusChanged*
+### *RecipientActiveStatusChanged*
 
 ```solidity title="Solidity"
-event DoneeActiveStatusChanged(uint256 doneeId, bool active)
+event RecipientActiveStatusChanged(uint256 recipientId, bool active)
 ```
-Emitted when a Donee status has changed
+Emitted when a Recipient status has changed
 
 
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| doneeId  | uint256 |
+| recipientId  | uint256 |
 undefined |
 | active  | bool |
 undefined |
 ---
-### *DoneeAdded*
+### *RecipientAdded*
 
 ```solidity title="Solidity"
-event DoneeAdded(uint256 doneeId, string name, address to, string description)
+event RecipientAdded(uint256 recipientId, string name, address to, string description)
 ```
-Emitted when a Donee is added
+Emitted when a Recipient is added
 
 
 #### Parameters
 | Name | Type | Description |
 |---|---|---|
-| doneeId  | uint256 |
+| recipientId  | uint256 |
 undefined |
 | name  | string |
 undefined |
@@ -1025,7 +1025,7 @@ undefined |
 ### *RequestAdded*
 
 ```solidity title="Solidity"
-event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 doneeId, uint16 indexed nounId, bytes32 indexed traitsHash, uint256 amount, string message)
+event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 recipientId, uint16 indexed nounId, bytes32 indexed traitsHash, uint256 amount, string message)
 ```
 Emitted when a Request is added
 
@@ -1041,7 +1041,7 @@ undefined |
 undefined |
 | traitId  | uint16 |
 undefined |
-| doneeId  | uint16 |
+| recipientId  | uint16 |
 undefined |
 | nounId `indexed` | uint16 |
 undefined |
@@ -1055,7 +1055,7 @@ undefined |
 ### *RequestRemoved*
 
 ```solidity title="Solidity"
-event RequestRemoved(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 indexed nounId, uint16 doneeId, bytes32 indexed traitsHash, uint256 amount)
+event RequestRemoved(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 indexed nounId, uint16 recipientId, bytes32 indexed traitsHash, uint256 amount)
 ```
 Emitted when a Request is removed
 
@@ -1073,7 +1073,7 @@ undefined |
 undefined |
 | nounId `indexed` | uint16 |
 undefined |
-| doneeId  | uint16 |
+| recipientId  | uint16 |
 undefined |
 | traitsHash `indexed` | bytes32 |
 undefined |
@@ -1118,22 +1118,22 @@ Thrown when an attempting to remove a Request within `AUCTION_END_LIMIT` (5 minu
 
 
 ---
-### *DonationAlreadySent*
+### *PledgeAlreadySent*
 
 ```solidity title="Solidity"
-error DonationAlreadySent()
+error PledgeAlreadySent()
 ```
 Thrown when an attempting to remove a Request that was previously matched
 
 
 
 ---
-### *InactiveDonee*
+### *InactiveRecipient*
 
 ```solidity title="Solidity"
-error InactiveDonee()
+error InactiveRecipient()
 ```
-Thrown when an attempting to add a Request that pledges an amount to an inactive Donee
+Thrown when an attempting to add a Request that pledges an amount to an inactive Recipient
 
 
 

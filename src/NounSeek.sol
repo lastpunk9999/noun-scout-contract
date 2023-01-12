@@ -25,7 +25,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
      * @notice Thrown when an attempting to remove a Request that was previously matched
      */
-    error DonationAlreadySent();
+    error PledgeAlreadySent();
 
     /**
      * @notice Thrown when attempting to remove a Request that was previously removed.
@@ -42,9 +42,9 @@ contract NounSeek is Ownable2Step, Pausable {
      */
     error IneligibleNounId();
     /**
-     * @notice Thrown when an attempting to add a Request that pledges an amount to an inactive Donee
+     * @notice Thrown when an attempting to add a Request that pledges an amount to an inactive Recipient
      */
-    error InactiveDonee();
+    error InactiveRecipient();
 
     /**
      * @notice Thrown when an attempting to add a Request with value below `minValue`
@@ -65,7 +65,7 @@ contract NounSeek is Ownable2Step, Pausable {
         address indexed requester,
         Traits trait,
         uint16 traitId,
-        uint16 doneeId,
+        uint16 recipientId,
         uint16 indexed nounId,
         bytes32 indexed traitsHash,
         uint256 amount,
@@ -81,25 +81,25 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 indexed nounId,
-        uint16 doneeId,
+        uint16 recipientId,
         bytes32 indexed traitsHash,
         uint256 amount
     );
 
     /**
-     * @notice Emitted when a Donee is added
+     * @notice Emitted when a Recipient is added
      */
-    event DoneeAdded(
-        uint256 doneeId,
+    event RecipientAdded(
+        uint256 recipientId,
         string name,
         address to,
         string description
     );
 
     /**
-     * @notice Emitted when a Donee status has changed
+     * @notice Emitted when a Recipient status has changed
      */
-    event DoneeActiveStatusChanged(uint256 doneeId, bool active);
+    event RecipientActiveStatusChanged(uint256 recipientId, bool active);
 
     /**
      * @notice Emitted when an eligible Noun matches one or more Requests
@@ -118,7 +118,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice Emitted when an eligible Noun matches one or more Requests
-     * @param donations The array of amounts indexed by Donee ID sent to donees
+     * @param donations The array of amounts indexed by Recipient ID sent to recipients
      */
     event Donated(uint256[] donations);
 
@@ -161,12 +161,12 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Stores pledged value, requested traits, donation target
+     * @notice Stores pledged value, requested traits, pledge target
      */
     struct Request {
         Traits trait;
         uint16 traitId;
-        uint16 doneeId;
+        uint16 recipientId;
         uint16 nounId;
         uint128 amount;
     }
@@ -178,7 +178,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint256 id;
         Traits trait;
         uint16 traitId;
-        uint16 doneeId;
+        uint16 recipientId;
         uint16 nounId;
         uint128 amount;
         RequestStatus status;
@@ -187,7 +187,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
      * @notice Name, address, and active status where funds can be donated
      */
-    struct Donee {
+    struct Recipient {
         string name;
         address to;
         bool active;
@@ -212,7 +212,7 @@ contract NounSeek is Ownable2Step, Pausable {
     enum RequestStatus {
         CAN_REMOVE,
         REMOVED,
-        DONATION_SENT,
+        PLEDGE_SENT,
         AUCTION_ENDING_SOON,
         MATCH_FOUND
     }
@@ -273,14 +273,14 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice minimum reimbursement for matching
-     * @dev The default attempts to cover 10 donee matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas)
+     * @dev The default attempts to cover 10 recipient matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas)
      * Owner can update
      * @return minReimbursement
      */
     uint256 public minReimbursement = 0.003 ether;
 
     /**
-     * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total donations
+     * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total pledges
      * @dev Owner can update
      * @return maxReimbursement
      */
@@ -301,9 +301,9 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public messageValue = 10 ether;
 
     /**
-     * @notice Array of Donee details
+     * @notice Array of Recipient details
      */
-    Donee[] internal _donees;
+    Recipient[] internal _recipients;
 
     /**
      * @notice the total number of background traits
@@ -341,9 +341,9 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public glassesCount;
 
     /**
-     * @notice Cumulative funds for trait parameters send to a specific donee.
+     * @notice Cumulative funds for trait parameters send to a specific recipient.
      * @dev The first mapping key is can be generated with the `traitsHash` function
-     * and the second is doneeId
+     * and the second is recipientId
      */
     mapping(bytes32 => mapping(uint16 => uint256)) public amounts;
 
@@ -374,10 +374,10 @@ contract NounSeek is Ownable2Step, Pausable {
     //----------------//
 
     /**
-     * @notice All donees as Donee structs
+     * @notice All recipients as Recipient structs
      */
-    function donees() public view returns (Donee[] memory) {
-        return _donees;
+    function recipients() public view returns (Recipient[] memory) {
+        return _recipients;
     }
 
     /**
@@ -425,7 +425,7 @@ contract NounSeek is Ownable2Step, Pausable {
                     id: activeRequestIds[i],
                     trait: request.trait,
                     traitId: request.traitId,
-                    doneeId: request.doneeId,
+                    recipientId: request.recipientId,
                     nounId: request.nounId,
                     amount: request.amount,
                     status: requestStatuses[i]
@@ -455,12 +455,12 @@ contract NounSeek is Ownable2Step, Pausable {
     //----------------//
 
     /**
-     * @notice Given a donation total, derive the reimbursement fee and basis points used to calculate it
-     * @param total A donation amount
+     * @notice Given a pledge total, derive the reimbursement fee and basis points used to calculate it
+     * @param total A pledge amount
      * @return effectiveBPS The basis point used to cacluate the reimbursement fee
      * @return reimbursement The reimbursement amount
      */
-    function effectiveBPSAndReimbursementForDonationTotal(uint256 total)
+    function effectiveBPSAndReimbursementForPledgeTotal(uint256 total)
         public
         view
         returns (uint256 effectiveBPS, uint256 reimbursement)
@@ -468,7 +468,7 @@ contract NounSeek is Ownable2Step, Pausable {
         (
             effectiveBPS,
             reimbursement
-        ) = _effectiveHighPrecisionBPSForDonationTotal(total);
+        ) = _effectiveHighPrecisionBPSForPledgeTotal(total);
         effectiveBPS = effectiveBPS / 100;
     }
 
@@ -498,25 +498,25 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice For a given Noun ID, get cumulative donation amounts for each Donee scoped by Trait Type and Trait ID.
-     * @dev The donations array is a nested structure of 3 arrays of Trait Type, Trait ID, and Donee ID.
+     * @notice For a given Noun ID, get cumulative pledge amounts for each Recipient scoped by Trait Type and Trait ID.
+     * @dev The pledges array is a nested structure of 3 arrays of Trait Type, Trait ID, and Recipient ID.
      * The length of the first array is 5 (five) representing all Trait Types.
      * The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads).
-     * The length of the third is dependant on the number of donees added to this contract.
+     * The length of the third is dependant on the number of recipients added to this contract.
      * Example lengths:
-     * - `donations[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
-     * - `donations[0][0].length` == the size of the number of donees that have been added to this contract. Each value is the amount that has been pledged to a specific donee, indexed by its ID, if a Noun is minted with a cool background.
-     * Calling `donationsForNounId(101) returns cumulative matching donations for each Trait Type, Trait ID and Donee ID such that:`
-     * - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
-     * - the value at `donations[0][1][2]` is in the total amount that has been pledged to Donee ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
-     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations. E.g. `donationsForNounId(101)` fetches all donations for the open ID value `ANY_ID` as well as specified donations for Noun ID 101.
+     * - `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
+     * - `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background.
+     * Calling `pledgesForNounId(101) returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:`
+     * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges. E.g. `pledgesForNounId(101)` fetches all pledges for the open ID value `ANY_ID` as well as specified pledges for Noun ID 101.
      * @param nounId The ID of the Noun requests should match.
-     * @return donations Cumulative amounts pledged for each Donee, indexed by Trait Type, Trait ID and Donee ID
+     * @return pledges Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID
      */
-    function donationsForNounId(uint16 nounId)
+    function pledgesForNounId(uint16 nounId)
         public
         view
-        returns (uint256[][][5] memory donations)
+        returns (uint256[][][5] memory pledges)
     {
         for (uint256 trait; trait < 5; trait++) {
             uint256 traitCount;
@@ -533,24 +533,24 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitCount = glassesCount;
             }
 
-            donations[trait] = new uint256[][](traitCount);
-            donations[trait] = donationsForNounIdByTrait(traitEnum, nounId);
+            pledges[trait] = new uint256[][](traitCount);
+            pledges[trait] = pledgesForNounIdByTrait(traitEnum, nounId);
         }
     }
 
     /**
-     * @notice Get cumulative donation amounts scoped to Noun ID and Trait Type.
-     * @dev Example: `donationsForNounIdByTrait(3, 25)` accumulates all pledged donations amounts for heads and Noun ID 25.
-     * The returned value in `donations[5][2]` is in the total amount that has been pledged to Donee ID 2 if Noun ID 25 is minted with a head of Trait ID 5
-     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+     * @notice Get cumulative pledge amounts scoped to Noun ID and Trait Type.
+     * @dev Example: `pledgesForNounIdByTrait(3, 25)` accumulates all pledged pledges amounts for heads and Noun ID 25.
+     * The returned value in `pledges[5][2]` is in the total amount that has been pledged to Recipient ID 2 if Noun ID 25 is minted with a head of Trait ID 5
+     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param trait The trait type to scope requests to (See `Traits` Enum)
      * @param nounId The Noun ID to scope requests to
-     * @return donationsByTraitId Cumulative amounts pledged for each Donee, indexed by Trait ID and Donee ID
+     * @return pledgesByTraitId Cumulative amounts pledged for each Recipient, indexed by Trait ID and Recipient ID
      */
-    function donationsForNounIdByTrait(Traits trait, uint16 nounId)
+    function pledgesForNounIdByTrait(Traits trait, uint16 nounId)
         public
         view
-        returns (uint256[][] memory donationsByTraitId)
+        returns (uint256[][] memory pledgesByTraitId)
     {
         unchecked {
             uint16 traitCount;
@@ -566,86 +566,86 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitCount = glassesCount;
             }
 
-            uint256 doneesCount = _donees.length;
-            donationsByTraitId = new uint256[][](traitCount);
+            uint256 recipientsCount = _recipients.length;
+            pledgesByTraitId = new uint256[][](traitCount);
 
             bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
 
             for (uint16 traitId; traitId < traitCount; traitId++) {
-                donationsByTraitId[traitId] = _donationsForNounIdByTraitId(
+                pledgesByTraitId[traitId] = _pledgesForNounIdByTraitId(
                     trait,
                     traitId,
                     nounId,
                     processAnyId,
-                    doneesCount
+                    recipientsCount
                 );
             }
         }
     }
 
     /**
-     * @notice Get cumulative donation amounts scoped to Noun ID, Trait Type, and Trait ID
-     * @dev Example: `donationsForNounIdByTraitId(0, 1, 25)` accumulates all pledged donation amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `donations[2]` is in the total amount that has been pledged to Donee ID 2
-     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+     * @notice Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
+     * @dev Example: `pledgesForNounIdByTraitId(0, 1, 25)` accumulates all pledged pledge amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `pledges[2]` is in the total amount that has been pledged to Recipient ID 2
+     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param trait The trait type to scope requests to (See `Traits` Enum)
      * @param traitId The trait ID  of the trait to scope requests
      * @param nounId The Noun ID to scope requests to
-     * @return donations Cumulative amounts pledged for each Donee, indexed by Donee ID
+     * @return pledges Cumulative amounts pledged for each Recipient, indexed by Recipient ID
      */
-    function donationsForNounIdByTraitId(
+    function pledgesForNounIdByTraitId(
         Traits trait,
         uint16 traitId,
         uint16 nounId
-    ) public view returns (uint256[] memory donations) {
+    ) public view returns (uint256[] memory pledges) {
         bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
         return
-            _donationsForNounIdByTraitId(
+            _pledgesForNounIdByTraitId(
                 trait,
                 traitId,
                 nounId,
                 processAnyId,
-                _donees.length
+                _recipients.length
             );
     }
 
     /**
-     * @notice For an existing on-chain Noun, use its seed to find matching donations
+     * @notice For an existing on-chain Noun, use its seed to find matching pledges
      * @dev Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
-     * Calling `donationsForOnChainNoun(1)` returns cumulative matching donations for each trait that matches the seed such that:
-     * - `donations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2
-     * Note: When accessing a Noun ID for an auctioned Noun, donations for the open ID value `ANY_ID` will be added to total donations
+     * Calling `pledgesForOnChainNoun(1)` returns cumulative matching pledges for each trait that matches the seed such that:
+     * - `pledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2
+     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param nounId Noun ID of an existing on-chain Noun
-     * @return donations Cumulative amounts pledged for each Donee that matches the on-chain Noun seed indexed by Trait Type and Donee ID
+     * @return pledges Cumulative amounts pledged for each Recipient that matches the on-chain Noun seed indexed by Trait Type and Recipient ID
      */
-    function donationsForOnChainNoun(uint16 nounId)
+    function pledgesForOnChainNoun(uint16 nounId)
         public
         view
-        returns (uint256[][5] memory donations)
+        returns (uint256[][5] memory pledges)
     {
         return
-            _donationsForOnChainNoun(
+            _pledgesForOnChainNoun(
                 nounId,
                 _isNonAuctionedNoun(nounId),
-                _donees.length
+                _recipients.length
             );
     }
 
     /**
-     * @notice Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative donation amounts for each Donee scoped by possible Trait Type and Trait ID.
-     * @dev See { donationsForNounId } for detailed documentation of the nested array structure
+     * @notice Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative pledge amounts for each Recipient scoped by possible Trait Type and Trait ID.
+     * @dev See { pledgesForNounId } for detailed documentation of the nested array structure
      * @return nextAuctionId The ID of the next Noun that will be auctioned
      * @return nextNonAuctionId If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
-     * @return nextAuctionDonations Total donations for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID
-     * @return nextNonAuctionDonations If two Nouns are due to be minted, this will contain the total donations for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Donee ID
+     * @return nextAuctionPledges Total pledges for the next auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Recipient ID
+     * @return nextNonAuctionPledges If two Nouns are due to be minted, this will contain the total pledges for the next non-auctioned Noun as a nested arrays in the order Trait Type, Trait ID, and Recipient ID
      */
-    function donationsForUpcomingNoun()
+    function pledgesForUpcomingNoun()
         public
         view
         returns (
             uint16 nextAuctionId,
             uint16 nextNonAuctionId,
-            uint256[][][5] memory nextAuctionDonations,
-            uint256[][][5] memory nextNonAuctionDonations
+            uint256[][][5] memory nextAuctionPledges,
+            uint256[][][5] memory nextNonAuctionPledges
         )
     {
         unchecked {
@@ -657,82 +657,82 @@ contract NounSeek is Ownable2Step, Pausable {
                 nextAuctionId++;
             }
 
-            nextAuctionDonations = donationsForNounId(nextAuctionId);
+            nextAuctionPledges = pledgesForNounId(nextAuctionId);
 
             if (nextNonAuctionId < UINT16_MAX) {
-                nextNonAuctionDonations = donationsForNounId(nextNonAuctionId);
+                nextNonAuctionPledges = pledgesForNounId(nextNonAuctionId);
             }
         }
     }
 
     /**
-     * @notice For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts pledged for each Donee using requests that match the Noun's seed.
+     * @notice For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts pledged for each Recipient using requests that match the Noun's seed.
      * @dev Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
-     * Calling `donationsForNounOnAuction()` returns cumulative matching donations for each trait that matches the seed such that:
-     * - `currentAuctionDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2.
-     * If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionDonations` would be populated
+     * Calling `pledgesForNounOnAuction()` returns cumulative matching pledges for each trait that matches the seed such that:
+     * - `currentAuctionPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
+     * If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `prevNonAuctionPledges` would be populated
      * @return currentAuctionId The ID of the Noun that is currently being auctioned
      * @return prevNonAuctionId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
-     * @return currentAuctionDonations Total donations for the current auctioned Noun as a nested arrays indexed by Trait Type and Donee ID
-     * @return prevNonAuctionDonations If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Donee ID
+     * @return currentAuctionPledges Total pledges for the current auctioned Noun as a nested arrays indexed by Trait Type and Recipient ID
+     * @return prevNonAuctionPledges If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays indexed by Trait Type and Recipient ID
      */
-    function donationsForNounOnAuction()
+    function pledgesForNounOnAuction()
         public
         view
         returns (
             uint16 currentAuctionId,
             uint16 prevNonAuctionId,
-            uint256[][5] memory currentAuctionDonations,
-            uint256[][5] memory prevNonAuctionDonations
+            uint256[][5] memory currentAuctionPledges,
+            uint256[][5] memory prevNonAuctionPledges
         )
     {
         unchecked {
             currentAuctionId = uint16(auctionHouse.auction().nounId);
             prevNonAuctionId = UINT16_MAX;
 
-            uint256 doneesCount = _donees.length;
+            uint256 recipientsCount = _recipients.length;
 
-            currentAuctionDonations = _donationsForOnChainNoun({
+            currentAuctionPledges = _pledgesForOnChainNoun({
                 nounId: currentAuctionId,
                 processAnyId: true,
-                doneesCount: doneesCount
+                recipientsCount: recipientsCount
             });
 
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
 
-                prevNonAuctionDonations = _donationsForOnChainNoun({
+                prevNonAuctionPledges = _pledgesForOnChainNoun({
                     nounId: prevNonAuctionId,
                     processAnyId: false,
-                    doneesCount: doneesCount
+                    recipientsCount: recipientsCount
                 });
             }
         }
     }
 
     /**
-     * @notice For the Noun that is eligible to be matched with pledged donations (and the previous non-auctioned Noun if it was minted at the same time), get cumulative donation amounts for each Donee using requests that match the Noun's seed.
+     * @notice For the Noun that is eligible to be matched with pledged pledges (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts for each Recipient using requests that match the Noun's seed.
      * @dev Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
-     * Calling `donationsForMatchableNoun()` returns cumulative matching donations for each trait that matches the seed.
-     * `auctionedNounDonations[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `donations[0][2]` is in the total amount that has been pledged to Donee ID 2.
-     * If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounDonations` would be populated
+     * Calling `pledgesForMatchableNoun()` returns cumulative matching pledges for each trait that matches the seed.
+     * `auctionedNounPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
+     * If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounPledges` would be populated
      * See the documentation in the function body for the cases used to match eligible Nouns
      * @return auctionedNounId The ID of the Noun that is was auctioned
      * @return nonAuctionedNounId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
-     * @return auctionedNounDonations Total donations for the eligible auctioned Noun as a nested arrays in the order Trait Type and Donee ID
-     * @return nonAuctionedNounDonations If two Nouns were minted, this will contain the total donations for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Donee ID
-     * @return totalDonationsPerTrait An array of total donation pledged minus reimbursement across all Donees, indexed by Trait Type
+     * @return auctionedNounPledges Total pledges for the eligible auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
+     * @return nonAuctionedNounPledges If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
+     * @return totalPledgesPerTrait An array of total pledge pledged minus reimbursement across all Recipients, indexed by Trait Type
      * @return reimbursementPerTrait An array of matcher's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type
      */
-    function donationsForMatchableNoun()
+    function pledgesForMatchableNoun()
         public
         view
         returns (
             uint16 auctionedNounId,
             uint16 nonAuctionedNounId,
-            uint256[][5] memory auctionedNounDonations,
-            uint256[][5] memory nonAuctionedNounDonations,
-            uint256[5] memory totalDonationsPerTrait,
+            uint256[][5] memory auctionedNounPledges,
+            uint256[][5] memory nonAuctionedNounPledges,
+            uint256[5] memory totalPledgesPerTrait,
             uint256[5] memory reimbursementPerTrait
         )
     {
@@ -769,43 +769,43 @@ contract NounSeek is Ownable2Step, Pausable {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount = _donees.length;
+        uint256 recipientsCount = _recipients.length;
 
-        auctionedNounDonations = _donationsForOnChainNoun({
+        auctionedNounPledges = _pledgesForOnChainNoun({
             nounId: auctionedNounId,
             processAnyId: true,
-            doneesCount: doneesCount
+            recipientsCount: recipientsCount
         });
 
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
 
         if (includeNonAuctionedNoun) {
-            nonAuctionedNounDonations = _donationsForOnChainNoun({
+            nonAuctionedNounPledges = _pledgesForOnChainNoun({
                 nounId: nonAuctionedNounId,
                 processAnyId: false,
-                doneesCount: doneesCount
+                recipientsCount: recipientsCount
             });
         }
 
         for (uint256 trait; trait < 5; trait++) {
-            for (uint256 doneeId; doneeId < doneesCount; doneeId++) {
-                uint256 nonAuctionedNounDonation;
+            for (uint256 recipientId; recipientId < recipientsCount; recipientId++) {
+                uint256 nonAuctionedNounPledge;
                 if (includeNonAuctionedNoun) {
-                    nonAuctionedNounDonation = nonAuctionedNounDonations[trait][
-                        doneeId
+                    nonAuctionedNounPledge = nonAuctionedNounPledges[trait][
+                        recipientId
                     ];
                 }
-                totalDonationsPerTrait[trait] +=
-                    auctionedNounDonations[trait][doneeId] +
-                    nonAuctionedNounDonation;
+                totalPledgesPerTrait[trait] +=
+                    auctionedNounPledges[trait][recipientId] +
+                    nonAuctionedNounPledge;
             }
             (
                 ,
                 reimbursementPerTrait[trait]
-            ) = _effectiveHighPrecisionBPSForDonationTotal(
-                totalDonationsPerTrait[trait]
+            ) = _effectiveHighPrecisionBPSForPledgeTotal(
+                totalPledgesPerTrait[trait]
             );
-            totalDonationsPerTrait[trait] -= reimbursementPerTrait[trait];
+            totalPledgesPerTrait[trait] -= reimbursementPerTrait[trait];
         }
     }
 
@@ -845,35 +845,35 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Donee.
+     * @notice Create a request for the specific trait and specific or open Noun ID payable to the specified Recipient.
      * @dev `msg.value` is used as the pledged Request amount
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
      * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
-     * @param doneeId the ID of the Donee that should receive the pledged amount if a Noun matching the parameters is minted
+     * @param recipientId the ID of the Recipient that should receive the pledged amount if a Noun matching the parameters is minted
      * @return requestId The ID of this requests for msg.sender's address
      */
     function add(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint16 doneeId
+        uint16 recipientId
     ) public payable whenNotPaused returns (uint256 requestId) {
         if (msg.value < minValue) {
             revert ValueTooLow();
         }
 
-        requestId = _add(trait, traitId, nounId, doneeId, msg.value, "");
+        requestId = _add(trait, traitId, nounId, recipientId, msg.value, "");
     }
 
     /**
-     * @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Donee.
-     * @dev The message cost is subtracted from `msg.value` and transfered immediately to the specified Donee.
+     * @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Recipient.
+     * @dev The message cost is subtracted from `msg.value` and transfered immediately to the specified Recipient.
      * The remaining value is stored as the pledged Request amount.
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
      * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
-     * @param doneeId the ID of the Donee that should receive the donation if a Noun matching the parameters is minted
+     * @param recipientId the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted
      * @param message The message to log
      * @return requestId The ID of this requests for msg.sender's address
      */
@@ -881,7 +881,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint16 doneeId,
+        uint16 recipientId,
         string memory message
     ) public payable whenNotPaused returns (uint256 requestId) {
         if (msg.value < minValue + messageValue) {
@@ -892,20 +892,20 @@ contract NounSeek is Ownable2Step, Pausable {
             trait,
             traitId,
             nounId,
-            doneeId,
+            recipientId,
             msg.value - messageValue, // Registered pledged amount that does not include `messageValue`
             message
         );
 
-        // Immediately send `messageValue` to donee
-        _safeTransferETHWithFallback(_donees[doneeId].to, messageValue);
+        // Immediately send `messageValue` to recipient
+        _safeTransferETHWithFallback(_recipients[recipientId].to, messageValue);
     }
 
     /**
      * @notice Remove the specified request and return the associated amount.
      * @dev Must be called by the Requester's address.
-     * If the Request has already been matched/sent to the Donee or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations)
-     * If the Donee of the Request is marked as inactive, the funds can be returned immediately
+     * If the Request has already been matched/sent to the Recipient or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations)
+     * If the Recipient of the Request is marked as inactive, the funds can be returned immediately
      * @param requestId Request Id
      * @param amount The amount sent to the requester
      */
@@ -919,8 +919,8 @@ contract NounSeek is Ownable2Step, Pausable {
 
         if (status == RequestStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash);
-        } else if (status == RequestStatus.DONATION_SENT) {
-            revert DonationAlreadySent();
+        } else if (status == RequestStatus.PLEDGE_SENT) {
+            revert PledgeAlreadySent();
         } else if (status == RequestStatus.REMOVED) {
             revert AlreadyRemoved();
         } else if (status == RequestStatus.AUCTION_ENDING_SOON) {
@@ -933,21 +933,21 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Sends pledged amounts to donees by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
+     * @notice Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
      * @dev Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
      * Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
      * If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
      * See function body for examples.
      * @param trait The Trait Type to fetch from an eligible Noun (see `Traits` Enum)
      * @param nounId The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
-     * @param doneeIds An array of donee IDs that have been pledged an amount if a Noun matches the specified trait.
+     * @param recipientIds An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.
      * @return total Total donated funds before reimbursement
      * @return reimbursement Reimbursement amount
      */
     function settle(
         Traits trait,
         uint16 nounId,
-        uint16[] memory doneeIds
+        uint16[] memory recipientIds
     ) public returns (uint256 total, uint256 reimbursement) {
         /**
          * Cases for eligible matched Nouns:
@@ -1010,27 +1010,27 @@ contract NounSeek is Ownable2Step, Pausable {
             trait,
             traitIds,
             nounIds,
-            doneeIds
+            recipientIds
         );
 
         if (total < 1) {
             revert NoMatch();
         }
 
-        (uint256 effectiveBPS, ) = _effectiveHighPrecisionBPSForDonationTotal(
+        (uint256 effectiveBPS, ) = _effectiveHighPrecisionBPSForPledgeTotal(
             total
         );
 
-        for (uint256 i; i < _donees.length; i++) {
+        for (uint256 i; i < _recipients.length; i++) {
             uint256 amount = donations[i];
             if (amount < 1) {
                 continue;
             }
-            uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
+            uint256 pledge = (amount * (1_000_000 - effectiveBPS)) /
                 1_000_000;
-            reimbursement += amount - donation;
-            donations[i] = donation;
-            _safeTransferETHWithFallback(_donees[i].to, donation);
+            reimbursement += amount - pledge;
+            donations[i] = pledge;
+            _safeTransferETHWithFallback(_recipients[i].to, pledge);
         }
         emit Donated(donations);
 
@@ -1060,20 +1060,20 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Add a Donee by specifying the name and address funds should be sent to
-     * @dev Adds a Donee to the donees set and activates the Donee
-     * @param name The Donee's name that should be displayed to users/consumers
-     * @param to Address that funds should be sent to in order to fund the Donee
+     * @notice Add a Recipient by specifying the name and address funds should be sent to
+     * @dev Adds a Recipient to the recipients set and activates the Recipient
+     * @param name The Recipient's name that should be displayed to users/consumers
+     * @param to Address that funds should be sent to in order to fund the Recipient
      */
-    function addDonee(
+    function addRecipient(
         string calldata name,
         address to,
         string calldata description
     ) external onlyOwner {
-        uint16 doneeId = uint16(_donees.length);
-        _donees.push(Donee({name: name, to: to, active: true}));
-        emit DoneeAdded({
-            doneeId: doneeId,
+        uint16 recipientId = uint16(_recipients.length);
+        _recipients.push(Recipient({name: name, to: to, active: true}));
+        emit RecipientAdded({
+            recipientId: recipientId,
             name: name,
             to: to,
             description: description
@@ -1081,15 +1081,15 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Toggles a Donee's active state by its index within the set, reverts if Donee is not configured
-     * @param doneeId Donee id based on its index within the donees set
+     * @notice Toggles a Recipient's active state by its index within the set, reverts if Recipient is not configured
+     * @param recipientId Recipient id based on its index within the recipients set
      * @param active Active state
      * @dev If the Done is not configured, a revert will be triggered
      */
-    function setDoneeActive(uint256 doneeId, bool active) external onlyOwner {
-        if (active == _donees[doneeId].active) return;
-        _donees[doneeId].active = active;
-        emit DoneeActiveStatusChanged({doneeId: doneeId, active: active});
+    function setRecipientActive(uint256 recipientId, bool active) external onlyOwner {
+        if (active == _recipients[recipientId].active) return;
+        _recipients[recipientId].active = active;
+        emit RecipientActiveStatusChanged({recipientId: recipientId, active: active});
     }
 
     /**
@@ -1182,23 +1182,23 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint16 doneeId,
+        uint16 recipientId,
         uint256 amount,
         string memory message
     ) internal returns (uint256 requestId) {
-        if (!_donees[doneeId].active) {
-            revert InactiveDonee();
+        if (!_recipients[recipientId].active) {
+            revert InactiveRecipient();
         }
 
         bytes32 hash = traitHash(trait, traitId, nounId);
 
-        amounts[hash][doneeId] += amount;
+        amounts[hash][recipientId] += amount;
 
         requestId = _requests[msg.sender].length;
 
         _requests[msg.sender].push(
             Request({
-                doneeId: doneeId,
+                recipientId: recipientId,
                 trait: trait,
                 traitId: traitId,
                 nounId: nounId,
@@ -1211,7 +1211,7 @@ contract NounSeek is Ownable2Step, Pausable {
             requester: msg.sender,
             trait: trait,
             traitId: traitId,
-            doneeId: doneeId,
+            recipientId: recipientId,
             nounId: nounId,
             traitsHash: hash,
             amount: amount,
@@ -1239,55 +1239,55 @@ contract NounSeek is Ownable2Step, Pausable {
             trait: request.trait,
             traitId: request.traitId,
             nounId: request.nounId,
-            doneeId: request.doneeId,
+            recipientId: request.recipientId,
             traitsHash: hash,
             amount: amount
         });
 
-        amounts[hash][request.doneeId] -= amount;
+        amounts[hash][request.recipientId] -= amount;
         _safeTransferETHWithFallback(msg.sender, amount);
 
         return amount;
     }
 
     /**
-     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate donation and reimubersement amounts, then removes the requests from storage.
+     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate pledge and reimubersement amounts, then removes the requests from storage.
      * @param trait The trait type requests should match (see `Traits` Enum)
      * @param traitIds Specific trait ID
      * @param nounIds Specific Noun ID
-     * @return donations Mutated donations array
+     * @return pledges Mutated pledges array
      * @return total total
      */
     function _combineAmountsAndDelete(
         Traits trait,
         uint16[] memory traitIds,
         uint16[] memory nounIds,
-        uint16[] memory doneeIds
-    ) internal returns (uint256[] memory donations, uint256 total) {
-        donations = new uint256[](_donees.length);
+        uint16[] memory recipientIds
+    ) internal returns (uint256[] memory pledges, uint256 total) {
+        pledges = new uint256[](_recipients.length);
 
         // Equal number of `nounIds` and `traitIds`s
-        // Loop through `nounIds` (hashing the `nounId`, `trait`, and `traitId`) to then inner loop through `doneeIds` to lookup pledged amounts
+        // Loop through `nounIds` (hashing the `nounId`, `trait`, and `traitId`) to then inner loop through `recipientIds` to lookup pledged amounts
         for (uint16 i; i < nounIds.length; i++) {
             uint16 traitId = traitIds[i];
             uint16 nounId = nounIds[i];
             bytes32 hash = traitHash(trait, traitId, nounId);
             uint256 traitTotal;
 
-            for (uint16 j; j < doneeIds.length; j++) {
-                // Inactive donees cannot be sent funds
-                if (!_donees[doneeIds[j]].active) continue;
+            for (uint16 j; j < recipientIds.length; j++) {
+                // Inactive recipients cannot be sent funds
+                if (!_recipients[recipientIds[j]].active) continue;
 
-                uint256 amount = amounts[hash][doneeIds[j]];
-                // Request was previously matched, funds were previously sent to this donee
+                uint256 amount = amounts[hash][recipientIds[j]];
+                // Request was previously matched, funds were previously sent to this recipient
                 if (amount < 1) {
                     continue;
                 }
                 traitTotal += amount;
                 total += amount;
-                donations[doneeIds[j]] += amount;
+                pledges[recipientIds[j]] += amount;
 
-                delete amounts[hash][doneeIds[j]];
+                delete amounts[hash][recipientIds[j]];
             }
 
             if (traitTotal < 1) {
@@ -1310,42 +1310,42 @@ contract NounSeek is Ownable2Step, Pausable {
      */
 
     /**
-     * @notice Get cumulative donation amounts for each Donee scoped by Noun Id, Trait Type, and Trait Id
+     * @notice Get cumulative pledge amounts for each Recipient scoped by Noun Id, Trait Type, and Trait Id
      */
-    function _donationsForNounIdByTraitId(
+    function _pledgesForNounIdByTraitId(
         Traits trait,
         uint16 traitId,
         uint16 nounId,
         bool processAnyId,
-        uint256 doneesCount
-    ) internal view returns (uint256[] memory donations) {
+        uint256 recipientsCount
+    ) internal view returns (uint256[] memory pledges) {
         unchecked {
-            bool[] memory isActive = _mapDoneeActive(doneesCount);
+            bool[] memory isActive = _mapRecipientActive(recipientsCount);
 
             bytes32 hash = traitHash(trait, traitId, nounId);
             bytes32 anyIdHash;
             if (processAnyId) {
                 anyIdHash = traitHash(trait, traitId, ANY_ID);
             }
-            donations = new uint256[](doneesCount);
-            for (uint16 doneeId; doneeId < doneesCount; doneeId++) {
-                if (!isActive[doneeId]) continue;
+            pledges = new uint256[](recipientsCount);
+            for (uint16 recipientId; recipientId < recipientsCount; recipientId++) {
+                if (!isActive[recipientId]) continue;
                 uint256 anyIdAmount = processAnyId
-                    ? amounts[anyIdHash][doneeId]
+                    ? amounts[anyIdHash][recipientId]
                     : 0;
-                donations[doneeId] = amounts[hash][doneeId] + anyIdAmount;
+                pledges[recipientId] = amounts[hash][recipientId] + anyIdAmount;
             }
         }
     }
 
     /**
-     * @notice For an on-chain Noun, get cumulative donation amounts that would match its seed
+     * @notice For an on-chain Noun, get cumulative pledge amounts that would match its seed
      */
-    function _donationsForOnChainNoun(
+    function _pledgesForOnChainNoun(
         uint16 nounId,
         bool processAnyId,
-        uint256 doneesCount
-    ) internal view returns (uint256[][5] memory donations) {
+        uint256 recipientsCount
+    ) internal view returns (uint256[][5] memory pledges) {
         INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
         for (uint256 trait; trait < 5; trait++) {
             Traits traitEnum = Traits(trait);
@@ -1362,12 +1362,12 @@ contract NounSeek is Ownable2Step, Pausable {
                 traitId = uint16(seed.glasses);
             }
 
-            donations[trait] = _donationsForNounIdByTraitId(
+            pledges[trait] = _pledgesForNounIdByTraitId(
                 traitEnum,
                 traitId,
                 nounId,
                 processAnyId,
-                doneesCount
+                recipientsCount
             );
         }
     }
@@ -1376,10 +1376,10 @@ contract NounSeek is Ownable2Step, Pausable {
      * @notice Generates a RequestStatus based on state of the Request, match data, and auction data
      * @dev RequestStatus calculations:
      * - REMOVED: the request amount is 0
-     * - DONATION_SENT: A Noun was minted with the Request parameters and has been matched
+     * - PLEDGE_SENT: A Noun was minted with the Request parameters and has been matched
      * - AUCTION_ENDING_SOON: The auction end time falls within the AUCTION_END_LIMIT
      * - MATCH_FOUND: The current or previous Noun matches the Request parameters
-     * - CAN_REMOVE: Donee is inactive and Request has not been matched
+     * - CAN_REMOVE: Recipient is inactive and Request has not been matched
      *  OR Request has not been matched and auction is not ending
      *  OR Request has not been matched, auction is not ending, and the current or prevous Noun does not match the Request parameters
      * @param request Request to analyze
@@ -1402,17 +1402,17 @@ contract NounSeek is Ownable2Step, Pausable {
 
         hash = traitHash(request.trait, request.traitId, request.nounId);
 
-        uint16 doneeId = request.doneeId;
+        uint16 recipientId = request.recipientId;
 
-        // If there is no amount available, a Noun was matched and donations for this Donee were sent
-        bool matched = amounts[hash][doneeId] < 1;
+        // If there is no amount available, a Noun was matched and pledges for this Recipient were sent
+        bool matched = amounts[hash][recipientId] < 1;
 
-        // Donee is inactive (and/or was inactive at the time of match) and there are funds to return
-        if (!_donees[doneeId].active && !matched)
+        // Recipient is inactive (and/or was inactive at the time of match) and there are funds to return
+        if (!_recipients[recipientId].active && !matched)
             return (RequestStatus.CAN_REMOVE, hash, nounId);
 
-        // Donee was active at time of match, no funds to return
-        if (matched) return (RequestStatus.DONATION_SENT, hash, nounId);
+        // Recipient was active at time of match, no funds to return
+        if (matched) return (RequestStatus.PLEDGE_SENT, hash, nounId);
 
         // Cannot executed within a time period from an auction's end
         if (
@@ -1506,7 +1506,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @return effectiveBPS The basis point value used to calculate the reimbursement given the total
      * @return reimbursement The amount to reimburse based on the total and effectiveBPS
      */
-    function _effectiveHighPrecisionBPSForDonationTotal(uint256 total)
+    function _effectiveHighPrecisionBPSForPledgeTotal(uint256 total)
         internal
         view
         returns (uint256 effectiveBPS, uint256 reimbursement)
@@ -1537,19 +1537,19 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Maps array of Donees to array of active status booleans
-     * @param doneesCount Cached length of _donees array
+     * @notice Maps array of Recipients to array of active status booleans
+     * @param recipientsCount Cached length of _recipients array
      * @return isActive Array of active status booleans
      */
-    function _mapDoneeActive(uint256 doneesCount)
+    function _mapRecipientActive(uint256 recipientsCount)
         internal
         view
         returns (bool[] memory isActive)
     {
         unchecked {
-            isActive = new bool[](doneesCount);
-            for (uint256 i; i < doneesCount; i++) {
-                isActive[i] = _donees[i].active;
+            isActive = new bool[](recipientsCount);
+            for (uint256 i; i < recipientsCount; i++) {
+                isActive[i] = _recipients[i].active;
             }
         }
     }

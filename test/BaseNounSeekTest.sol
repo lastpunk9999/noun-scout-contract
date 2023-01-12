@@ -24,16 +24,16 @@ contract BaseNounSeekTest is EnhancedTest {
     MockAuctionHouse mockAuctionHouse;
     MockDescriptor mockDescriptor;
     NounSeekViewUtils nounSeekViewUtils;
-    uint16[] public allDoneeIds;
+    uint16[] public allRecipientIds;
 
     address user1 = mkaddr("user1");
     address user2 = mkaddr("user2");
     address user3 = mkaddr("user3");
-    address donee0 = mkaddr("donee0");
-    address donee1 = mkaddr("donee1");
-    address donee2 = mkaddr("donee2");
-    address donee3 = mkaddr("donee3");
-    address donee4 = mkaddr("donee4");
+    address recipient0 = mkaddr("recipient0");
+    address recipient1 = mkaddr("recipient1");
+    address recipient2 = mkaddr("recipient2");
+    address recipient3 = mkaddr("recipient3");
+    address recipient4 = mkaddr("recipient4");
     uint256 AUCTION_END_LIMIT;
     uint16 ANY_ID;
     uint256 minValue;
@@ -60,11 +60,11 @@ contract BaseNounSeekTest is EnhancedTest {
         maxReimbursement = nounSeek.maxReimbursement();
         minReimbursement = nounSeek.minReimbursement();
 
-        nounSeek.addDonee("donee0", donee0, "donee0");
-        nounSeek.addDonee("donee1", donee1, "donee1");
-        nounSeek.addDonee("donee2", donee2, "donee2");
-        nounSeek.addDonee("donee3", donee3, "donee3");
-        nounSeek.addDonee("donee4", donee4, "donee4");
+        nounSeek.addRecipient("recipient0", recipient0, "recipient0");
+        nounSeek.addRecipient("recipient1", recipient1, "recipient1");
+        nounSeek.addRecipient("recipient2", recipient2, "recipient2");
+        nounSeek.addRecipient("recipient3", recipient3, "recipient3");
+        nounSeek.addRecipient("recipient4", recipient4, "recipient4");
 
         mockDescriptor.setHeadCount(99);
         mockDescriptor.setGlassesCount(98);
@@ -73,13 +73,13 @@ contract BaseNounSeekTest is EnhancedTest {
         mockDescriptor.setBackgroundCount(95);
         nounSeek.updateTraitCounts();
         mockAuctionHouse.setNounId(99);
-        allDoneeIds = doneeIds(nounSeek.donees().length, 0, 1);
+        allRecipientIds = recipientIds(nounSeek.recipients().length, 0, 1);
     }
 
-    function doneeIds(uint256 length, uint16 skip, uint16 mul) public pure returns(uint16[] memory _doneeIds){
-        _doneeIds = new uint16[](length);
+    function recipientIds(uint256 length, uint16 skip, uint16 mul) public pure returns(uint16[] memory _recipientIds){
+        _recipientIds = new uint16[](length);
         for (uint16 i; i < length; i++){
-            _doneeIds[i]=(i*mul)+skip;
+            _recipientIds[i]=(i*mul)+skip;
         }
     }
 }

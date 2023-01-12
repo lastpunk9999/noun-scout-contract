@@ -24,54 +24,54 @@ contract TestnetDeploy is Script {
         // mockNouns = new MockNouns(address(mockDescriptor));
         // nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
         nounSeek = new NounSeek(mockNouns, mockAuctionHouse, IWETH(address(0)));
-        // Add Donees
-        nounSeek.addDonee(
+        // Add Recipients
+        nounSeek.addRecipient(
             "Freedom Of The Press Foundation",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Freedom Of The Press Foundation is a non-profit organization."
         );
-        nounSeek.addDonee(
+        nounSeek.addRecipient(
             "Internet Archive",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Internet Archive is a non-profit organization."
         );
-        nounSeek.addDonee(
+        nounSeek.addRecipient(
             "Rainforest Foundation US",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Rainforest Foundation US is a non-profit organization."
         );
-        nounSeek.addDonee(
+        nounSeek.addRecipient(
             "Tor Project",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Tor Project is a non-profit organization."
         );
 
-        nounSeek.addDonee(
-            "No logo Donee",
+        nounSeek.addRecipient(
+            "No logo Recipient",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "No logo Donee Center is a non-profit organization."
+            "No logo Recipient Center is a non-profit organization."
         );
-         nounSeek.addDonee(
-            "Inactive Donee",
+         nounSeek.addRecipient(
+            "Inactive Recipient",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
-            "Inactive Donee Center is a non-profit organization."
+            "Inactive Recipient Center is a non-profit organization."
         );
-        // nounSeek.addDonee(
+        // nounSeek.addRecipient(
         //     "Alzheimer's Association",
         //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
         //     "Alzheimer's Association is a non-profit organization."
         // );
-        // nounSeek.addDonee(
+        // nounSeek.addRecipient(
         //     "Breast Cancer Research Foundation",
         //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
         //     "Breast Cancer Research Foundation is a non-profit organization."
         // );
-        // nounSeek.addDonee(
+        // nounSeek.addRecipient(
         //     "National Kidney Foundation",
         //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
         //     "National Kidney Foundation is a non-profit organization."
         // );
-        // nounSeek.addDonee(
+        // nounSeek.addRecipient(
         //     "Freedom Of The Press Foundation",
         //     0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
         //     "Freedom Of The Press Foundation is a non-profit organization."
@@ -96,13 +96,13 @@ contract TestnetDeploy is Script {
         uint256 minValue = 0.0001 ether;
         nounSeek.setMinReimbursement(minValue / 10);
         nounSeek.setMinValue(minValue);
-        nounSeek.setDoneeActive(5, false);
+        nounSeek.setRecipientActive(5, false);
         for (uint16 i; i < 10; i++) {
             /*
             Traits trait,
             uint16 traitId,
             uint16 nounId,
-            uint16 doneeId*/
+            uint16 recipientId*/
             nounSeek.addWithMessage{value: minValue * 2}(
                 NounSeek.Traits.HEAD,
                 i,
@@ -117,7 +117,7 @@ contract TestnetDeploy is Script {
             Traits trait,
             uint16 traitId,
             uint16 nounId,
-            uint16 doneeId*/
+            uint16 recipientId*/
             nounSeek.addWithMessage{value: minValue * 2}(
                 NounSeek.Traits.HEAD,
                 i + 10,
@@ -132,7 +132,7 @@ contract TestnetDeploy is Script {
             Traits trait,
             uint16 traitId,
             uint16 nounId,
-            uint16 doneeId*/
+            uint16 recipientId*/
             nounSeek.addWithMessage{value: minValue * 2}(
                 NounSeek.Traits.HEAD,
                 i + 20,
@@ -148,7 +148,7 @@ contract TestnetDeploy is Script {
             Traits trait,
             uint16 traitId,
             uint16 nounId,
-            uint16 doneeId*/
+            uint16 recipientId*/
             uint16 trait = i%4;
             uint16 traitId = i % 7;
             // background only has 2 ids

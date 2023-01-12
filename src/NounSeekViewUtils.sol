@@ -17,14 +17,14 @@ contract NounSeekViewUtils {
         ANY_ID = nounSeek.ANY_ID();
     }
 
-    function donationsForUpcomingNounByTrait(NounSeek.Traits trait)
+    function pledgesForUpcomingNounByTrait(NounSeek.Traits trait)
         public
         view
         returns (
             uint16 nextAuctionId,
             uint16 nextNonAuctionId,
-            uint256[][] memory nextAuctionDonations,
-            uint256[][] memory nextNonAuctionDonations
+            uint256[][] memory nextAuctionPledges,
+            uint256[][] memory nextNonAuctionPledges
         )
     {
         unchecked {
@@ -36,13 +36,13 @@ contract NounSeekViewUtils {
                 nextAuctionId++;
             }
 
-            nextAuctionDonations = nounSeek.donationsForNounIdByTrait(
+            nextAuctionPledges = nounSeek.pledgesForNounIdByTrait(
                 trait,
                 nextAuctionId
             );
 
             if (nextNonAuctionId < UINT16_MAX) {
-                nextNonAuctionDonations = nounSeek.donationsForNounIdByTrait(
+                nextNonAuctionPledges = nounSeek.pledgesForNounIdByTrait(
                     trait,
                     nextNonAuctionId
                 );
@@ -50,14 +50,14 @@ contract NounSeekViewUtils {
         }
     }
 
-    function donationsForNounOnAuctionByTrait(NounSeek.Traits trait)
+    function pledgesForNounOnAuctionByTrait(NounSeek.Traits trait)
         public
         view
         returns (
             uint16 currentAuctionId,
             uint16 prevNonAuctionId,
-            uint256[] memory currentAuctionDonations,
-            uint256[] memory prevNonAuctionDonations
+            uint256[] memory currentAuctionPledges,
+            uint256[] memory prevNonAuctionPledges
         )
     {
         unchecked {
@@ -69,7 +69,7 @@ contract NounSeekViewUtils {
 
             currentTraitId = _fetchTraitId(trait, currentAuctionId);
 
-            currentAuctionDonations = nounSeek.donationsForNounIdByTraitId(
+            currentAuctionPledges = nounSeek.pledgesForNounIdByTraitId(
                 trait,
                 currentTraitId,
                 currentAuctionId
@@ -78,7 +78,7 @@ contract NounSeekViewUtils {
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
                 prevTraitId = _fetchTraitId(trait, prevNonAuctionId);
-                prevNonAuctionDonations = nounSeek.donationsForNounIdByTraitId(
+                prevNonAuctionPledges = nounSeek.pledgesForNounIdByTraitId(
                     trait,
                     prevTraitId,
                     prevNonAuctionId
@@ -87,15 +87,15 @@ contract NounSeekViewUtils {
         }
     }
 
-    function donationsForMatchableNounByTrait(NounSeek.Traits trait)
+    function pledgesForMatchableNounByTrait(NounSeek.Traits trait)
         public
         view
         returns (
             uint16 auctionedNounId,
             uint16 nonAuctionedNounId,
-            uint256[] memory auctionedNounDonations,
-            uint256[] memory nonAuctionedNounDonations,
-            uint256 totalDonations,
+            uint256[] memory auctionedNounPledges,
+            uint256[] memory nonAuctionedNounPledges,
+            uint256 totalPledges,
             uint256 reimbursement
         )
     {
@@ -132,9 +132,9 @@ contract NounSeekViewUtils {
             nonAuctionedNounId = auctionedNounId - 1;
         }
 
-        uint256 doneesCount = nounSeek.donees().length;
+        uint256 recipientsCount = nounSeek.recipients().length;
 
-        auctionedNounDonations = nounSeek.donationsForNounIdByTraitId({
+        auctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
             nounId: auctionedNounId
@@ -143,25 +143,25 @@ contract NounSeekViewUtils {
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
 
         if (includeNonAuctionedNoun) {
-            nonAuctionedNounDonations = nounSeek.donationsForNounIdByTraitId({
+            nonAuctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
                 trait: trait,
                 traitId: _fetchTraitId(trait, nonAuctionedNounId),
                 nounId: nonAuctionedNounId
             });
         }
 
-        for (uint256 doneeId; doneeId < doneesCount; doneeId++) {
-            uint256 nonAuctionedNounDonation;
+        for (uint256 recipientId; recipientId < recipientsCount; recipientId++) {
+            uint256 nonAuctionedNounPledge;
             if (includeNonAuctionedNoun) {
-                nonAuctionedNounDonation = nonAuctionedNounDonations[doneeId];
+                nonAuctionedNounPledge = nonAuctionedNounPledges[recipientId];
             }
-            totalDonations +=
-                auctionedNounDonations[doneeId] +
-                nonAuctionedNounDonation;
+            totalPledges +=
+                auctionedNounPledges[recipientId] +
+                nonAuctionedNounPledge;
         }
         (, reimbursement) = nounSeek
-            .effectiveBPSAndReimbursementForDonationTotal(totalDonations);
-        totalDonations -= reimbursement;
+            .effectiveBPSAndReimbursementForPledgeTotal(totalPledges);
+        totalPledges -= reimbursement;
     }
 
     /**
@@ -187,7 +187,7 @@ contract NounSeekViewUtils {
         return
             nounSeek.requestMatchesNoun(
                 NounSeek.Request({
-                    doneeId: 0,
+                    recipientId: 0,
                     trait: requestTrait,
                     traitId: requestTraitId,
                     nounId: requestNounId,
@@ -198,21 +198,21 @@ contract NounSeekViewUtils {
     }
 
     /**
-     * @notice The amount a given donee will receive (before fees) if a Noun with specific trait parameters is minted
+     * @notice The amount a given recipient will receive (before fees) if a Noun with specific trait parameters is minted
      * @param trait The trait enum
      * @param traitId The ID of the trait
      * @param nounId The Noun ID
-     * @param doneeId The donee ID
+     * @param recipientId The recipient ID
      * @return amount The amount before fees
      */
-    function amountForDoneeByTrait(
+    function amountForRecipientByTrait(
         NounSeek.Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint16 doneeId
+        uint16 recipientId
     ) public view returns (uint256 amount) {
         bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-        amount = nounSeek.amounts(hash, doneeId);
+        amount = nounSeek.amounts(hash, recipientId);
     }
 
     /**
@@ -254,20 +254,20 @@ contract NounSeekViewUtils {
     }
 
     /**
-     * @notice Maps array of Donees to array of active status booleans
-     * @param doneesCount Cached length of _donees array
+     * @notice Maps array of Recipients to array of active status booleans
+     * @param recipientsCount Cached length of _recipients array
      * @return isActive Array of active status booleans
      */
-    function _mapDoneeActive(uint256 doneesCount)
+    function _mapRecipientActive(uint256 recipientsCount)
         internal
         view
         returns (bool[] memory isActive)
     {
         unchecked {
-            isActive = new bool[](doneesCount);
-            NounSeek.Donee[] memory donees = nounSeek.donees();
-            for (uint256 i; i < doneesCount; i++) {
-                isActive[i] = donees[i].active;
+            isActive = new bool[](recipientsCount);
+            NounSeek.Recipient[] memory recipients = nounSeek.recipients();
+            for (uint256 i; i < recipientsCount; i++) {
+                isActive[i] = recipients[i].active;
             }
         }
     }

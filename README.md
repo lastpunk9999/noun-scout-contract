@@ -13,7 +13,7 @@ Allows anyone to put up a reward for minting a Noun with a specific trait and do
 
 **Adding to a Request**
 - Another user can create the same `Request` for `trait` and `traitId` combination, and specify the same charity or another.
-- Adding can be done at any time before a Noun with specific traits is minted, or during the auction of a matched Noun which allows others to contribute to the donation during the auction time window.
+- Adding can be done at any time before a Noun with specific traits is minted, or during the auction of a matched Noun which allows others to contribute to the pledge during the auction time window.
  - *Example:*
    - Alice makes 1 ETH request is made to mint a `panda` head Noun, with funds being donated to the World Wildlife Foundation
    - Noun 34 is minted with a `panda` head
@@ -25,7 +25,7 @@ Allows anyone to put up a reward for minting a Noun with a specific trait and do
    - 0.495 ETH is sent to the Rainforest Foundation
    - 0.025 ETH is sent to the `matcher`
 
-**Matching Requests to a Noun and sending the cumulative donations**
+**Matching Requests to a Noun and sending the cumulative pledges**
 - If a Noun was minted that matches one more more `Requests`, the match can only be made after its auction has been settled, and at any time during the auction of the next Noun.
  - *Example:*
    - A 1 ETH request is made to mint a Noun with `blue` glasses, with funds donated to the Coral Restoration Foundation
@@ -36,7 +36,7 @@ Allows anyone to put up a reward for minting a Noun with a specific trait and do
    - 0.01 ETH is sent to the `matcher`
 
 **Reimbursement for `matchers`**
-- To incintivize matching, a user who matches a Noun to a set of `Requests` will be automatically sent 1% of the total donations made to charity/public goods.
+- To incintivize matching, a user who matches a Noun to a set of `Requests` will be automatically sent 1% of the total pledges made to charity/public goods.
 
 **Removing a Request**
 - A `request` may choose to keep their `Request` active forever
