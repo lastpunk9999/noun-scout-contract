@@ -788,7 +788,11 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         for (uint256 trait; trait < 5; trait++) {
-            for (uint256 recipientId; recipientId < recipientsCount; recipientId++) {
+            for (
+                uint256 recipientId;
+                recipientId < recipientsCount;
+                recipientId++
+            ) {
                 uint256 nonAuctionedNounPledge;
                 if (includeNonAuctionedNoun) {
                     nonAuctionedNounPledge = nonAuctionedNounPledges[trait][
@@ -1026,8 +1030,7 @@ contract NounSeek is Ownable2Step, Pausable {
             if (amount < 1) {
                 continue;
             }
-            uint256 pledge = (amount * (1_000_000 - effectiveBPS)) /
-                1_000_000;
+            uint256 pledge = (amount * (1_000_000 - effectiveBPS)) / 1_000_000;
             reimbursement += amount - pledge;
             donations[i] = pledge;
             _safeTransferETHWithFallback(_recipients[i].to, pledge);
@@ -1086,10 +1089,16 @@ contract NounSeek is Ownable2Step, Pausable {
      * @param active Active state
      * @dev If the Done is not configured, a revert will be triggered
      */
-    function setRecipientActive(uint256 recipientId, bool active) external onlyOwner {
+    function setRecipientActive(uint256 recipientId, bool active)
+        external
+        onlyOwner
+    {
         if (active == _recipients[recipientId].active) return;
         _recipients[recipientId].active = active;
-        emit RecipientActiveStatusChanged({recipientId: recipientId, active: active});
+        emit RecipientActiveStatusChanged({
+            recipientId: recipientId,
+            active: active
+        });
     }
 
     /**
@@ -1328,7 +1337,11 @@ contract NounSeek is Ownable2Step, Pausable {
                 anyIdHash = traitHash(trait, traitId, ANY_ID);
             }
             pledges = new uint256[](recipientsCount);
-            for (uint16 recipientId; recipientId < recipientsCount; recipientId++) {
+            for (
+                uint16 recipientId;
+                recipientId < recipientsCount;
+                recipientId++
+            ) {
                 if (!isActive[recipientId]) continue;
                 uint256 anyIdAmount = processAnyId
                     ? amounts[anyIdHash][recipientId]
