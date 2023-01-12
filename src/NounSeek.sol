@@ -23,9 +23,9 @@ contract NounSeek is Ownable2Step, Pausable {
     error MatchFound(uint16 nounId);
 
     /**
-     * @notice Thrown when an attempting to remove a Request that was previously matched
+     * @notice Thrown when an attempting to remove a Request that was previously matched (donation was sent)
      */
-    error PledgeAlreadySent();
+    error DonationAlreadySent();
 
     /**
      * @notice Thrown when attempting to remove a Request that was previously removed.
@@ -33,7 +33,7 @@ contract NounSeek is Ownable2Step, Pausable {
     error AlreadyRemoved();
 
     /**
-     * @notice Thrown when attempting to match the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
+     * @notice Thrown when attempting to settle the eligible Noun that has no matching Requests for the specified Trait Type and Trait ID
      */
     error NoMatch();
 
@@ -124,10 +124,10 @@ contract NounSeek is Ownable2Step, Pausable {
 
     /**
      * @notice Emitted when an eligible Noun matches one or more Requests
-     * @param matcher The addressed that performed the matching function
+     * @param settler The addressed that performed the settling function
      * @param amount The reimbursement amount
      */
-    event Reimbursed(address indexed matcher, uint256 amount);
+    event Reimbursed(address indexed settler, uint256 amount);
 
     /**
      * @notice Emitted when the minValue changes
@@ -272,7 +272,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint16 public baseReimbursementBPS = 250;
 
     /**
-     * @notice minimum reimbursement for matching
+     * @notice minimum reimbursement for settling
      * @dev The default attempts to cover 10 recipient matches each sent the default minimimum value (150_000 gas at 20 Gwei/gas)
      * Owner can update
      * @return minReimbursement
@@ -280,7 +280,7 @@ contract NounSeek is Ownable2Step, Pausable {
     uint256 public minReimbursement = 0.003 ether;
 
     /**
-     * @notice maximum reimbursement for matching; with default BPS value, this is reached at 4 ETH total pledges
+     * @notice maximum reimbursement for settling; with default BPS value, this is reached at 4 ETH total pledges
      * @dev Owner can update
      * @return maxReimbursement
      */
@@ -722,7 +722,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @return auctionedNounPledges Total pledges for the eligible auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
      * @return nonAuctionedNounPledges If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
      * @return totalPledgesPerTrait An array of total pledge pledged minus reimbursement across all Recipients, indexed by Trait Type
-     * @return reimbursementPerTrait An array of matcher's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type
+     * @return reimbursementPerTrait An array of settler's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type
      */
     function pledgesForMatchableNoun()
         public
@@ -749,7 +749,7 @@ contract NounSeek is Ownable2Step, Pausable {
 
         /// The Noun ID of the previous to the current Noun on auction
         auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
-        /// Setup a parameter to detect if a non-auctioned Noun should  be matched
+        /// Setup a parameter to detect if a non-auctioned Noun should be matched
         nonAuctionedNounId = UINT16_MAX;
 
         /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
@@ -908,7 +908,7 @@ contract NounSeek is Ownable2Step, Pausable {
     /**
      * @notice Remove the specified request and return the associated amount.
      * @dev Must be called by the Requester's address.
-     * If the Request has already been matched/sent to the Recipient or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations)
+     * If the Request has already been settled/donation was sent to the Recipient or the current auction is ending soon, this will revert (See { _getRequestStatusAndParams } for calculations)
      * If the Recipient of the Request is marked as inactive, the funds can be returned immediately
      * @param requestId Request Id
      * @param amount The amount sent to the requester
@@ -924,7 +924,7 @@ contract NounSeek is Ownable2Step, Pausable {
         if (status == RequestStatus.CAN_REMOVE) {
             return _remove(request, requestId, hash);
         } else if (status == RequestStatus.PLEDGE_SENT) {
-            revert PledgeAlreadySent();
+            revert DonationAlreadySent();
         } else if (status == RequestStatus.REMOVED) {
             revert AlreadyRemoved();
         } else if (status == RequestStatus.AUCTION_ENDING_SOON) {
@@ -965,7 +965,7 @@ contract NounSeek is Ownable2Step, Pausable {
          */
         /// The Noun ID of the previous to the current Noun on auction
         uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
-        /// Setup a parameter to detect if a non-auctioned Noun should  be matched
+        /// Setup a parameter to detect if a non-auctioned Noun should be matched
         uint16 nonAuctionedNounId = UINT16_MAX;
 
         /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
@@ -1030,15 +1030,16 @@ contract NounSeek is Ownable2Step, Pausable {
             if (amount < 1) {
                 continue;
             }
-            uint256 pledge = (amount * (1_000_000 - effectiveBPS)) / 1_000_000;
-            reimbursement += amount - pledge;
-            donations[i] = pledge;
-            _safeTransferETHWithFallback(_recipients[i].to, pledge);
+            uint256 donation = (amount * (1_000_000 - effectiveBPS)) /
+                1_000_000;
+            reimbursement += amount - donation;
+            donations[i] = donation;
+            _safeTransferETHWithFallback(_recipients[i].to, donation);
         }
         emit Donated(donations);
 
         _safeTransferETHWithFallback(msg.sender, reimbursement);
-        emit Reimbursed({matcher: msg.sender, amount: reimbursement});
+        emit Reimbursed({settler: msg.sender, amount: reimbursement});
     }
 
     /**
@@ -1138,7 +1139,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Sets the minium reimbursement amount when matching
+     * @notice Sets the minium reimbursement amount when settling
      * @param newMinReimbursement new minimum value
      */
     function setMinReimbursement(uint256 newMinReimbursement)
@@ -1152,7 +1153,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Sets the maximum reimbursement amount when matching
+     * @notice Sets the maximum reimbursement amount when settling
      * @param newMaxReimbursement new maximum value
      */
     function setMaxReimbursement(uint256 newMaxReimbursement)

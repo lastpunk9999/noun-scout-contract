@@ -659,13 +659,13 @@ contract NounSeekTest is BaseNounSeekTest {
         nounSeek.settle(HEAD, 100, allRecipientIds);
 
         vm.startPrank(user1);
-        vm.expectRevert(NounSeek.PledgeAlreadySent.selector);
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
 
         nounSeek.remove(requestId1);
 
         mockAuctionHouse.setNounId(103);
 
-        vm.expectRevert(NounSeek.PledgeAlreadySent.selector);
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
 
         nounSeek.remove(requestId1);
     }
@@ -807,7 +807,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         // requestId2 cannot be removed
         vm.startPrank(user1);
-        vm.expectRevert(NounSeek.PledgeAlreadySent.selector);
+        vm.expectRevert(NounSeek.DonationAlreadySent.selector);
 
         nounSeek.remove(requestId2);
     }
