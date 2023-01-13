@@ -253,7 +253,10 @@ contract NounSeekTest is BaseNounSeekTest {
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
             assertEq(nextAuctionPledges[trait][trait].length, recipientsCount);
-            assertEq(nextNonAuctionPledges[trait][trait].length, recipientsCount);
+            assertEq(
+                nextNonAuctionPledges[trait][trait].length,
+                recipientsCount
+            );
         }
         for (uint256 trait = 1; trait < 5; trait++) {
             for (uint256 traitId; traitId < 10; traitId++) {
@@ -362,9 +365,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
     }
 
-    function test_PLEDGESFORNOUNONAUCTION_NoNonAuctionedNoSpecificID()
-        public
-    {
+    function test_PLEDGESFORNOUNONAUCTION_NoNonAuctionedNoSpecificID() public {
         vm.startPrank(user1);
 
         // For Each trait, except Background
@@ -711,8 +712,8 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nonAuctionedNounId,
             uint256[][5] memory auctionedNounPledges,
             uint256[][5] memory nonAuctionedNounPledges,
-            uint256[5] memory totalPledgesPerTrait,
-            uint256[5] memory reimbursementPerTrait
+            uint256[5] memory auctionNounTotalReimbursement,
+            uint256[5] memory nonAuctionNounTotalReimbursement
         ) = nounSeek.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 102);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -729,29 +730,29 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(nonAuctionedNounPledges[3].length, 0);
         assertEq(nonAuctionedNounPledges[4].length, 0);
 
-        assertEq(totalPledgesPerTrait.length, 5);
-        assertEq(reimbursementPerTrait.length, 5);
+        assertEq(auctionNounTotalReimbursement.length, 5);
+        assertEq(nonAuctionNounTotalReimbursement.length, 5);
         for (uint256 trait; trait < 5; trait++) {
             // The BODY and HEAD trait of the seed for Noun 101 do not match any requests which were for traitIds less than 10
             // These are expected to be 0
-            uint256 expectedPledge = (trait == 1 || trait == 3)
-                ? 0
-                : minValue;
+            uint256 expectedPledge = (trait == 1 || trait == 3) ? 0 : minValue;
             assertEq(auctionedNounPledges[trait][0], expectedPledge);
             assertEq(auctionedNounPledges[trait][1], expectedPledge * 2);
             assertEq(auctionedNounPledges[trait][2], 0);
             assertEq(auctionedNounPledges[trait][3], 0);
 
+            // Auctioned Noun
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
                 : minReimbursement;
-            assertEq(reimbursementPerTrait[trait], expectedReimbursement);
+            assertEq(
+                auctionNounTotalReimbursement[trait],
+                expectedReimbursement
+            );
 
-            uint256 expectedPerTraitPledge = (trait == 1 || trait == 3)
-                ? 0
-                : (minValue * 3) - minReimbursement;
-            assertEq(totalPledgesPerTrait[trait], expectedPerTraitPledge);
+            // Non-Auctioned Noun
+            assertEq(nonAuctionNounTotalReimbursement[trait], 0);
         }
     }
 
@@ -822,8 +823,8 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nonAuctionedNounId,
             uint256[][5] memory auctionedNounPledges,
             uint256[][5] memory nonAuctionedNounPledges,
-            uint256[5] memory totalPledgesPerTrait,
-            uint256[5] memory reimbursementPerTrait
+            uint256[5] memory auctionNounTotalReimbursement,
+            uint256[5] memory nonAuctionNounTotalReimbursement
         ) = nounSeek.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 99);
         assertEq(nonAuctionedNounId, type(uint16).max);
@@ -840,29 +841,29 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(nonAuctionedNounPledges[3].length, 0);
         assertEq(nonAuctionedNounPledges[4].length, 0);
 
-        assertEq(totalPledgesPerTrait.length, 5);
-        assertEq(reimbursementPerTrait.length, 5);
+        assertEq(auctionNounTotalReimbursement.length, 5);
+        assertEq(nonAuctionNounTotalReimbursement.length, 5);
         for (uint256 trait; trait < 5; trait++) {
             // The BODY and HEAD trait of the seed for Noun 101 do not match any requests which were for traitIds less than 10
             // These are expected to be 0
-            uint256 expectedPledge = (trait == 1 || trait == 3)
-                ? 0
-                : minValue;
+            uint256 expectedPledge = (trait == 1 || trait == 3) ? 0 : minValue;
             assertEq(auctionedNounPledges[trait][0], expectedPledge);
             assertEq(auctionedNounPledges[trait][1], expectedPledge * 2);
             assertEq(auctionedNounPledges[trait][2], 0);
             assertEq(auctionedNounPledges[trait][3], 0);
 
+            // Auctioned Noun
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
                 : minReimbursement;
-            assertEq(reimbursementPerTrait[trait], expectedReimbursement);
+            assertEq(
+                auctionNounTotalReimbursement[trait],
+                expectedReimbursement
+            );
 
-            uint256 expectedPerTraitPledge = (trait == 1 || trait == 3)
-                ? 0
-                : (minValue * 3) - minReimbursement;
-            assertEq(totalPledgesPerTrait[trait], expectedPerTraitPledge);
+            // Non-Auctioned Noun
+            assertEq(nonAuctionNounTotalReimbursement[trait], 0);
         }
     }
 
@@ -895,8 +896,8 @@ contract NounSeekTest is BaseNounSeekTest {
                     101,
                     1
                 );
-                // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
+                // add a maxValue request for Noun 100, to recipient 2
+                nounSeek.add{value: maxValue}(
                     NounSeek.Traits(trait),
                     traitId,
                     100,
@@ -933,8 +934,8 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nonAuctionedNounId,
             uint256[][5] memory auctionedNounPledges,
             uint256[][5] memory nonAuctionedNounPledges,
-            uint256[5] memory totalPledgesPerTrait,
-            uint256[5] memory reimbursementPerTrait
+            uint256[5] memory auctionNounTotalReimbursement,
+            uint256[5] memory nonAuctionNounTotalReimbursement
         ) = nounSeek.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 101);
         assertEq(nonAuctionedNounId, 100);
@@ -951,36 +952,42 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(nonAuctionedNounPledges[3].length, recipientsCount);
         assertEq(nonAuctionedNounPledges[4].length, recipientsCount);
 
-        assertEq(totalPledgesPerTrait.length, 5);
-        assertEq(reimbursementPerTrait.length, 5);
+        assertEq(auctionNounTotalReimbursement.length, 5);
+        assertEq(nonAuctionNounTotalReimbursement.length, 5);
         for (uint256 trait; trait < 5; trait++) {
             // The BODY and HEAD trait of the seed for Noun 101 do not match any requests which were for traitIds less than 10
             // These are expected to be 0
-            uint256 expectedPledge = (trait == 1 || trait == 3)
-                ? 0
-                : minValue;
+            uint256 expectedPledge = (trait == 1 || trait == 3) ? 0 : minValue;
             assertEq(auctionedNounPledges[trait][0], expectedPledge);
             assertEq(auctionedNounPledges[trait][1], expectedPledge * 2);
             assertEq(auctionedNounPledges[trait][2], 0);
             assertEq(auctionedNounPledges[trait][3], 0);
 
+            expectedPledge = (trait == 1 || trait == 3) ? 0 : maxValue;
             assertEq(nonAuctionedNounPledges[trait][0], 0);
             assertEq(nonAuctionedNounPledges[trait][1], 0);
             assertEq(nonAuctionedNounPledges[trait][2], expectedPledge);
             assertEq(nonAuctionedNounPledges[trait][3], 0);
 
+            // Auctioned Noun
             // Minimum value was sent, so minimum reimbursement is applied
             uint256 expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
                 : minReimbursement;
-            assertEq(reimbursementPerTrait[trait], expectedReimbursement);
+            assertEq(
+                auctionNounTotalReimbursement[trait],
+                expectedReimbursement
+            );
 
-            // 4 requests total for the trait
-            // (1) ANY ID (2) ANY ID (3) 101 specific Id (4) 101 specific id
-            uint256 expectedPerTraitPledge = (trait == 1 || trait == 3)
+            // Non-Auctioned Noun
+            // Maximum value was sent (that can be reimbursed), so max reimbursement is applied
+            expectedReimbursement = (trait == 1 || trait == 3)
                 ? 0
-                : (minValue * 4) - minReimbursement;
-            assertEq(totalPledgesPerTrait[trait], expectedPerTraitPledge);
+                : maxReimbursement;
+            assertEq(
+                nonAuctionNounTotalReimbursement[trait],
+                expectedReimbursement
+            );
         }
     }
 
@@ -1042,8 +1049,8 @@ contract NounSeekTest is BaseNounSeekTest {
             ,
             uint256[][5] memory auctionedNounPledges,
             ,
-            uint256[5] memory totalPledgesPerTrait,
-            uint256[5] memory reimbursementPerTrait
+            uint256[5] memory auctionNounTotalReimbursement,
+
         ) = nounSeek.pledgesForMatchableNoun();
 
         uint256 recipientsCount = nounSeek.recipients().length;
@@ -1066,28 +1073,16 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(auctionedNounPledges[3][1], 0);
         assertEq(auctionedNounPledges[4][1], 0);
 
-        // Include only recipient0 matches minus minReimbursement
-        assertEq(totalPledgesPerTrait[1], (minValue * 2) - minReimbursement);
-        assertEq(totalPledgesPerTrait[2], (minValue * 2) - minReimbursement);
-        assertEq(totalPledgesPerTrait[3], (minValue * 2) - minReimbursement);
-        assertEq(totalPledgesPerTrait[4], (minValue * 2) - minReimbursement);
-
-        assertEq(reimbursementPerTrait[1], minReimbursement);
-        assertEq(reimbursementPerTrait[2], minReimbursement);
-        assertEq(reimbursementPerTrait[3], minReimbursement);
-        assertEq(reimbursementPerTrait[4], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[1], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[2], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[3], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[4], minReimbursement);
 
         // set recipient1 active
         nounSeek.setRecipientActive(1, true);
 
-        (
-            ,
-            ,
-            auctionedNounPledges,
-            ,
-            totalPledgesPerTrait,
-            reimbursementPerTrait
-        ) = nounSeek.pledgesForMatchableNoun();
+        (, , auctionedNounPledges, , auctionNounTotalReimbursement, ) = nounSeek
+            .pledgesForMatchableNoun();
 
         // recipient0 has values
         assertEq(auctionedNounPledges[1][0], minValue * 2);
@@ -1101,15 +1096,9 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(auctionedNounPledges[3][1], minValue * 2);
         assertEq(auctionedNounPledges[4][1], minValue * 2);
 
-        // Include recipient0 and recipient1 matches minus minReimbursement
-        assertEq(totalPledgesPerTrait[1], (minValue * 4) - minReimbursement);
-        assertEq(totalPledgesPerTrait[2], (minValue * 4) - minReimbursement);
-        assertEq(totalPledgesPerTrait[3], (minValue * 4) - minReimbursement);
-        assertEq(totalPledgesPerTrait[4], (minValue * 4) - minReimbursement);
-
-        assertEq(reimbursementPerTrait[1], minReimbursement);
-        assertEq(reimbursementPerTrait[2], minReimbursement);
-        assertEq(reimbursementPerTrait[3], minReimbursement);
-        assertEq(reimbursementPerTrait[4], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[1], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[2], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[3], minReimbursement);
+        assertEq(auctionNounTotalReimbursement[4], minReimbursement);
     }
 }

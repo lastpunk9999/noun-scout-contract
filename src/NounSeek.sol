@@ -721,8 +721,8 @@ contract NounSeek is Ownable2Step, Pausable {
      * @return nonAuctionedNounId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
      * @return auctionedNounPledges Total pledges for the eligible auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
      * @return nonAuctionedNounPledges If two Nouns were minted, this will contain the total pledges for the previous non-auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
-     * @return totalPledgesPerTrait An array of total pledge pledged minus reimbursement across all Recipients, indexed by Trait Type
-     * @return reimbursementPerTrait An array of settler's reimbursement that will be sent if a Trait Type is matched, indexed by Trait Type
+     * @return auctionNounTotalReimbursement An array of settler's reimbursement that will be sent if a Trait Type is matched to the auctioned Noun, indexed by Trait Type
+     * @return nonAuctionNounTotalReimbursement An array of settler's reimbursement that will be sent if a Trait Type is matched to the non-auctioned Noun, indexed by Trait Type
      */
     function pledgesForMatchableNoun()
         public
@@ -732,8 +732,8 @@ contract NounSeek is Ownable2Step, Pausable {
             uint16 nonAuctionedNounId,
             uint256[][5] memory auctionedNounPledges,
             uint256[][5] memory nonAuctionedNounPledges,
-            uint256[5] memory totalPledgesPerTrait,
-            uint256[5] memory reimbursementPerTrait
+            uint256[5] memory auctionNounTotalReimbursement,
+            uint256[5] memory nonAuctionNounTotalReimbursement
         )
     {
         /**
@@ -786,6 +786,8 @@ contract NounSeek is Ownable2Step, Pausable {
                 recipientsCount: recipientsCount
             });
         }
+        uint256[5] memory auctionedNounPledgesTotal;
+        uint256[5] memory nonAuctionedNounPledgesTotal;
 
         for (uint256 trait; trait < 5; trait++) {
             for (
@@ -793,23 +795,27 @@ contract NounSeek is Ownable2Step, Pausable {
                 recipientId < recipientsCount;
                 recipientId++
             ) {
-                uint256 nonAuctionedNounPledge;
+                auctionedNounPledgesTotal[trait] += auctionedNounPledges[trait][
+                    recipientId
+                ];
                 if (includeNonAuctionedNoun) {
-                    nonAuctionedNounPledge = nonAuctionedNounPledges[trait][
-                        recipientId
-                    ];
+                    nonAuctionedNounPledgesTotal[
+                        trait
+                    ] += nonAuctionedNounPledges[trait][recipientId];
                 }
-                totalPledgesPerTrait[trait] +=
-                    auctionedNounPledges[trait][recipientId] +
-                    nonAuctionedNounPledge;
             }
             (
                 ,
-                reimbursementPerTrait[trait]
+                auctionNounTotalReimbursement[trait]
             ) = _effectiveHighPrecisionBPSForPledgeTotal(
-                totalPledgesPerTrait[trait]
+                auctionedNounPledgesTotal[trait]
             );
-            totalPledgesPerTrait[trait] -= reimbursementPerTrait[trait];
+            (
+                ,
+                nonAuctionNounTotalReimbursement[trait]
+            ) = _effectiveHighPrecisionBPSForPledgeTotal(
+                nonAuctionedNounPledgesTotal[trait]
+            );
         }
     }
 

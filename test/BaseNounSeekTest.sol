@@ -13,7 +13,7 @@ contract EnhancedTest is Test {
             uint160(uint256(keccak256(abi.encodePacked(name))))
         );
         vm.label(addr, name);
-        vm.deal(addr, 100e18);
+        vm.deal(addr, 10000e18);
         return addr;
     }
 }
@@ -37,6 +37,7 @@ contract BaseNounSeekTest is EnhancedTest {
     uint256 AUCTION_END_LIMIT;
     uint16 ANY_ID;
     uint256 minValue;
+    uint256 maxValue;
     uint256 messageValue;
     uint256 baseReimbursementBPS;
 
@@ -59,6 +60,7 @@ contract BaseNounSeekTest is EnhancedTest {
         baseReimbursementBPS = nounSeek.baseReimbursementBPS();
         maxReimbursement = nounSeek.maxReimbursement();
         minReimbursement = nounSeek.minReimbursement();
+        maxValue = (maxReimbursement * 10_000) / baseReimbursementBPS;
 
         nounSeek.addRecipient("recipient0", recipient0, "recipient0");
         nounSeek.addRecipient("recipient1", recipient1, "recipient1");
@@ -76,10 +78,14 @@ contract BaseNounSeekTest is EnhancedTest {
         allRecipientIds = recipientIds(nounSeek.recipients().length, 0, 1);
     }
 
-    function recipientIds(uint256 length, uint16 skip, uint16 mul) public pure returns(uint16[] memory _recipientIds){
+    function recipientIds(
+        uint256 length,
+        uint16 skip,
+        uint16 mul
+    ) public pure returns (uint16[] memory _recipientIds) {
         _recipientIds = new uint16[](length);
-        for (uint16 i; i < length; i++){
-            _recipientIds[i]=(i*mul)+skip;
+        for (uint16 i; i < length; i++) {
+            _recipientIds[i] = (i * mul) + skip;
         }
     }
 }
