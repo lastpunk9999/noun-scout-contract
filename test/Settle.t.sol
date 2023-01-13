@@ -8,7 +8,7 @@ import "./MockContracts.sol";
 import "../src/Interfaces.sol";
 import "./BaseNounSeekTest.sol";
 
-contract MatchAndDonate is BaseNounSeekTest {
+contract Settle is BaseNounSeekTest {
     function setUp() public override {
         BaseNounSeekTest.setUp();
     }
