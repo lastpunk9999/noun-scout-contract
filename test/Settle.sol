@@ -467,9 +467,7 @@ contract MatchAndDonate is BaseNounSeekTest {
         assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);
     }
 
-    function test_SETTLE_failsIneligibleImmediateAuctionedNounId()
-        public
-    {
+    function test_SETTLE_failsIneligibleImmediateAuctionedNounId() public {
         // only 99 is eligible
         mockAuctionHouse.setNounId(101);
         // ineligible
@@ -569,5 +567,32 @@ contract MatchAndDonate is BaseNounSeekTest {
                 minValue
             );
         }
+    }
+
+    function test_SETTLE_revertsWhenPaused() public {
+        vm.prank(user1);
+        // 1 Should match
+        nounSeek.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+        mockNouns.setSeed(seed, 102);
+        mockAuctionHouse.setNounId(103);
+
+        nounSeek.pause();
+
+        vm.expectRevert(bytes("Pausable: paused"));
+        nounSeek.settle(HEAD, 102, allRecipientIds);
+
+        nounSeek.unpause();
+
+        vm.startPrank(user2);
+        vm.expectCall(address(user2), minReimbursement, "");
+        nounSeek.settle(HEAD, 102, allRecipientIds);
     }
 }

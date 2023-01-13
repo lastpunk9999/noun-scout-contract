@@ -958,7 +958,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16 nounId,
         uint16[] memory recipientIds
-    ) public returns (uint256 total, uint256 reimbursement) {
+    ) public whenNotPaused returns (uint256 total, uint256 reimbursement) {
         /**
          * Cases for eligible matched Nouns:
          *
@@ -1421,6 +1421,10 @@ contract NounSeek is Ownable2Step, Pausable {
         }
 
         hash = traitHash(request.trait, request.traitId, request.nounId);
+
+        if (paused()) {
+            return (RequestStatus.CAN_REMOVE, hash, nounId);
+        }
 
         uint16 recipientId = request.recipientId;
 

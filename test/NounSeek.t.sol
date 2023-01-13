@@ -930,6 +930,42 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(recipient1Amount, 0);
     }
 
+    function test_REMOVE_removeAfterPause() public {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+
+        uint256 requestId = nounSeek.add{value: minValue}(HEAD, 9, 100, 1);
+
+        vm.expectRevert(NounSeek.AuctionEndingSoon.selector);
+        nounSeek.remove(requestId);
+        vm.stopPrank();
+
+        nounSeek.pause();
+        NounSeek.RequestWithStatus[] memory requests = nounSeek
+            .requestsByAddress(user1);
+        assertEq(requests.length, 1);
+        assertEq(
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.CAN_REMOVE)
+        );
+
+        nounSeek.unpause();
+        requests = nounSeek.requestsByAddress(user1);
+        assertEq(requests.length, 1);
+        assertEq(
+            uint8(requests[0].status),
+            uint8(NounSeek.RequestStatus.AUCTION_ENDING_SOON)
+        );
+
+        nounSeek.pause();
+        vm.prank(user1);
+        nounSeek.remove(requestId);
+        requests = nounSeek.requestsByAddress(user1);
+        assertEq(requests.length, 0);
+    }
+
     function test_REQUESTSBYACTIVEADDRESS_happyCase() public {
         vm.startPrank(user1);
         // 1 Should match
