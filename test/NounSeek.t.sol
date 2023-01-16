@@ -16,7 +16,7 @@ contract NounSeekTest is BaseNounSeekTest {
         uint16 traitId,
         uint16 recipientId,
         uint16 indexed nounId,
-        uint16 nonce,
+        uint16 pledgeGroupId,
         bytes32 indexed traitsHash,
         uint256 amount,
         string message
@@ -27,7 +27,7 @@ contract NounSeekTest is BaseNounSeekTest {
         NounSeek.Traits trait,
         uint16 traitId,
         uint16 indexed nounId,
-        uint16 nonce,
+        uint16 pledgeGroupId,
         uint16 recipientId,
         bytes32 indexed traitsHash,
         uint256 amount
@@ -197,7 +197,9 @@ contract NounSeekTest is BaseNounSeekTest {
         );
     }
 
-    function test_ADD_happyCase_storesNonceIncrementsAfterSettle() public {
+    function test_ADD_happyCase_storesPledgeGroupIdIncrementsAfterSettle()
+        public
+    {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
@@ -227,7 +229,7 @@ contract NounSeekTest is BaseNounSeekTest {
             requestId1
         );
 
-        assertEq(request1.nonce, 0);
+        assertEq(request1.pledgeGroupId, 0);
 
         // - removes first request
         vm.prank(user1);
@@ -257,8 +259,8 @@ contract NounSeekTest is BaseNounSeekTest {
             requestId2
         );
 
-        // nonce has not incremeneted
-        assertEq(request2.nonce, request1.nonce);
+        // pledgeGroupId has not incremeneted
+        assertEq(request2.pledgeGroupId, request1.pledgeGroupId);
 
         // set seed for previous auction
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
@@ -276,7 +278,7 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.prank(user2);
         nounSeek.settle(HEAD, 101, allRecipientIds);
 
-        // User 1 adds another request, nonce should increase
+        // User 1 adds another request, pledgeGroupId should increase
         vm.expectEmit(true, true, true, true);
         emit RequestAdded(
             2,
@@ -301,8 +303,8 @@ contract NounSeekTest is BaseNounSeekTest {
             requestId3
         );
 
-        // nonce has incremeneted
-        assertEq(request3.nonce, request2.nonce + 1);
+        // pledgeGroupId has incremeneted
+        assertEq(request3.pledgeGroupId, request2.pledgeGroupId + 1);
     }
 
     function test_ADD_failsWhenPaused() public {

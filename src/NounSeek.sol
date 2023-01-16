@@ -67,7 +67,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId,
         uint16 recipientId,
         uint16 indexed nounId,
-        uint16 nonce,
+        uint16 pledgeGroupId,
         bytes32 indexed traitsHash,
         uint256 amount,
         string message
@@ -82,7 +82,7 @@ contract NounSeek is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 indexed nounId,
-        uint16 nonce,
+        uint16 pledgeGroupId,
         uint16 recipientId,
         bytes32 indexed traitsHash,
         uint256 amount
@@ -170,7 +170,7 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 traitId;
         uint16 recipientId;
         uint16 nounId;
-        uint16 nonce;
+        uint16 pledgeGroupId;
         uint128 amount;
     }
 
@@ -188,11 +188,11 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Used to track cumlitive amounts for a recipient . Nonce is incremented when pledged amounts are sent; See `pledgeGroups` variable and `_combineAmountsAndDelete` function
+     * @notice Used to track cumlitive amounts for a recipient . `id` is incremented when pledged amounts are sent; See `pledgeGroups` variable and `_combineAmountsAndDelete` function
      */
     struct PledgeGroup {
         uint240 amount;
-        uint16 nonce;
+        uint16 id;
     }
 
     /**
@@ -355,7 +355,7 @@ contract NounSeek is Ownable2Step, Pausable {
      * @notice Cumulative funds to be sent to a specific recipient scoped to trait type, trait ID, and  Noun ID.
      * @dev The first mapping key is can be generated with the `traitsHash` function
      * and the second is recipientId.
-     * Nonce tracks which group of pledges have been sent. See `_combineAmountsAndDelete()`
+     * `id` tracks which group of pledges have been sent. When a pledge is sent, the ID is incremented. See `_combineAmountsAndDelete()`
      */
     mapping(bytes32 => mapping(uint16 => PledgeGroup)) public pledgeGroups;
 
@@ -1232,7 +1232,7 @@ contract NounSeek is Ownable2Step, Pausable {
                 trait: trait,
                 traitId: traitId,
                 nounId: nounId,
-                nonce: pledge.nonce,
+                pledgeGroupId: pledge.id,
                 amount: uint128(amount)
             })
         );
@@ -1244,7 +1244,7 @@ contract NounSeek is Ownable2Step, Pausable {
             traitId: traitId,
             recipientId: recipientId,
             nounId: nounId,
-            nonce: pledge.nonce,
+            pledgeGroupId: pledge.id,
             traitsHash: hash,
             amount: amount,
             message: message
@@ -1271,7 +1271,7 @@ contract NounSeek is Ownable2Step, Pausable {
             trait: request.trait,
             traitId: request.traitId,
             nounId: request.nounId,
-            nonce: request.nonce,
+            pledgeGroupId: request.pledgeGroupId,
             recipientId: request.recipientId,
             traitsHash: hash,
             amount: amount
@@ -1284,7 +1284,7 @@ contract NounSeek is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate pledge and reimubersement amounts, sets a new PledgeGroup record with amount set to 0 and nonce increased by 1.
+     * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate pledge and reimubersement amounts, sets a new PledgeGroup record with amount set to 0 and pledgeGroupId increased by 1.
      * @param trait The trait type requests should match (see `Traits` Enum)
      * @param traitIds Specific trait ID
      * @param nounIds Specific Noun ID
@@ -1324,8 +1324,8 @@ contract NounSeek is Ownable2Step, Pausable {
                 pledges[recipientIds[j]] += pledge.amount;
 
                 pledgeGroups[hash][recipientIds[j]] = PledgeGroup({
-                    amount: 0,
-                    nonce: pledge.nonce + 1
+                    id: pledge.id + 1,
+                    amount: 0
                 });
             }
 
@@ -1454,7 +1454,8 @@ contract NounSeek is Ownable2Step, Pausable {
         uint16 recipientId = request.recipientId;
 
         // If current pledgeGroup's ID is different than the ID the request was part of, the pledge has been sent
-        bool matched = pledgeGroups[hash][recipientId].nonce > request.nonce;
+        bool matched = pledgeGroups[hash][recipientId].id >
+            request.pledgeGroupId;
 
         // Recipient is inactive (and/or was inactive at the time of match) and there are funds to return
         if (!_recipients[recipientId].active && !matched)

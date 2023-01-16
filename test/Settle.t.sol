@@ -37,11 +37,11 @@ contract Settle is BaseNounSeekTest {
         mockNouns.setSeed(seed, 102);
         mockAuctionHouse.setNounId(102);
 
-        (, uint16 nonceAnyId) = nounSeek.pledgeGroups(
+        (, uint16 groupIdAnyId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             0
         );
-        (, uint16 nonceSpecificId) = nounSeek.pledgeGroups(
+        (, uint16 groupIdSpecificId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 102),
             1
         );
@@ -52,18 +52,18 @@ contract Settle is BaseNounSeekTest {
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
         nounSeek.settle(HEAD, 102, allRecipientIds);
 
-        // Nonce did not increased
-        (, uint16 expectedNonce) = nounSeek.pledgeGroups(
+        // Pledge Group ID did not increased
+        (, uint16 expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             0
         );
-        assertEq(expectedNonce, nonceAnyId);
+        assertEq(expectedPledgeGroupId, groupIdAnyId);
 
-        (, expectedNonce) = nounSeek.pledgeGroups(
+        (, expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 102),
             1
         );
-        assertEq(expectedNonce, nonceSpecificId);
+        assertEq(expectedPledgeGroupId, groupIdSpecificId);
 
         mockAuctionHouse.setNounId(103);
 
@@ -76,18 +76,18 @@ contract Settle is BaseNounSeekTest {
 
         nounSeek.settle(HEAD, 102, allRecipientIds);
 
-        // Nonce increased
-        (, expectedNonce) = nounSeek.pledgeGroups(
+        // Pledge Group ID increased
+        (, expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             0
         );
-        assertEq(expectedNonce, nonceAnyId + 1);
+        assertEq(expectedPledgeGroupId, groupIdAnyId + 1);
 
-        (, expectedNonce) = nounSeek.pledgeGroups(
+        (, expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 102),
             1
         );
-        assertEq(expectedNonce, nonceSpecificId + 1);
+        assertEq(expectedPledgeGroupId, groupIdSpecificId + 1);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -167,15 +167,15 @@ contract Settle is BaseNounSeekTest {
 
         vm.stopPrank();
 
-        (, uint16 nonceAnyId) = nounSeek.pledgeGroups(
+        (, uint16 groupIdAnyId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             0
         );
-        (, uint16 nonceSpecificId) = nounSeek.pledgeGroups(
+        (, uint16 groupIdSpecificId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 101),
             1
         );
-        (, uint16 nonceNonAuctioned) = nounSeek.pledgeGroups(
+        (, uint16 groupIdNonAuctioned) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 100),
             1
         );
@@ -219,25 +219,25 @@ contract Settle is BaseNounSeekTest {
 
         nounSeek.settle(HEAD, 100, allRecipientIds);
 
-        // Nonce increased
-        (, uint16 expectedNonce) = nounSeek.pledgeGroups(
+        // Pledge Group ID increased
+        (, uint16 expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, ANY_ID),
             0
         );
-        assertEq(expectedNonce, nonceAnyId + 1);
+        assertEq(expectedPledgeGroupId, groupIdAnyId + 1);
 
-        (, expectedNonce) = nounSeek.pledgeGroups(
+        (, expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 100),
             1
         );
-        assertEq(expectedNonce, nonceNonAuctioned + 1);
+        assertEq(expectedPledgeGroupId, groupIdNonAuctioned + 1);
 
-        // Nonce did not increase
-        (, expectedNonce) = nounSeek.pledgeGroups(
+        // Pledge Group ID did not increase
+        (, expectedPledgeGroupId) = nounSeek.pledgeGroups(
             nounSeek.traitHash(HEAD, 9, 101),
             1
         );
-        assertEq(expectedNonce, nonceSpecificId);
+        assertEq(expectedPledgeGroupId, groupIdSpecificId);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);

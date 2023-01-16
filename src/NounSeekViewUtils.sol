@@ -182,7 +182,7 @@ contract NounSeekViewUtils {
                     trait: requestTrait,
                     traitId: requestTraitId,
                     nounId: requestNounId,
-                    nonce: 0,
+                    pledgeGroupId: 0,
                     amount: 0
                 }),
                 onChainNounId
@@ -208,21 +208,21 @@ contract NounSeekViewUtils {
     }
 
     /**
-     * @notice The nonce for a given recipient pledge group
+     * @notice The current pledge group ID for a given recipient
      * @param trait The trait enum
      * @param traitId The ID of the trait
      * @param nounId The Noun ID
      * @param recipientId The recipient ID
-     * @return nonce The amount before fees
+     * @return pledgeGroupId The amount before fees
      */
-    function nonceForRecipientByTrait(
+    function pledgeGroupIdForRecipientByTrait(
         NounSeek.Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 recipientId
-    ) public view returns (uint16 nonce) {
+    ) public view returns (uint16 pledgeGroupId) {
         bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-        (, nonce) = nounSeek.pledgeGroups(hash, recipientId);
+        (, pledgeGroupId) = nounSeek.pledgeGroups(hash, recipientId);
     }
 
     /**
