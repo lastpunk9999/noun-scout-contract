@@ -3,33 +3,33 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import "../src/NounSeek.sol";
+import "../src/NounScout.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
-import "./BaseNounSeekTest.sol";
+import "./BaseNounScoutTest.sol";
 
-contract NounSeekTest is BaseNounSeekTest {
+contract NounScoutTest is BaseNounScoutTest {
     function setUp() public override {
-        BaseNounSeekTest.setUp();
+        BaseNounScoutTest.setUp();
         // Total 20 Recipients
         // Add 5-9
-        nounSeek.addRecipient("recipient0", recipient0, "");
-        nounSeek.addRecipient("recipient1", recipient1, "");
-        nounSeek.addRecipient("recipient2", recipient2, "");
-        nounSeek.addRecipient("recipient3", recipient3, "");
-        nounSeek.addRecipient("recipient4", recipient4, "");
+        nounScout.addRecipient("recipient0", recipient0, "");
+        nounScout.addRecipient("recipient1", recipient1, "");
+        nounScout.addRecipient("recipient2", recipient2, "");
+        nounScout.addRecipient("recipient3", recipient3, "");
+        nounScout.addRecipient("recipient4", recipient4, "");
         // Add 10-14
-        nounSeek.addRecipient("recipient0", recipient0, "");
-        nounSeek.addRecipient("recipient1", recipient1, "");
-        nounSeek.addRecipient("recipient2", recipient2, "");
-        nounSeek.addRecipient("recipient3", recipient3, "");
-        nounSeek.addRecipient("recipient4", recipient4, "");
+        nounScout.addRecipient("recipient0", recipient0, "");
+        nounScout.addRecipient("recipient1", recipient1, "");
+        nounScout.addRecipient("recipient2", recipient2, "");
+        nounScout.addRecipient("recipient3", recipient3, "");
+        nounScout.addRecipient("recipient4", recipient4, "");
         // Add 15-19
-        nounSeek.addRecipient("recipient0", recipient0, "");
-        nounSeek.addRecipient("recipient1", recipient1, "");
-        nounSeek.addRecipient("recipient2", recipient2, "");
-        nounSeek.addRecipient("recipient3", recipient3, "");
-        nounSeek.addRecipient("recipient4", recipient4, "");
+        nounScout.addRecipient("recipient0", recipient0, "");
+        nounScout.addRecipient("recipient1", recipient1, "");
+        nounScout.addRecipient("recipient2", recipient2, "");
+        nounScout.addRecipient("recipient3", recipient3, "");
+        nounScout.addRecipient("recipient4", recipient4, "");
 
         mockDescriptor.setBackgroundCount(2);
         mockDescriptor.setBodyCount(23);
@@ -37,7 +37,7 @@ contract NounSeekTest is BaseNounSeekTest {
         mockDescriptor.setHeadCount(242);
         mockDescriptor.setGlassesCount(30);
 
-        nounSeek.updateTraitCounts();
+        nounScout.updateTraitCounts();
 
         uint256 timestamp = 9999999999;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
@@ -53,9 +53,9 @@ contract NounSeekTest is BaseNounSeekTest {
             // For recipients 0 - 14
             for (uint16 j; j < 15; j++) {
                 // Add a request for each head, with any id, going to recipient 0 - 14
-                nounSeek.add{value: minValue}(HEAD, i, ANY_ID, j);
+                nounScout.add{value: minValue}(HEAD, i, ANY_ID, j);
                 // Add a request for each head, with any 101, going to recipient 0 - 4
-                nounSeek.add{value: minValue}(HEAD, i, 101, j);
+                nounScout.add{value: minValue}(HEAD, i, 101, j);
             }
         }
 
@@ -64,22 +64,22 @@ contract NounSeekTest is BaseNounSeekTest {
             // Add a request for each glasses, for any id, going to recipient 0 - 4
             for (uint16 j; j < 15; j++) {
                 // Add a request for each glasses, with any id, going to recipient 0 - 14
-                nounSeek.add{value: minValue}(GLASSES, i, ANY_ID, j);
+                nounScout.add{value: minValue}(GLASSES, i, ANY_ID, j);
             }
 
             for (uint16 j; j < 15; j++) {
                 // Add a request for each glasses, with any 101, going to recipient 0 - 14
-                nounSeek.add{value: minValue}(GLASSES, i, 101, j);
+                nounScout.add{value: minValue}(GLASSES, i, 101, j);
             }
 
             for (uint16 j; j < 15; j++) {
                 // Add a request for each glasses, with any 100, going to recipient 0 - 14
-                nounSeek.add{value: minValue}(GLASSES, i, 100, j);
+                nounScout.add{value: minValue}(GLASSES, i, 100, j);
             }
         }
 
         // ANY_ID and specific Id = 101
-        uint256[][][5] memory pledges = nounSeek.pledgesForNounId(101);
+        uint256[][][5] memory pledges = nounScout.pledgesForNounId(101);
 
         // For all recipient slots for next auctioned Noun
         for (uint256 i = 0; i < 20; i++) {
@@ -101,7 +101,7 @@ contract NounSeekTest is BaseNounSeekTest {
         }
 
         // Only specific Id = 100
-        pledges = nounSeek.pledgesForNounId(100);
+        pledges = nounScout.pledgesForNounId(100);
         for (uint256 i = 0; i < 20; i++) {
             // No HEAD requests
             assertEq(pledges[3][0][i], 0);
@@ -123,22 +123,22 @@ contract NounSeekTest is BaseNounSeekTest {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 101, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
@@ -146,7 +146,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         // Next Noun has No Requests
         mockAuctionHouse.setNounId(98);
@@ -155,15 +155,15 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][][5] memory nextAuctionPledges,
             uint256[][][5] memory nextNonAuctionPledges
-        ) = nounSeek.pledgesForUpcomingNoun();
+        ) = nounScout.pledgesForUpcomingNoun();
         assertEq(nextAuctionedId, 99);
         assertEq(nextNonAuctionedId, type(uint16).max);
 
-        assertEq(nextAuctionPledges[0].length, nounSeek.backgroundCount());
-        assertEq(nextAuctionPledges[1].length, nounSeek.bodyCount());
-        assertEq(nextAuctionPledges[2].length, nounSeek.accessoryCount());
-        assertEq(nextAuctionPledges[3].length, nounSeek.headCount());
-        assertEq(nextAuctionPledges[4].length, nounSeek.glassesCount());
+        assertEq(nextAuctionPledges[0].length, nounScout.backgroundCount());
+        assertEq(nextAuctionPledges[1].length, nounScout.bodyCount());
+        assertEq(nextAuctionPledges[2].length, nounScout.accessoryCount());
+        assertEq(nextAuctionPledges[3].length, nounScout.headCount());
+        assertEq(nextAuctionPledges[4].length, nounScout.glassesCount());
 
         // There is no non-auction Noun, so no slots for traits or recipients
         assertEq(nextNonAuctionPledges[0].length, 0);
@@ -195,28 +195,28 @@ contract NounSeekTest is BaseNounSeekTest {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 101 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
@@ -224,7 +224,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         // Next Noun has Non-Auctioned Noun and Specific Id Requests
         mockAuctionHouse.setNounId(99);
@@ -233,22 +233,22 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 nextNonAuctionedId,
             uint256[][][5] memory nextAuctionPledges,
             uint256[][][5] memory nextNonAuctionPledges
-        ) = nounSeek.pledgesForUpcomingNoun();
+        ) = nounScout.pledgesForUpcomingNoun();
         assertEq(nextAuctionedId, 101);
         assertEq(nextNonAuctionedId, 100);
 
-        assertEq(nextAuctionPledges[0].length, nounSeek.backgroundCount());
-        assertEq(nextAuctionPledges[1].length, nounSeek.bodyCount());
-        assertEq(nextAuctionPledges[2].length, nounSeek.accessoryCount());
-        assertEq(nextAuctionPledges[3].length, nounSeek.headCount());
-        assertEq(nextAuctionPledges[4].length, nounSeek.glassesCount());
+        assertEq(nextAuctionPledges[0].length, nounScout.backgroundCount());
+        assertEq(nextAuctionPledges[1].length, nounScout.bodyCount());
+        assertEq(nextAuctionPledges[2].length, nounScout.accessoryCount());
+        assertEq(nextAuctionPledges[3].length, nounScout.headCount());
+        assertEq(nextAuctionPledges[4].length, nounScout.glassesCount());
 
         // There is no non-auction Noun, so no slots for traits or recipients
-        assertEq(nextNonAuctionPledges[0].length, nounSeek.backgroundCount());
-        assertEq(nextNonAuctionPledges[1].length, nounSeek.bodyCount());
-        assertEq(nextNonAuctionPledges[2].length, nounSeek.accessoryCount());
-        assertEq(nextNonAuctionPledges[3].length, nounSeek.headCount());
-        assertEq(nextNonAuctionPledges[4].length, nounSeek.glassesCount());
+        assertEq(nextNonAuctionPledges[0].length, nounScout.backgroundCount());
+        assertEq(nextNonAuctionPledges[1].length, nounScout.bodyCount());
+        assertEq(nextNonAuctionPledges[2].length, nounScout.accessoryCount());
+        assertEq(nextNonAuctionPledges[3].length, nounScout.headCount());
+        assertEq(nextNonAuctionPledges[4].length, nounScout.glassesCount());
 
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
@@ -285,30 +285,30 @@ contract NounSeekTest is BaseNounSeekTest {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for 99, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     0
                 );
                 // add a request for ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
 
                 // add a request for 99, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     1
@@ -318,20 +318,20 @@ contract NounSeekTest is BaseNounSeekTest {
         vm.stopPrank();
 
         // set recipient1 inactive
-        nounSeek.setRecipientActive(1, false);
+        nounScout.setRecipientActive(1, false);
 
         // Next Noun matches ANY_ID requests
         mockAuctionHouse.setNounId(98);
-        (, , uint256[][][5] memory nextAuctionPledges, ) = nounSeek
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
             .pledgesForUpcomingNoun();
 
-        assertEq(nextAuctionPledges[0].length, nounSeek.backgroundCount());
-        assertEq(nextAuctionPledges[1].length, nounSeek.bodyCount());
-        assertEq(nextAuctionPledges[2].length, nounSeek.accessoryCount());
-        assertEq(nextAuctionPledges[3].length, nounSeek.headCount());
-        assertEq(nextAuctionPledges[4].length, nounSeek.glassesCount());
+        assertEq(nextAuctionPledges[0].length, nounScout.backgroundCount());
+        assertEq(nextAuctionPledges[1].length, nounScout.bodyCount());
+        assertEq(nextAuctionPledges[2].length, nounScout.accessoryCount());
+        assertEq(nextAuctionPledges[3].length, nounScout.headCount());
+        assertEq(nextAuctionPledges[4].length, nounScout.glassesCount());
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
             assertEq(nextAuctionPledges[trait][trait].length, recipientsCount);
@@ -346,10 +346,10 @@ contract NounSeekTest is BaseNounSeekTest {
         }
 
         // set recipient1 active
-        nounSeek.setRecipientActive(1, true);
+        nounScout.setRecipientActive(1, true);
 
         mockAuctionHouse.setNounId(98);
-        (, , nextAuctionPledges, ) = nounSeek.pledgesForUpcomingNoun();
+        (, , nextAuctionPledges, ) = nounScout.pledgesForUpcomingNoun();
 
         for (uint256 trait = 0; trait < 5; trait++) {
             // Random check that each traitId has enough slots for each Donnee
@@ -375,36 +375,36 @@ contract NounSeekTest is BaseNounSeekTest {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 101 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     102,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
                 );
 
                 // add a request for Noun 101, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     3
@@ -412,7 +412,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -432,7 +432,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[][5] memory currentAuctionPledges,
             uint256[][5] memory prevNonAuctionPledges
-        ) = nounSeek.pledgesForNounOnAuction();
+        ) = nounScout.pledgesForNounOnAuction();
         assertEq(currentAuctionedId, 102);
         assertEq(prevNonAuctionedId, type(uint16).max);
 
@@ -470,36 +470,36 @@ contract NounSeekTest is BaseNounSeekTest {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 101 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
                 );
 
                 // add a request for Noun 102, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     102,
                     3
@@ -507,7 +507,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -526,7 +526,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint16 prevNonAuctionedId,
             uint256[][5] memory currentAuctionPledges,
             uint256[][5] memory prevNonAuctionPledges
-        ) = nounSeek.pledgesForNounOnAuction();
+        ) = nounScout.pledgesForNounOnAuction();
         assertEq(currentAuctionedId, 101);
         assertEq(prevNonAuctionedId, 100);
 
@@ -567,30 +567,30 @@ contract NounSeekTest is BaseNounSeekTest {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for 99, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     0
                 );
                 // add a request for ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
 
                 // add a request for 99, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     1
@@ -609,11 +609,11 @@ contract NounSeekTest is BaseNounSeekTest {
         mockNouns.setSeed(seed, 99);
 
         // set recipient1 inactive
-        nounSeek.setRecipientActive(1, false);
-        (, , uint256[][5] memory currentAuctionPledges, ) = nounSeek
+        nounScout.setRecipientActive(1, false);
+        (, , uint256[][5] memory currentAuctionPledges, ) = nounScout
             .pledgesForNounOnAuction();
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         assertEq(currentAuctionPledges[0].length, recipientsCount);
         assertEq(currentAuctionPledges[1].length, recipientsCount);
@@ -634,9 +634,9 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(currentAuctionPledges[4][1], 0);
 
         // set recipient1 active
-        nounSeek.setRecipientActive(1, true);
+        nounScout.setRecipientActive(1, true);
 
-        (, , currentAuctionPledges, ) = nounSeek.pledgesForNounOnAuction();
+        (, , currentAuctionPledges, ) = nounScout.pledgesForNounOnAuction();
 
         // recipient1 has values reset because it is now active
         assertEq(currentAuctionPledges[1][1], minValue * 2);
@@ -655,36 +655,36 @@ contract NounSeekTest is BaseNounSeekTest {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     102,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
                 );
 
                 // add a request for Noun 101, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     3
@@ -692,7 +692,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -714,7 +714,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounPledges,
             uint256[5] memory auctionNounTotalReimbursement,
             uint256[5] memory nonAuctionNounTotalReimbursement
-        ) = nounSeek.pledgesForMatchableNoun();
+        ) = nounScout.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 102);
         assertEq(nonAuctionedNounId, type(uint16).max);
 
@@ -766,36 +766,36 @@ contract NounSeekTest is BaseNounSeekTest {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
                 );
 
                 // add a request for Noun 101, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     3
@@ -803,7 +803,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -825,7 +825,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounPledges,
             uint256[5] memory auctionNounTotalReimbursement,
             uint256[5] memory nonAuctionNounTotalReimbursement
-        ) = nounSeek.pledgesForMatchableNoun();
+        ) = nounScout.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 99);
         assertEq(nonAuctionedNounId, type(uint16).max);
 
@@ -877,36 +877,36 @@ contract NounSeekTest is BaseNounSeekTest {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a maxValue request for Noun 100, to recipient 2
-                nounSeek.add{value: maxValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: maxValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     100,
                     2
                 );
 
                 // add a request for Noun 101, to recipient 2
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     99,
                     3
@@ -914,7 +914,7 @@ contract NounSeekTest is BaseNounSeekTest {
             }
         }
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             1,
@@ -936,7 +936,7 @@ contract NounSeekTest is BaseNounSeekTest {
             uint256[][5] memory nonAuctionedNounPledges,
             uint256[5] memory auctionNounTotalReimbursement,
             uint256[5] memory nonAuctionNounTotalReimbursement
-        ) = nounSeek.pledgesForMatchableNoun();
+        ) = nounScout.pledgesForMatchableNoun();
         assertEq(auctionedNounId, 101);
         assertEq(nonAuctionedNounId, 100);
 
@@ -999,30 +999,30 @@ contract NounSeekTest is BaseNounSeekTest {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_ID, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     0
                 );
                 // add a request for 99, to recipient 0
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     98,
                     0
                 );
                 // add a request for ANY_ID, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     ANY_ID,
                     1
                 );
 
                 // add a request for 99, to recipient 1
-                nounSeek.add{value: minValue}(
-                    NounSeek.Traits(trait),
+                nounScout.add{value: minValue}(
+                    NounScout.Traits(trait),
                     traitId,
                     98,
                     1
@@ -1042,7 +1042,7 @@ contract NounSeekTest is BaseNounSeekTest {
         mockAuctionHouse.setNounId(99);
 
         // set recipient1 inactive
-        nounSeek.setRecipientActive(1, false);
+        nounScout.setRecipientActive(1, false);
 
         (
             ,
@@ -1051,9 +1051,9 @@ contract NounSeekTest is BaseNounSeekTest {
             ,
             uint256[5] memory auctionNounTotalReimbursement,
 
-        ) = nounSeek.pledgesForMatchableNoun();
+        ) = nounScout.pledgesForMatchableNoun();
 
-        uint256 recipientsCount = nounSeek.recipients().length;
+        uint256 recipientsCount = nounScout.recipients().length;
 
         assertEq(auctionedNounPledges[0].length, recipientsCount);
         assertEq(auctionedNounPledges[1].length, recipientsCount);
@@ -1079,10 +1079,16 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(auctionNounTotalReimbursement[4], minReimbursement);
 
         // set recipient1 active
-        nounSeek.setRecipientActive(1, true);
+        nounScout.setRecipientActive(1, true);
 
-        (, , auctionedNounPledges, , auctionNounTotalReimbursement, ) = nounSeek
-            .pledgesForMatchableNoun();
+        (
+            ,
+            ,
+            auctionedNounPledges,
+            ,
+            auctionNounTotalReimbursement,
+
+        ) = nounScout.pledgesForMatchableNoun();
 
         // recipient0 has values
         assertEq(auctionedNounPledges[1][0], minValue * 2);

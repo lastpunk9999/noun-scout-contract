@@ -1,24 +1,24 @@
 // // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "./NounSeek.sol";
+import "./NounScout.sol";
 import "./Interfaces.sol";
 
-contract NounSeekViewUtils {
-    NounSeek public immutable nounSeek;
+contract NounScoutViewUtils {
+    NounScout public immutable nounScout;
     INounsTokenLike public immutable nouns;
     INounsAuctionHouseLike public immutable auctionHouse;
     uint16 public immutable ANY_ID;
     uint16 private constant UINT16_MAX = type(uint16).max;
 
-    constructor(NounSeek _nounSeek) {
-        nounSeek = _nounSeek;
-        nouns = INounsTokenLike(nounSeek.nouns());
-        auctionHouse = INounsAuctionHouseLike(nounSeek.auctionHouse());
-        ANY_ID = nounSeek.ANY_ID();
+    constructor(NounScout _nounScout) {
+        nounScout = _nounScout;
+        nouns = INounsTokenLike(nounScout.nouns());
+        auctionHouse = INounsAuctionHouseLike(nounScout.auctionHouse());
+        ANY_ID = nounScout.ANY_ID();
     }
 
-    function pledgesForUpcomingNounByTrait(NounSeek.Traits trait)
+    function pledgesForUpcomingNounByTrait(NounScout.Traits trait)
         public
         view
         returns (
@@ -35,12 +35,12 @@ contract NounSeekViewUtils {
                 nextNonAuctionId = nextAuctionId;
                 nextAuctionId++;
             }
-            nextAuctionPledges = nounSeek.pledgesForNounIdByTrait(
+            nextAuctionPledges = nounScout.pledgesForNounIdByTrait(
                 trait,
                 nextAuctionId
             );
             if (nextNonAuctionId < UINT16_MAX) {
-                nextNonAuctionPledges = nounSeek.pledgesForNounIdByTrait(
+                nextNonAuctionPledges = nounScout.pledgesForNounIdByTrait(
                     trait,
                     nextNonAuctionId
                 );
@@ -48,7 +48,7 @@ contract NounSeekViewUtils {
         }
     }
 
-    function pledgesForNounOnAuctionByTrait(NounSeek.Traits trait)
+    function pledgesForNounOnAuctionByTrait(NounScout.Traits trait)
         public
         view
         returns (
@@ -64,7 +64,7 @@ contract NounSeekViewUtils {
             uint16 currentTraitId;
             uint16 prevTraitId;
             currentTraitId = _fetchTraitId(trait, currentAuctionId);
-            currentAuctionPledges = nounSeek.pledgesForNounIdByTraitId(
+            currentAuctionPledges = nounScout.pledgesForNounIdByTraitId(
                 trait,
                 currentTraitId,
                 currentAuctionId
@@ -72,7 +72,7 @@ contract NounSeekViewUtils {
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
                 prevTraitId = _fetchTraitId(trait, prevNonAuctionId);
-                prevNonAuctionPledges = nounSeek.pledgesForNounIdByTraitId(
+                prevNonAuctionPledges = nounScout.pledgesForNounIdByTraitId(
                     trait,
                     prevTraitId,
                     prevNonAuctionId
@@ -81,7 +81,7 @@ contract NounSeekViewUtils {
         }
     }
 
-    function pledgesForMatchableNounByTrait(NounSeek.Traits trait)
+    function pledgesForMatchableNounByTrait(NounScout.Traits trait)
         public
         view
         returns (
@@ -123,15 +123,15 @@ contract NounSeekViewUtils {
         if (_isNonAuctionedNoun(auctionedNounId - 1)) {
             nonAuctionedNounId = auctionedNounId - 1;
         }
-        uint256 recipientsCount = nounSeek.recipients().length;
-        auctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
+        uint256 recipientsCount = nounScout.recipients().length;
+        auctionedNounPledges = nounScout.pledgesForNounIdByTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
             nounId: auctionedNounId
         });
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
         if (includeNonAuctionedNoun) {
-            nonAuctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
+            nonAuctionedNounPledges = nounScout.pledgesForNounIdByTraitId({
                 trait: trait,
                 traitId: _fetchTraitId(trait, nonAuctionedNounId),
                 nounId: nonAuctionedNounId
@@ -150,9 +150,8 @@ contract NounSeekViewUtils {
                 auctionedNounPledges[recipientId] +
                 nonAuctionedNounPledge;
         }
-        (, reimbursement) = nounSeek.effectiveBPSAndReimbursementForPledgeTotal(
-            totalPledges
-        );
+        (, reimbursement) = nounScout
+            .effectiveBPSAndReimbursementForPledgeTotal(totalPledges);
         totalPledges -= reimbursement;
     }
 
@@ -170,14 +169,14 @@ contract NounSeekViewUtils {
      * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
      */
     function requestParamsMatchNounParams(
-        NounSeek.Traits requestTrait,
+        NounScout.Traits requestTrait,
         uint16 requestTraitId,
         uint16 requestNounId,
         uint16 onChainNounId
     ) public view returns (bool) {
         return
-            nounSeek.requestMatchesNoun(
-                NounSeek.Request({
+            nounScout.requestMatchesNoun(
+                NounScout.Request({
                     recipientId: 0,
                     trait: requestTrait,
                     traitId: requestTraitId,
@@ -198,13 +197,13 @@ contract NounSeekViewUtils {
      * @return amount The amount before fees
      */
     function amountForRecipientByTrait(
-        NounSeek.Traits trait,
+        NounScout.Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 recipientId
     ) public view returns (uint256 amount) {
-        bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-        (amount, ) = nounSeek.pledgeGroups(hash, recipientId);
+        bytes32 hash = nounScout.traitHash(trait, traitId, nounId);
+        (amount, ) = nounScout.pledgeGroups(hash, recipientId);
     }
 
     /**
@@ -216,13 +215,13 @@ contract NounSeekViewUtils {
      * @return pledgeGroupId The amount before fees
      */
     function pledgeGroupIdForRecipientByTrait(
-        NounSeek.Traits trait,
+        NounScout.Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 recipientId
     ) public view returns (uint16 pledgeGroupId) {
-        bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-        (, pledgeGroupId) = nounSeek.pledgeGroups(hash, recipientId);
+        bytes32 hash = nounScout.traitHash(trait, traitId, nounId);
+        (, pledgeGroupId) = nounScout.pledgeGroups(hash, recipientId);
     }
 
     /**
@@ -244,20 +243,20 @@ contract NounSeekViewUtils {
         return nounId % 10 > 0 || nounId > 1820;
     }
 
-    function _fetchTraitId(NounSeek.Traits trait, uint16 nounId)
+    function _fetchTraitId(NounScout.Traits trait, uint16 nounId)
         internal
         view
         returns (uint16 traitId)
     {
-        if (trait == NounSeek.Traits.BACKGROUND) {
+        if (trait == NounScout.Traits.BACKGROUND) {
             traitId = uint16(nouns.seeds(nounId).background);
-        } else if (trait == NounSeek.Traits.BODY) {
+        } else if (trait == NounScout.Traits.BODY) {
             traitId = uint16(nouns.seeds(nounId).body);
-        } else if (trait == NounSeek.Traits.ACCESSORY) {
+        } else if (trait == NounScout.Traits.ACCESSORY) {
             traitId = uint16(nouns.seeds(nounId).accessory);
-        } else if (trait == NounSeek.Traits.HEAD) {
+        } else if (trait == NounScout.Traits.HEAD) {
             traitId = uint16(nouns.seeds(nounId).head);
-        } else if (trait == NounSeek.Traits.GLASSES) {
+        } else if (trait == NounScout.Traits.GLASSES) {
             traitId = uint16(nouns.seeds(nounId).glasses);
         }
     }
@@ -274,7 +273,7 @@ contract NounSeekViewUtils {
     {
         unchecked {
             isActive = new bool[](recipientsCount);
-            NounSeek.Recipient[] memory recipients = nounSeek.recipients();
+            NounScout.Recipient[] memory recipients = nounScout.recipients();
             for (uint256 i; i < recipientsCount; i++) {
                 isActive[i] = recipients[i].active;
             }

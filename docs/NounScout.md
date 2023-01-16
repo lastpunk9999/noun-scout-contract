@@ -2,7 +2,7 @@
 description:
 ---
 
-# NounSeek.sol
+# NounScout.sol
 
 ## Methods
 
@@ -73,7 +73,7 @@ the total number of accessory traits
 ### _add_
 
 ```solidity title="Solidity"
-function add(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId) external payable returns (uint256 requestId)
+function add(enum NounScout.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId) external payable returns (uint256 requestId)
 ```
 
 Create a request for the specific trait and specific or open Noun ID payable to the specified Recipient.
@@ -84,12 +84,12 @@ Create a request for the specific trait and specific or open Noun ID payable to 
 
 #### Parameters
 
-| Name        | Type                 | Description                                                                                                |
-| ----------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| trait       | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum)                                                          |
-| traitId     | uint16               | ID of the specified Trait that the request is for                                                          |
-| nounId      | uint16               | the Noun ID the request is targeted for (or the value of ANY_ID for open requests)                         |
-| recipientId | uint16               | the ID of the Recipient that should receive the pledged amount if a Noun matching the parameters is minted |
+| Name        | Type                  | Description                                                                                                |
+| ----------- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
+| trait       | enum NounScout.Traits | Trait Type the request is for (see `Traits` Enum)                                                          |
+| traitId     | uint16                | ID of the specified Trait that the request is for                                                          |
+| nounId      | uint16                | the Noun ID the request is targeted for (or the value of ANY_ID for open requests)                         |
+| recipientId | uint16                | the ID of the Recipient that should receive the pledged amount if a Noun matching the parameters is minted |
 
 #### Returns
 
@@ -124,7 +124,7 @@ Add a Recipient by specifying the name and address funds should be sent to
 ### _addWithMessage_
 
 ```solidity title="Solidity"
-function addWithMessage(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId, string message) external payable returns (uint256 requestId)
+function addWithMessage(enum NounScout.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId, string message) external payable returns (uint256 requestId)
 ```
 
 Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Recipient.
@@ -135,13 +135,13 @@ Create a request with a logged message for the specific trait and specific or op
 
 #### Parameters
 
-| Name        | Type                 | Description                                                                                        |
-| ----------- | -------------------- | -------------------------------------------------------------------------------------------------- |
-| trait       | enum NounSeek.Traits | Trait Type the request is for (see `Traits` Enum)                                                  |
-| traitId     | uint16               | ID of the specified Trait that the request is for                                                  |
-| nounId      | uint16               | the Noun ID the request is targeted for (or the value of ANY_ID for open requests)                 |
-| recipientId | uint16               | the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted |
-| message     | string               | The message to log                                                                                 |
+| Name        | Type                  | Description                                                                                        |
+| ----------- | --------------------- | -------------------------------------------------------------------------------------------------- |
+| trait       | enum NounScout.Traits | Trait Type the request is for (see `Traits` Enum)                                                  |
+| traitId     | uint16                | ID of the specified Trait that the request is for                                                  |
+| nounId      | uint16                | the Noun ID the request is targeted for (or the value of ANY_ID for open requests)                 |
+| recipientId | uint16                | the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted |
+| message     | string                | The message to log                                                                                 |
 
 #### Returns
 
@@ -410,7 +410,7 @@ function owner() external view returns (address)
 function pause() external nonpayable
 ```
 
-Pauses the NounSeek contract. Pausing can be reversed by unpausing.
+Pauses the NounScout contract. Pausing can be reversed by unpausing.
 
 ---
 
@@ -532,7 +532,7 @@ For a given Noun ID, get cumulative pledge amounts for each Recipient scoped by 
 ### _pledgesForNounIdByTrait_
 
 ```solidity title="Solidity"
-function pledgesForNounIdByTrait(enum NounSeek.Traits trait, uint16 nounId) external view returns (uint256[][] pledgesByTraitId)
+function pledgesForNounIdByTrait(enum NounScout.Traits trait, uint16 nounId) external view returns (uint256[][] pledgesByTraitId)
 ```
 
 Get cumulative pledge amounts scoped to Noun ID and Trait Type.
@@ -543,10 +543,10 @@ Get cumulative pledge amounts scoped to Noun ID and Trait Type.
 
 #### Parameters
 
-| Name   | Type                 | Description                                             |
-| ------ | -------------------- | ------------------------------------------------------- |
-| trait  | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
-| nounId | uint16               | The Noun ID to scope requests to                        |
+| Name   | Type                  | Description                                             |
+| ------ | --------------------- | ------------------------------------------------------- |
+| trait  | enum NounScout.Traits | The trait type to scope requests to (See `Traits` Enum) |
+| nounId | uint16                | The Noun ID to scope requests to                        |
 
 #### Returns
 
@@ -559,7 +559,7 @@ Get cumulative pledge amounts scoped to Noun ID and Trait Type.
 ### _pledgesForNounIdByTraitId_
 
 ```solidity title="Solidity"
-function pledgesForNounIdByTraitId(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] pledges)
+function pledgesForNounIdByTraitId(enum NounScout.Traits trait, uint16 traitId, uint16 nounId) external view returns (uint256[] pledges)
 ```
 
 Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
@@ -570,11 +570,11 @@ Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
 
 #### Parameters
 
-| Name    | Type                 | Description                                             |
-| ------- | -------------------- | ------------------------------------------------------- |
-| trait   | enum NounSeek.Traits | The trait type to scope requests to (See `Traits` Enum) |
-| traitId | uint16               | The trait ID of the trait to scope requests             |
-| nounId  | uint16               | The Noun ID to scope requests to                        |
+| Name    | Type                  | Description                                             |
+| ------- | --------------------- | ------------------------------------------------------- |
+| trait   | enum NounScout.Traits | The trait type to scope requests to (See `Traits` Enum) |
+| traitId | uint16                | The trait ID of the trait to scope requests             |
+| nounId  | uint16                | The Noun ID to scope requests to                        |
 
 #### Returns
 
@@ -659,7 +659,7 @@ Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in 
 ### _rawRequestById_
 
 ```solidity title="Solidity"
-function rawRequestById(address requester, uint256 requestId) external view returns (struct NounSeek.Request request)
+function rawRequestById(address requester, uint256 requestId) external view returns (struct NounScout.Request request)
 ```
 
 Get a specific raw Request (without status, includes deleted Requests)
@@ -677,16 +677,16 @@ Get a specific raw Request (without status, includes deleted Requests)
 
 #### Returns
 
-| Name    | Type             | Description        |
-| ------- | ---------------- | ------------------ |
-| request | NounSeek.Request | The Request struct |
+| Name    | Type              | Description        |
+| ------- | ----------------- | ------------------ |
+| request | NounScout.Request | The Request struct |
 
 ---
 
 ### _rawRequestsByAddress_
 
 ```solidity title="Solidity"
-function rawRequestsByAddress(address requester) external view returns (struct NounSeek.Request[] requests)
+function rawRequestsByAddress(address requester) external view returns (struct NounScout.Request[] requests)
 ```
 
 Get all raw Requests (without status, includes deleted Requests)
@@ -703,25 +703,25 @@ Get all raw Requests (without status, includes deleted Requests)
 
 #### Returns
 
-| Name     | Type               | Description                 |
-| -------- | ------------------ | --------------------------- |
-| requests | NounSeek.Request[] | An array of Request structs |
+| Name     | Type                | Description                 |
+| -------- | ------------------- | --------------------------- |
+| requests | NounScout.Request[] | An array of Request structs |
 
 ---
 
 ### _recipients_
 
 ```solidity title="Solidity"
-function recipients() external view returns (struct NounSeek.Recipient[])
+function recipients() external view returns (struct NounScout.Recipient[])
 ```
 
 All recipients as Recipient structs
 
 #### Returns
 
-| Name | Type                 | Description |
-| ---- | -------------------- | ----------- |
-| \_0  | NounSeek.Recipient[] | undefined   |
+| Name | Type                  | Description |
+| ---- | --------------------- | ----------- |
+| \_0  | NounScout.Recipient[] | undefined   |
 
 ---
 
@@ -766,15 +766,15 @@ function renounceOwnership() external nonpayable
 ### _requestMatchesNoun_
 
 ```solidity title="Solidity"
-function requestMatchesNoun(NounSeek.Request request, uint16 nounId) external view returns (bool)
+function requestMatchesNoun(NounScout.Request request, uint16 nounId) external view returns (bool)
 ```
 
 #### Parameters
 
-| Name    | Type             | Description |
-| ------- | ---------------- | ----------- |
-| request | NounSeek.Request | undefined   |
-| nounId  | uint16           | undefined   |
+| Name    | Type              | Description |
+| ------- | ----------------- | ----------- |
+| request | NounScout.Request | undefined   |
+| nounId  | uint16            | undefined   |
 
 #### Returns
 
@@ -787,7 +787,7 @@ function requestMatchesNoun(NounSeek.Request request, uint16 nounId) external vi
 ### _requestsByAddress_
 
 ```solidity title="Solidity"
-function requestsByAddress(address requester) external view returns (struct NounSeek.RequestWithStatus[] requests)
+function requestsByAddress(address requester) external view returns (struct NounScout.RequestWithStatus[] requests)
 ```
 
 Get requests, augemented with status, for non-removed Requests
@@ -804,9 +804,9 @@ Get requests, augemented with status, for non-removed Requests
 
 #### Returns
 
-| Name     | Type                         | Description                           |
-| -------- | ---------------------------- | ------------------------------------- |
-| requests | NounSeek.RequestWithStatus[] | An array of RequestWithStatus Structs |
+| Name     | Type                          | Description                           |
+| -------- | ----------------------------- | ------------------------------------- |
+| requests | NounScout.RequestWithStatus[] | An array of RequestWithStatus Structs |
 
 ---
 
@@ -914,7 +914,7 @@ Sets the standard reimbursement basis points
 ### _settle_
 
 ```solidity title="Solidity"
-function settle(enum NounSeek.Traits trait, uint16 nounId, uint16[] recipientIds) external nonpayable returns (uint256 total, uint256 reimbursement)
+function settle(enum NounScout.Traits trait, uint16 nounId, uint16[] recipientIds) external nonpayable returns (uint256 total, uint256 reimbursement)
 ```
 
 Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
@@ -925,11 +925,11 @@ Sends pledged amounts to recipients by matching a requested trait to an eligible
 
 #### Parameters
 
-| Name         | Type                 | Description                                                                                                                                       |
-| ------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| trait        | enum NounSeek.Traits | The Trait Type to fetch from an eligible Noun (see `Traits` Enum)                                                                                 |
-| nounId       | uint16               | The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time. |
-| recipientIds | uint16[]             | An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.                                                 |
+| Name         | Type                  | Description                                                                                                                                       |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| trait        | enum NounScout.Traits | The Trait Type to fetch from an eligible Noun (see `Traits` Enum)                                                                                 |
+| nounId       | uint16                | The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time. |
+| recipientIds | uint16[]              | An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.                                                 |
 
 #### Returns
 
@@ -943,7 +943,7 @@ Sends pledged amounts to recipients by matching a requested trait to an eligible
 ### _traitHash_
 
 ```solidity title="Solidity"
-function traitHash(enum NounSeek.Traits trait, uint16 traitId, uint16 nounId) external pure returns (bytes32 hash)
+function traitHash(enum NounScout.Traits trait, uint16 traitId, uint16 nounId) external pure returns (bytes32 hash)
 ```
 
 The canonical key for requests that target the same `trait`, `traitId`, and `nounId`
@@ -954,11 +954,11 @@ The canonical key for requests that target the same `trait`, `traitId`, and `nou
 
 #### Parameters
 
-| Name    | Type                 | Description         |
-| ------- | -------------------- | ------------------- |
-| trait   | enum NounSeek.Traits | The trait enum      |
-| traitId | uint16               | The ID of the trait |
-| nounId  | uint16               | The Noun ID         |
+| Name    | Type                  | Description         |
+| ------- | --------------------- | ------------------- |
+| trait   | enum NounScout.Traits | The trait enum      |
+| traitId | uint16                | The ID of the trait |
+| nounId  | uint16                | The Noun ID         |
 
 #### Returns
 
@@ -992,7 +992,7 @@ function transferOwnership(address newOwner) external nonpayable
 function unpause() external nonpayable
 ```
 
-Unpauses (resumes) the NounSeek contract. Unpausing can be reversed by pausing.
+Unpauses (resumes) the NounScout contract. Unpausing can be reversed by pausing.
 
 ---
 
@@ -1044,7 +1044,7 @@ Emitted when an eligible Noun matches one or more Requests
 ### _Matched_
 
 ```solidity title="Solidity"
-event Matched(enum NounSeek.Traits indexed trait, uint16 traitId, uint16 indexed nounId, bytes32 indexed traitsHash)
+event Matched(enum NounScout.Traits indexed trait, uint16 traitId, uint16 indexed nounId, bytes32 indexed traitsHash)
 ```
 
 Emitted when an eligible Noun matches one or more Requests
@@ -1055,15 +1055,15 @@ Emitted when an eligible Noun matches one or more Requests
 
 #### Parameters
 
-| Name                           | Type                 | Description |
-| ------------------------------ | -------------------- | ----------- |
-| trait `indexed`                | enum NounSeek.Traits |
+| Name                           | Type                  | Description |
+| ------------------------------ | --------------------- | ----------- |
+| trait `indexed`                | enum NounScout.Traits |
 | Trait Type that matched        |
-| traitId                        | uint16               |
+| traitId                        | uint16                |
 | Trait ID that matched          |
-| nounId `indexed`               | uint16               |
+| nounId `indexed`               | uint16                |
 | Noun Id that matched           |
-| traitsHash `indexed`           | bytes32              |
+| traitsHash `indexed`           | bytes32               |
 | Hash of trait, traitId, nounId |
 
 ---
@@ -1266,34 +1266,34 @@ Emitted when the baseReimbursementBPS changes
 ### _RequestAdded_
 
 ```solidity title="Solidity"
-event RequestAdded(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 recipientId, uint16 indexed nounId, uint16 pledgeGroupId, bytes32 indexed traitsHash, uint256 amount, string message)
+event RequestAdded(uint256 requestId, address indexed requester, enum NounScout.Traits trait, uint16 traitId, uint16 recipientId, uint16 indexed nounId, uint16 pledgeGroupId, bytes32 indexed traitsHash, uint256 amount, string message)
 ```
 
 Emitted when a Request is added
 
 #### Parameters
 
-| Name                 | Type                 | Description |
-| -------------------- | -------------------- | ----------- |
-| requestId            | uint256              |
+| Name                 | Type                  | Description |
+| -------------------- | --------------------- | ----------- |
+| requestId            | uint256               |
 | undefined            |
-| requester `indexed`  | address              |
+| requester `indexed`  | address               |
 | undefined            |
-| trait                | enum NounSeek.Traits |
+| trait                | enum NounScout.Traits |
 | undefined            |
-| traitId              | uint16               |
+| traitId              | uint16                |
 | undefined            |
-| recipientId          | uint16               |
+| recipientId          | uint16                |
 | undefined            |
-| nounId `indexed`     | uint16               |
+| nounId `indexed`     | uint16                |
 | undefined            |
-| pledgeGroupId        | uint16               |
+| pledgeGroupId        | uint16                |
 | undefined            |
-| traitsHash `indexed` | bytes32              |
+| traitsHash `indexed` | bytes32               |
 | undefined            |
-| amount               | uint256              |
+| amount               | uint256               |
 | undefined            |
-| message              | string               |
+| message              | string                |
 | undefined            |
 
 ---
@@ -1301,32 +1301,32 @@ Emitted when a Request is added
 ### _RequestRemoved_
 
 ```solidity title="Solidity"
-event RequestRemoved(uint256 requestId, address indexed requester, enum NounSeek.Traits trait, uint16 traitId, uint16 indexed nounId, uint16 pledgeGroupId, uint16 recipientId, bytes32 indexed traitsHash, uint256 amount)
+event RequestRemoved(uint256 requestId, address indexed requester, enum NounScout.Traits trait, uint16 traitId, uint16 indexed nounId, uint16 pledgeGroupId, uint16 recipientId, bytes32 indexed traitsHash, uint256 amount)
 ```
 
 Emitted when a Request is removed
 
 #### Parameters
 
-| Name                 | Type                 | Description |
-| -------------------- | -------------------- | ----------- |
-| requestId            | uint256              |
+| Name                 | Type                  | Description |
+| -------------------- | --------------------- | ----------- |
+| requestId            | uint256               |
 | undefined            |
-| requester `indexed`  | address              |
+| requester `indexed`  | address               |
 | undefined            |
-| trait                | enum NounSeek.Traits |
+| trait                | enum NounScout.Traits |
 | undefined            |
-| traitId              | uint16               |
+| traitId              | uint16                |
 | undefined            |
-| nounId `indexed`     | uint16               |
+| nounId `indexed`     | uint16                |
 | undefined            |
-| pledgeGroupId        | uint16               |
+| pledgeGroupId        | uint16                |
 | undefined            |
-| recipientId          | uint16               |
+| recipientId          | uint16                |
 | undefined            |
-| traitsHash `indexed` | bytes32              |
+| traitsHash `indexed` | bytes32               |
 | undefined            |
-| amount               | uint256              |
+| amount               | uint256               |
 | undefined            |
 
 ---
