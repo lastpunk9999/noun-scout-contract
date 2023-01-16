@@ -1031,8 +1031,8 @@
       "inputs": {},
       "notice": "Thrown when an attempting to remove a Request within `AUCTION_END_LIMIT` (5 minutes) of auction end."
     },
-    "DonationAlreadySent": {
-      "code": "error DonationAlreadySent()",
+    "PledgeSent": {
+      "code": "error PledgeSent()",
       "inputs": {},
       "notice": "Thrown when an attempting to remove a Request that was previously matched"
     },

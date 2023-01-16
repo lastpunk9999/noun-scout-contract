@@ -1282,10 +1282,10 @@ Thrown when an attempting to remove a Request within `AUCTION_END_LIMIT` (5 minu
 
 ---
 
-### _DonationAlreadySent_
+### _PledgeSent_
 
 ```solidity title="Solidity"
-error DonationAlreadySent()
+error PledgeSent()
 ```
 
 Thrown when an attempting to remove a Request that was previously matched

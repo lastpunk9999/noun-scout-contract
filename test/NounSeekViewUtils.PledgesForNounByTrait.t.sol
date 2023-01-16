@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
@@ -81,7 +81,7 @@ contract NounSeekTest is BaseNounSeekTest {
 
         for (uint256 traitId; traitId < 10; traitId++) {
             assertEq(nextAuctionPledges[traitId].length, recipientsCount);
-            // Check that recipient#1 and donnee#2 are zero
+            // Check that recipient#1 and recipient#2 are zero
             assertEq(nextAuctionPledges[traitId][1], 0);
             assertEq(nextAuctionPledges[traitId][2], 0);
             // Check that recipient#0 is minValue because of ANY_ID request
@@ -228,12 +228,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(currentAuctionPledges[3], 0);
 
         // Current Noun has no matching requests for HEAD
-        (
-            ,
-            ,
-            currentAuctionPledges,
-            prevNonAuctionPledges
-        ) = nounSeekViewUtils.pledgesForNounOnAuctionByTrait(HEAD);
+        (, , currentAuctionPledges, prevNonAuctionPledges) = nounSeekViewUtils
+            .pledgesForNounOnAuctionByTrait(HEAD);
         assertEq(currentAuctionPledges.length, recipientsCount);
 
         assertEq(currentAuctionPledges[0], 0);
@@ -327,12 +323,8 @@ contract NounSeekTest is BaseNounSeekTest {
         assertEq(prevNonAuctionPledges[3], 0);
 
         // No requests for match current HEAD
-        (
-            ,
-            ,
-            currentAuctionPledges,
-            prevNonAuctionPledges
-        ) = nounSeekViewUtils.pledgesForNounOnAuctionByTrait(HEAD);
+        (, , currentAuctionPledges, prevNonAuctionPledges) = nounSeekViewUtils
+            .pledgesForNounOnAuctionByTrait(HEAD);
 
         assertEq(currentAuctionPledges.length, recipientsCount);
 

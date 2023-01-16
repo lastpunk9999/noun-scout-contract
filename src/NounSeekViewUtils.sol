@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// // SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.17;
+
 import "./NounSeek.sol";
 import "./Interfaces.sol";
 
@@ -30,17 +31,14 @@ contract NounSeekViewUtils {
         unchecked {
             nextAuctionId = uint16(auctionHouse.auction().nounId) + 1;
             nextNonAuctionId = UINT16_MAX;
-
             if (_isNonAuctionedNoun(nextAuctionId)) {
                 nextNonAuctionId = nextAuctionId;
                 nextAuctionId++;
             }
-
             nextAuctionPledges = nounSeek.pledgesForNounIdByTrait(
                 trait,
                 nextAuctionId
             );
-
             if (nextNonAuctionId < UINT16_MAX) {
                 nextNonAuctionPledges = nounSeek.pledgesForNounIdByTrait(
                     trait,
@@ -63,18 +61,14 @@ contract NounSeekViewUtils {
         unchecked {
             currentAuctionId = uint16(auctionHouse.auction().nounId);
             prevNonAuctionId = UINT16_MAX;
-
             uint16 currentTraitId;
             uint16 prevTraitId;
-
             currentTraitId = _fetchTraitId(trait, currentAuctionId);
-
             currentAuctionPledges = nounSeek.pledgesForNounIdByTraitId(
                 trait,
                 currentTraitId,
                 currentAuctionId
             );
-
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
                 prevTraitId = _fetchTraitId(trait, prevNonAuctionId);
@@ -109,12 +103,10 @@ contract NounSeekViewUtils {
          *     102 | 101, 100 (*includes 100)
          *     103 | 102
          */
-
         /// The Noun ID of the previous to the current Noun on auction
         auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
         /// Setup a parameter to detect if a non-auctioned Noun should  be matched
         nonAuctionedNounId = UINT16_MAX;
-
         /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
         /// Example:
         ///   Current Noun: 101
@@ -131,17 +123,13 @@ contract NounSeekViewUtils {
         if (_isNonAuctionedNoun(auctionedNounId - 1)) {
             nonAuctionedNounId = auctionedNounId - 1;
         }
-
         uint256 recipientsCount = nounSeek.recipients().length;
-
         auctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
             nounId: auctionedNounId
         });
-
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
-
         if (includeNonAuctionedNoun) {
             nonAuctionedNounPledges = nounSeek.pledgesForNounIdByTraitId({
                 trait: trait,
@@ -149,8 +137,11 @@ contract NounSeekViewUtils {
                 nounId: nonAuctionedNounId
             });
         }
-
-        for (uint256 recipientId; recipientId < recipientsCount; recipientId++) {
+        for (
+            uint256 recipientId;
+            recipientId < recipientsCount;
+            recipientId++
+        ) {
             uint256 nonAuctionedNounPledge;
             if (includeNonAuctionedNoun) {
                 nonAuctionedNounPledge = nonAuctionedNounPledges[recipientId];
@@ -159,8 +150,9 @@ contract NounSeekViewUtils {
                 auctionedNounPledges[recipientId] +
                 nonAuctionedNounPledge;
         }
-        (, reimbursement) = nounSeek
-            .effectiveBPSAndReimbursementForPledgeTotal(totalPledges);
+        (, reimbursement) = nounSeek.effectiveBPSAndReimbursementForPledgeTotal(
+            totalPledges
+        );
         totalPledges -= reimbursement;
     }
 
@@ -169,7 +161,6 @@ contract NounSeekViewUtils {
      * UTILITY FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
-
     /**
      * @notice Evaluate if the provided Request parameters matches the specified Noun
      * @param requestTrait The trait type to compare the given Noun ID with
@@ -191,6 +182,7 @@ contract NounSeekViewUtils {
                     trait: requestTrait,
                     traitId: requestTraitId,
                     nounId: requestNounId,
+                    nonce: 0,
                     amount: 0
                 }),
                 onChainNounId
@@ -212,7 +204,25 @@ contract NounSeekViewUtils {
         uint16 recipientId
     ) public view returns (uint256 amount) {
         bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
-        amount = nounSeek.amounts(hash, recipientId);
+        (amount, ) = nounSeek.pledgeGroups(hash, recipientId);
+    }
+
+    /**
+     * @notice The nonce for a given recipient pledge group
+     * @param trait The trait enum
+     * @param traitId The ID of the trait
+     * @param nounId The Noun ID
+     * @param recipientId The recipient ID
+     * @return nonce The amount before fees
+     */
+    function nonceForRecipientByTrait(
+        NounSeek.Traits trait,
+        uint16 traitId,
+        uint16 nounId,
+        uint16 recipientId
+    ) public view returns (uint16 nonce) {
+        bytes32 hash = nounSeek.traitHash(trait, traitId, nounId);
+        (, nonce) = nounSeek.pledgeGroups(hash, recipientId);
     }
 
     /**
@@ -220,7 +230,6 @@ contract NounSeekViewUtils {
      * INTERNAL FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      */
-
     /**
      * @notice Was the specified Noun ID not auctioned
      */

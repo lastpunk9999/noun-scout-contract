@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
@@ -37,11 +37,33 @@ contract Settle is BaseNounSeekTest {
         mockNouns.setSeed(seed, 102);
         mockAuctionHouse.setNounId(102);
 
+        (, uint16 nonceAnyId) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            0
+        );
+        (, uint16 nonceSpecificId) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 102),
+            1
+        );
+
         vm.startPrank(user2);
 
         // Cannot match Noun on auction
         vm.expectRevert(NounSeek.IneligibleNounId.selector);
         nounSeek.settle(HEAD, 102, allRecipientIds);
+
+        // Nonce did not increased
+        (, uint16 expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            0
+        );
+        assertEq(expectedNonce, nonceAnyId);
+
+        (, expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 102),
+            1
+        );
+        assertEq(expectedNonce, nonceSpecificId);
 
         mockAuctionHouse.setNounId(103);
 
@@ -53,6 +75,19 @@ contract Settle is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.settle(HEAD, 102, allRecipientIds);
+
+        // Nonce increased
+        (, expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            0
+        );
+        assertEq(expectedNonce, nonceAnyId + 1);
+
+        (, expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 102),
+            1
+        );
+        assertEq(expectedNonce, nonceSpecificId + 1);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -131,6 +166,20 @@ contract Settle is BaseNounSeekTest {
         nounSeek.add{value: minValue}(HEAD, 9, 99, 1);
 
         vm.stopPrank();
+
+        (, uint16 nonceAnyId) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            0
+        );
+        (, uint16 nonceSpecificId) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 101),
+            1
+        );
+        (, uint16 nonceNonAuctioned) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 100),
+            1
+        );
+
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
             0,
@@ -169,6 +218,26 @@ contract Settle is BaseNounSeekTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         nounSeek.settle(HEAD, 100, allRecipientIds);
+
+        // Nonce increased
+        (, uint16 expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, ANY_ID),
+            0
+        );
+        assertEq(expectedNonce, nonceAnyId + 1);
+
+        (, expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 100),
+            1
+        );
+        assertEq(expectedNonce, nonceNonAuctioned + 1);
+
+        // Nonce did not increase
+        (, expectedNonce) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 101),
+            1
+        );
+        assertEq(expectedNonce, nonceSpecificId);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -439,13 +508,18 @@ contract Settle is BaseNounSeekTest {
         vm.prank(user2);
         nounSeek.settle(HEAD, 102, allRecipientIds);
 
-        assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 0), 0), 0);
-
-        // donnee1 retains deposited amount
-        assertEq(
-            nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1),
-            minValue
+        (uint256 recipient0Amount, ) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 0),
+            0
         );
+        assertEq(recipient0Amount, 0);
+
+        // recipient1 retains deposited amount
+        (uint256 recipient1Amount, ) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 102),
+            1
+        );
+        assertEq(recipient1Amount, minValue);
 
         // Cannot re-match Noun
         vm.expectRevert(NounSeek.NoMatch.selector);
@@ -463,8 +537,12 @@ contract Settle is BaseNounSeekTest {
         vm.prank(user2);
         nounSeek.settle(HEAD, 102, allRecipientIds);
 
-        // donnee1 amounts are 0
-        assertEq(nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 102), 1), 0);
+        // recipient1 amounts are 0
+        (recipient1Amount, ) = nounSeek.pledgeGroups(
+            nounSeek.traitHash(HEAD, 9, 102),
+            1
+        );
+        assertEq(recipient1Amount, 0);
     }
 
     function test_SETTLE_failsIneligibleImmediateAuctionedNounId() public {
@@ -554,18 +632,21 @@ contract Settle is BaseNounSeekTest {
         for (uint16 i; i < allRecipientIds.length; i++) {
             uint256 amount = minValue;
             if (i == 0 || i == 2) amount = 0;
-            assertEq(
-                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 101), i),
-                amount
+            (uint256 pledgeGroup1Amount, ) = nounSeek.pledgeGroups(
+                nounSeek.traitHash(HEAD, 9, 101),
+                i
             );
-            assertEq(
-                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, ANY_ID), i),
-                amount
+            assertEq(pledgeGroup1Amount, amount);
+            (uint256 pledgeGroup2Amount, ) = nounSeek.pledgeGroups(
+                nounSeek.traitHash(HEAD, 9, ANY_ID),
+                i
             );
-            assertEq(
-                nounSeek.amounts(nounSeek.traitHash(HEAD, 9, 100), i),
-                minValue
+            assertEq(pledgeGroup2Amount, amount);
+            (uint256 pledgeGroup3Amount, ) = nounSeek.pledgeGroups(
+                nounSeek.traitHash(HEAD, 9, 100),
+                i
             );
+            assertEq(pledgeGroup3Amount, minValue);
         }
     }
 

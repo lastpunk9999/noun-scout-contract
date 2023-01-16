@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
@@ -79,8 +79,10 @@ contract NounSeekTest is BaseNounSeekTest {
         }
 
         // HEAD with ANY_ID and Specific Id 101
-        uint256[][] memory pledgesByTraitId = nounSeek
-            .pledgesForNounIdByTrait(HEAD, 101);
+        uint256[][] memory pledgesByTraitId = nounSeek.pledgesForNounIdByTrait(
+            HEAD,
+            101
+        );
 
         assertEq(pledgesByTraitId.length, nounSeek.headCount());
 

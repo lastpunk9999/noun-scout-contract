@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
@@ -51,7 +51,7 @@ contract TestnetDeploy is Script {
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "No logo Recipient Center is a non-profit organization."
         );
-         nounSeek.addRecipient(
+        nounSeek.addRecipient(
             "Inactive Recipient",
             0x8A6636Af3e6B3589fDdf09611Db7d030A8532943,
             "Inactive Recipient Center is a non-profit organization."
@@ -149,10 +149,10 @@ contract TestnetDeploy is Script {
             uint16 traitId,
             uint16 nounId,
             uint16 recipientId*/
-            uint16 trait = i%4;
+            uint16 trait = i % 4;
             uint16 traitId = i % 7;
             // background only has 2 ids
-            if (trait == 0){
+            if (trait == 0) {
                 traitId = i % 2;
             }
             // make sure there are no head requests
