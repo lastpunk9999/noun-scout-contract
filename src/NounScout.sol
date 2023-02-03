@@ -6,7 +6,7 @@ import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step
 import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 
 contract NounScout is Ownable2Step, Pausable {
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * ERRORS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -51,7 +51,7 @@ contract NounScout is Ownable2Step, Pausable {
      */
     error ValueTooLow();
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * EVENTS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -156,7 +156,7 @@ contract NounScout is Ownable2Step, Pausable {
      */
     event MaxReimbursementChanged(uint256 newMaxReimbursement);
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * CUSTOM TYPES
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -228,7 +228,7 @@ contract NounScout is Ownable2Step, Pausable {
         MATCH_FOUND
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * CONSTANTS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -269,7 +269,7 @@ contract NounScout is Ownable2Step, Pausable {
      */
     uint16 private constant UINT16_MAX = type(uint16).max;
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * STORAGE VARIABLES
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -375,7 +375,7 @@ contract NounScout is Ownable2Step, Pausable {
         updateTraitCounts();
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * VIEW FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -860,7 +860,7 @@ contract NounScout is Ownable2Step, Pausable {
         request = _requests[requester][requestId];
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * WRITE FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -1075,7 +1075,7 @@ contract NounScout is Ownable2Step, Pausable {
         glassesCount = uint16(descriptor.glassesCount());
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * OWNER FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -1196,7 +1196,7 @@ contract NounScout is Ownable2Step, Pausable {
         _unpause();
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * INTERNAL WRITE FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -1342,7 +1342,7 @@ contract NounScout is Ownable2Step, Pausable {
         }
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * INTERNAL READ FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
