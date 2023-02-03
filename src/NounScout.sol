@@ -724,11 +724,19 @@ contract NounScout is Ownable2Step, Pausable {
 
     /**
      * @notice For the Noun that is eligible to be matched with pledged pledges (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts for each Recipient using requests that match the Noun's seed.
-     * @dev Example: The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
-     * Calling `pledgesForMatchableNoun()` returns cumulative matching pledges for each trait that matches the seed.
-     * `auctionedNounPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
-     * If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounPledges` would be populated
-     * See the documentation in the function body for the cases used to match eligible Nouns
+     * @dev Example:
+     - The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
+     * - Calling `pledgesForMatchableNoun()` returns cumulative matching pledges for each trait that matches the seed.
+     * - `auctionedNounPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
+     * - If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounPledges` would be populated
+     *
+     * - Cases for eligible matched Nouns:
+     *
+     * - `Current Noun ID | Eligible Noun ID`
+     * - `----------------|-------------------`
+     * - `            101 | 99 (*skips 100)`
+     * - `            102 | 101, 100 (*includes 100)`
+     * - `            103 | 102`
      * @return auctionedNounId The ID of the Noun that is was auctioned
      * @return nonAuctionedNounId If two Nouns were minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
      * @return auctionedNounPledges Total pledges for the eligible auctioned Noun as a nested arrays in the order Trait Type and Recipient ID
@@ -748,17 +756,6 @@ contract NounScout is Ownable2Step, Pausable {
             uint256[5] memory nonAuctionNounTotalReimbursement
         )
     {
-        /**
-         * Cases for eligible matched Nouns:
-         *
-         * Current | Eligible
-         * Noun ID | Noun ID
-         * --------|-------------------
-         *     101 | 99 (*skips 100)
-         *     102 | 101, 100 (*includes 100)
-         *     103 | 102
-         */
-
         /// The Noun ID of the previous to the current Noun on auction
         auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
         /// Setup a parameter to detect if a non-auctioned Noun should be matched
@@ -956,10 +953,18 @@ contract NounScout is Ownable2Step, Pausable {
 
     /**
      * @notice Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
-     * @dev Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
-     * Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
-     * If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
-     * See function body for examples.
+     * @dev
+     * - Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
+     * - Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
+     * - If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
+     *
+     * - Cases for eligible matched Nouns:
+     *
+     * - `Current Noun ID | Eligible Noun ID`
+     * - `----------------|-------------------`
+     * - `            101 | 99 (*skips 100)`
+     * - `            102 | 101, 100 (*includes 100)`
+     * - `            103 | 102`
      * @param trait The Trait Type to fetch from an eligible Noun (see `Traits` Enum)
      * @param nounId The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
      * @param recipientIds An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.
@@ -971,16 +976,6 @@ contract NounScout is Ownable2Step, Pausable {
         uint16 nounId,
         uint16[] memory recipientIds
     ) public whenNotPaused returns (uint256 total, uint256 reimbursement) {
-        /**
-         * Cases for eligible matched Nouns:
-         *
-         * Current | Eligible
-         * Noun ID | Noun ID
-         * --------|-------------------
-         *     101 | 99 (*skips 100)
-         *     102 | 101, 100 (*includes 100)
-         *     103 | 102
-         */
         /// The Noun ID of the previous to the current Noun on auction
         uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
         /// Setup a parameter to detect if a non-auctioned Noun should be matched
@@ -1424,9 +1419,24 @@ contract NounScout is Ownable2Step, Pausable {
      * - PLEDGE_SENT: A Noun was minted with the Request parameters and has been matched
      * - AUCTION_ENDING_SOON: The auction end time falls within the AUCTION_END_LIMIT
      * - MATCH_FOUND: The current or previous Noun matches the Request parameters
+     * - MATCH_FOUND Case 1) The current Noun on auction has the requested traits
+     * - MATCH_FOUND Case 2) The previous Noun has the requested traits
+     * - MATCH_FOUND Case 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
+     * - MATCH_FOUND: Case 3) A Non-Auctioned Noun which matches the request.nounId is the previous previous Noun
+
+     * ```
+     * Case # | Example Noun ID | Ineligible Noun ID
+     * -------|---------|-------------------
+     *    1,3 |     101 | 101, 99 (*skips 100)
+     *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
+     *    1,2 |     103 | 103, 102
+     * ```
+     *
      * - CAN_REMOVE: Recipient is inactive and Request has not been matched
-     *  OR Request has not been matched and auction is not ending
-     *  OR Request has not been matched, auction is not ending, and the current or prevous Noun does not match the Request parameters
+     *   - OR Request has not been matched and auction is not ending
+     *   - OR Request has not been matched, auction is not ending, and the current or prevous Noun does not match the Request parameters
+    //
+
      * @param request Request to analyze
      * @return requestStatus RequestStatus Enum
      * @return hash generated trait hash to minimize gas ussage
@@ -1474,20 +1484,6 @@ contract NounScout is Ownable2Step, Pausable {
 
         nounId = uint16(auctionHouse.auction().nounId);
 
-        /**
-         * A request cannot be removed if:
-         * 1) The current Noun on auction has the requested traits
-         * 2) The previous Noun has the requested traits
-         * 2b) If the previous Noun is non-auctioned, the previous previous has the requested traits
-         * 3) A Non-Auctioned Noun which matches the request.nounId is the previous previous Noun
-
-         * Case # | Example | Ineligible
-         *        | Noun ID | Noun ID
-         * -------|---------|-------------------
-         *    1,3 |     101 | 101, 99 (*skips 100)
-         *  1,2,2b|     102 | 102, 101, 100 (*includes 100)
-         *    1,2 |     103 | 103, 102
-        */
         // Case 1
         if (requestMatchesNoun(request, nounId)) {
             return (RequestStatus.MATCH_FOUND, hash, nounId);
