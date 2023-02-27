@@ -36,7 +36,8 @@ contract BaseNounScoutTest is EnhancedTest {
     address recipient3 = mkaddr("recipient3");
     address recipient4 = mkaddr("recipient4");
     uint256 AUCTION_END_LIMIT;
-    uint16 ANY_ID;
+    uint16 ANY_AUCTION_ID;
+    uint16 ANY_NON_AUCTION_ID;
     uint256 minValue;
     uint256 maxValue;
     uint256 messageValue;
@@ -59,7 +60,8 @@ contract BaseNounScoutTest is EnhancedTest {
         nounScoutViewUtils = new NounScoutViewUtils(nounScout);
 
         AUCTION_END_LIMIT = nounScout.AUCTION_END_LIMIT();
-        ANY_ID = nounScout.ANY_ID();
+        ANY_AUCTION_ID = nounScout.ANY_AUCTION_ID();
+        ANY_NON_AUCTION_ID = nounScout.ANY_NON_AUCTION_ID();
         minValue = nounScout.minValue();
         messageValue = nounScout.messageValue();
         baseReimbursementBPS = nounScout.baseReimbursementBPS();

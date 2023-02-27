@@ -8,14 +8,14 @@ contract NounScoutViewUtils {
     NounScout public immutable nounScout;
     INounsTokenLike public immutable nouns;
     INounsAuctionHouseLike public immutable auctionHouse;
-    uint16 public immutable ANY_ID;
+    uint16 public immutable ANY_AUCTION_ID;
     uint16 private constant UINT16_MAX = type(uint16).max;
 
     constructor(NounScout _nounScout) {
         nounScout = _nounScout;
         nouns = INounsTokenLike(nounScout.nouns());
         auctionHouse = INounsAuctionHouseLike(nounScout.auctionHouse());
-        ANY_ID = nounScout.ANY_ID();
+        ANY_AUCTION_ID = nounScout.ANY_AUCTION_ID();
     }
 
     function pledgesForUpcomingNounByTrait(NounScout.Traits trait)
@@ -37,12 +37,14 @@ contract NounScoutViewUtils {
             }
             nextAuctionPledges = nounScout.pledgesForNounIdByTrait(
                 trait,
-                nextAuctionId
+                nextAuctionId,
+                true
             );
             if (nextNonAuctionId < UINT16_MAX) {
                 nextNonAuctionPledges = nounScout.pledgesForNounIdByTrait(
                     trait,
-                    nextNonAuctionId
+                    nextNonAuctionId,
+                    true
                 );
             }
         }
@@ -67,7 +69,8 @@ contract NounScoutViewUtils {
             currentAuctionPledges = nounScout.pledgesForNounIdByTraitId(
                 trait,
                 currentTraitId,
-                currentAuctionId
+                currentAuctionId,
+                true
             );
             if (_isNonAuctionedNoun(currentAuctionId - 1)) {
                 prevNonAuctionId = currentAuctionId - 1;
@@ -75,7 +78,8 @@ contract NounScoutViewUtils {
                 prevNonAuctionPledges = nounScout.pledgesForNounIdByTraitId(
                     trait,
                     prevTraitId,
-                    prevNonAuctionId
+                    prevNonAuctionId,
+                    true
                 );
             }
         }
@@ -127,14 +131,16 @@ contract NounScoutViewUtils {
         auctionedNounPledges = nounScout.pledgesForNounIdByTraitId({
             trait: trait,
             traitId: _fetchTraitId(trait, auctionedNounId),
-            nounId: auctionedNounId
+            nounId: auctionedNounId,
+            includeAnyId: true
         });
         bool includeNonAuctionedNoun = nonAuctionedNounId < UINT16_MAX;
         if (includeNonAuctionedNoun) {
             nonAuctionedNounPledges = nounScout.pledgesForNounIdByTraitId({
                 trait: trait,
                 traitId: _fetchTraitId(trait, nonAuctionedNounId),
-                nounId: nonAuctionedNounId
+                nounId: nonAuctionedNounId,
+                includeAnyId: true
             });
         }
         for (
@@ -155,7 +161,7 @@ contract NounScoutViewUtils {
         totalPledges -= reimbursement;
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * UTILITY FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -164,7 +170,7 @@ contract NounScoutViewUtils {
      * @notice Evaluate if the provided Request parameters matches the specified Noun
      * @param requestTrait The trait type to compare the given Noun ID with
      * @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
-     * @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_ID)
+     * @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_AUCTION_ID)
      * @param onChainNounId Noun ID to fetch the attributes of to compare against the given request properties
      * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
      */
@@ -224,7 +230,7 @@ contract NounScoutViewUtils {
         (, pledgeGroupId) = nounScout.pledgeGroups(hash, recipientId);
     }
 
-    /**
+    /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * INTERNAL FUNCTIONS
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░

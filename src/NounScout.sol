@@ -259,13 +259,19 @@ contract NounScout is Ownable2Step, Pausable {
     uint16 public constant AUCTION_END_LIMIT = 5 minutes;
 
     /**
-     * @notice The value of "open Noun ID" which allows trait matches to be performed against any Noun ID except non-auctioned Nouns
+     * @notice The value of "open auctioned Noun ID" which allows trait matches to be performed against any auctioned Noun ID
      * @return Set to zero (0)
      */
-    uint16 public constant ANY_ID = 0;
+    uint16 public constant ANY_AUCTION_ID = 0;
 
     /**
-     * @notice cheaper to store than calculate
+     * @notice The value of "open non-auctioned Noun ID" which allows trait matches to be performed against any non-auctioned Noun ID
+     * @return Set to one (1)
+     */
+    uint16 public constant ANY_NON_AUCTION_ID = 1;
+
+    /**
+     * @notice used as `null` value for Noun ID
      */
     uint16 private constant UINT16_MAX = type(uint16).max;
 
@@ -495,13 +501,27 @@ contract NounScout is Ownable2Step, Pausable {
         view
         returns (bool)
     {
-        // If a specific Noun ID is part of the request, but is not the target Noun id, can exit
-        if (request.nounId != ANY_ID && request.nounId != nounId) {
+        // open IDs can't be used as Noun Ids
+        if (nounId == ANY_AUCTION_ID || nounId == ANY_NON_AUCTION_ID) {
+            revert IneligibleNounId();
+        }
+
+        // If a specific Noun ID is part of the request, but is not the target Noun ID, can exit
+        if (
+            request.nounId != ANY_AUCTION_ID &&
+            request.nounId != ANY_NON_AUCTION_ID &&
+            request.nounId != nounId
+        ) {
             return false;
         }
 
-        // No Preference Noun ID can only apply to auctioned Nouns
-        if (request.nounId == ANY_ID && _isNonAuctionedNoun(nounId)) {
+        // `ANY_AUCTION_ID` can only apply to auctioned Nouns
+        if (request.nounId == ANY_AUCTION_ID && _isNonAuctionedNoun(nounId)) {
+            return false;
+        }
+
+        // `ANY_NON_AUCTION_ID` can only apply to non-auctioned Nouns
+        if (request.nounId == ANY_NON_AUCTION_ID && _isAuctionedNoun(nounId)) {
             return false;
         }
 
@@ -521,11 +541,11 @@ contract NounScout is Ownable2Step, Pausable {
      * Calling `pledgesForNounId(101) returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:`
      * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
      * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
-     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges. E.g. `pledgesForNounId(101)` fetches all pledges for the open ID value `ANY_ID` as well as specified pledges for Noun ID 101.
      * @param nounId The ID of the Noun requests should match.
+     * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID
      */
-    function pledgesForNounId(uint16 nounId)
+    function pledgesForNounId(uint16 nounId, bool includeAnyId)
         public
         view
         returns (uint256[][][5] memory pledges)
@@ -546,7 +566,11 @@ contract NounScout is Ownable2Step, Pausable {
             }
 
             pledges[trait] = new uint256[][](traitCount);
-            pledges[trait] = pledgesForNounIdByTrait(traitEnum, nounId);
+            pledges[trait] = pledgesForNounIdByTrait(
+                traitEnum,
+                nounId,
+                includeAnyId
+            );
         }
     }
 
@@ -554,16 +578,16 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Get cumulative pledge amounts scoped to Noun ID and Trait Type.
      * @dev Example: `pledgesForNounIdByTrait(3, 25)` accumulates all pledged pledges amounts for heads and Noun ID 25.
      * The returned value in `pledges[5][2]` is in the total amount that has been pledged to Recipient ID 2 if Noun ID 25 is minted with a head of Trait ID 5
-     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param trait The trait type to scope requests to (See `Traits` Enum)
      * @param nounId The Noun ID to scope requests to
+     * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledgesByTraitId Cumulative amounts pledged for each Recipient, indexed by Trait ID and Recipient ID
      */
-    function pledgesForNounIdByTrait(Traits trait, uint16 nounId)
-        public
-        view
-        returns (uint256[][] memory pledgesByTraitId)
-    {
+    function pledgesForNounIdByTrait(
+        Traits trait,
+        uint16 nounId,
+        bool includeAnyId
+    ) public view returns (uint256[][] memory pledgesByTraitId) {
         unchecked {
             uint16 traitCount;
             if (trait == Traits.BACKGROUND) {
@@ -581,14 +605,12 @@ contract NounScout is Ownable2Step, Pausable {
             uint256 recipientsCount = _recipients.length;
             pledgesByTraitId = new uint256[][](traitCount);
 
-            bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
-
             for (uint16 traitId; traitId < traitCount; traitId++) {
                 pledgesByTraitId[traitId] = _pledgesForNounIdByTraitId(
                     trait,
                     traitId,
                     nounId,
-                    processAnyId,
+                    includeAnyId,
                     recipientsCount
                 );
             }
@@ -598,24 +620,24 @@ contract NounScout is Ownable2Step, Pausable {
     /**
      * @notice Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
      * @dev Example: `pledgesForNounIdByTraitId(0, 1, 25)` accumulates all pledged pledge amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `pledges[2]` is in the total amount that has been pledged to Recipient ID 2
-     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param trait The trait type to scope requests to (See `Traits` Enum)
      * @param traitId The trait ID  of the trait to scope requests
      * @param nounId The Noun ID to scope requests to
+     * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Recipient ID
      */
     function pledgesForNounIdByTraitId(
         Traits trait,
         uint16 traitId,
-        uint16 nounId
+        uint16 nounId,
+        bool includeAnyId
     ) public view returns (uint256[] memory pledges) {
-        bool processAnyId = nounId != ANY_ID && _isAuctionedNoun(nounId);
         return
             _pledgesForNounIdByTraitId(
                 trait,
                 traitId,
                 nounId,
-                processAnyId,
+                includeAnyId,
                 _recipients.length
             );
     }
@@ -625,21 +647,16 @@ contract NounScout is Ownable2Step, Pausable {
      * @dev Example: `noun.seeds(1)` returns a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
      * Calling `pledgesForOnChainNoun(1)` returns cumulative matching pledges for each trait that matches the seed such that:
      * - `pledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 for Noun ID 1. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2
-     * Note: When accessing a Noun ID for an auctioned Noun, pledges for the open ID value `ANY_ID` will be added to total pledges
      * @param nounId Noun ID of an existing on-chain Noun
+     * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient that matches the on-chain Noun seed indexed by Trait Type and Recipient ID
      */
-    function pledgesForOnChainNoun(uint16 nounId)
+    function pledgesForOnChainNoun(uint16 nounId, bool includeAnyId)
         public
         view
         returns (uint256[][5] memory pledges)
     {
-        return
-            _pledgesForOnChainNoun(
-                nounId,
-                _isNonAuctionedNoun(nounId),
-                _recipients.length
-            );
+        return _pledgesForOnChainNoun(nounId, includeAnyId, _recipients.length);
     }
 
     /**
@@ -669,10 +686,13 @@ contract NounScout is Ownable2Step, Pausable {
                 nextAuctionId++;
             }
 
-            nextAuctionPledges = pledgesForNounId(nextAuctionId);
+            nextAuctionPledges = pledgesForNounId(nextAuctionId, true);
 
             if (nextNonAuctionId < UINT16_MAX) {
-                nextNonAuctionPledges = pledgesForNounId(nextNonAuctionId);
+                nextNonAuctionPledges = pledgesForNounId(
+                    nextNonAuctionId,
+                    true
+                );
             }
         }
     }
@@ -706,7 +726,7 @@ contract NounScout is Ownable2Step, Pausable {
 
             currentAuctionPledges = _pledgesForOnChainNoun({
                 nounId: currentAuctionId,
-                processAnyId: true,
+                includeAnyId: true,
                 recipientsCount: recipientsCount
             });
 
@@ -715,7 +735,7 @@ contract NounScout is Ownable2Step, Pausable {
 
                 prevNonAuctionPledges = _pledgesForOnChainNoun({
                     nounId: prevNonAuctionId,
-                    processAnyId: false,
+                    includeAnyId: true,
                     recipientsCount: recipientsCount
                 });
             }
@@ -782,7 +802,7 @@ contract NounScout is Ownable2Step, Pausable {
 
         auctionedNounPledges = _pledgesForOnChainNoun({
             nounId: auctionedNounId,
-            processAnyId: true,
+            includeAnyId: true,
             recipientsCount: recipientsCount
         });
 
@@ -791,7 +811,7 @@ contract NounScout is Ownable2Step, Pausable {
         if (includeNonAuctionedNoun) {
             nonAuctionedNounPledges = _pledgesForOnChainNoun({
                 nounId: nonAuctionedNounId,
-                processAnyId: false,
+                includeAnyId: true,
                 recipientsCount: recipientsCount
             });
         }
@@ -868,7 +888,7 @@ contract NounScout is Ownable2Step, Pausable {
      * @dev `msg.value` is used as the pledged Request amount
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
-     * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
+     * @param nounId the Noun ID the request is targeted for. Can be (1) any specific Noun ID, (2) the value of `ANY_AUCTION_ID` if the pledge can target any auctioned Noun, or (3) the value of `ANY_NON_AUCTION_ID` if the pledge can target any non-auctioned Noun
      * @param recipientId the ID of the Recipient that should receive the pledged amount if a Noun matching the parameters is minted
      * @return requestId The ID of this requests for msg.sender's address
      */
@@ -891,7 +911,7 @@ contract NounScout is Ownable2Step, Pausable {
      * The remaining value is stored as the pledged Request amount.
      * @param trait Trait Type the request is for (see `Traits` Enum)
      * @param traitId ID of the specified Trait that the request is for
-     * @param nounId the Noun ID the request is targeted for (or the value of ANY_ID for open requests)
+     * @param nounId the Noun ID the request is targeted for. Can be (1) any specific Noun ID, (2) the value of `ANY_AUCTION_ID` if the pledge can target any auctioned Noun, or (3) the value of `ANY_NON_AUCTION_ID` if the pledge can target any non-auctioned Noun
      * @param recipientId the ID of the Recipient that should receive the pledge if a Noun matching the parameters is minted
      * @param message The message to log
      * @return requestId The ID of this requests for msg.sender's address
@@ -955,7 +975,8 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
      * @dev
      * - Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
-     * - Specifying a Noun Id for an auctioned Noun will matches against requests that have an open ID (ANY_ID) as well as specific ID.
+     * - Specifying a Noun Id for an auctioned Noun will matches against requests that target `ANY_AUCTION_ID` as well as specific ID.
+     * - Specifying a Noun Id for a non-auctioned Noun will matches against requests that target `ANY_NON_AUCTION_ID` as well as specific ID.
      * - If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
      *
      * - Cases for eligible matched Nouns:
@@ -1005,28 +1026,13 @@ contract NounScout is Ownable2Step, Pausable {
             revert IneligibleNounId();
         }
 
-        uint16[] memory traitIds;
-        uint16[] memory nounIds;
-
-        if (_isNonAuctionedNoun(nounId)) {
-            traitIds = new uint16[](1);
-            nounIds = new uint16[](1);
-            nounIds[0] = nounId;
-            traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
-        } else {
-            traitIds = new uint16[](2);
-            nounIds = new uint16[](2);
-            nounIds[0] = nounId;
-            nounIds[1] = ANY_ID;
-            traitIds[0] = _fetchOnChainNounTraitId(trait, nounId);
-            traitIds[1] = traitIds[0];
-        }
+        uint16 traitId = _fetchOnChainNounTraitId(trait, nounId);
 
         uint256[] memory donations;
         (donations, total) = _combineAmountsAndDelete(
             trait,
-            traitIds,
-            nounIds,
+            traitId,
+            nounId,
             recipientIds
         );
 
@@ -1281,26 +1287,28 @@ contract NounScout is Ownable2Step, Pausable {
     /**
      * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate pledge and reimubersement amounts, sets a new PledgeGroup record with amount set to 0 and pledgeGroupId increased by 1.
      * @param trait The trait type requests should match (see `Traits` Enum)
-     * @param traitIds Specific trait ID
-     * @param nounIds Specific Noun ID
+     * @param traitId Specific trait ID
+     * @param nounId Specific Noun ID
      * @param recipientIds Specific set of recipients
      * @return pledges Mutated pledges array
      * @return total total
      */
     function _combineAmountsAndDelete(
         Traits trait,
-        uint16[] memory traitIds,
-        uint16[] memory nounIds,
+        uint16 traitId,
+        uint16 nounId,
         uint16[] memory recipientIds
     ) internal returns (uint256[] memory pledges, uint256 total) {
+        // Lookup specific and Open ID requests
+        uint16[2] memory nounIds = [
+            nounId,
+            _isAuctionedNoun(nounId) ? ANY_AUCTION_ID : ANY_NON_AUCTION_ID
+        ];
         pledges = new uint256[](_recipients.length);
 
-        // Equal number of `nounIds` and `traitIds`s
         // Loop through `nounIds` (hashing the `nounId`, `trait`, and `traitId`) to then inner loop through `recipientIds` to lookup pledged amounts
         for (uint16 i; i < nounIds.length; i++) {
-            uint16 traitId = traitIds[i];
-            uint16 nounId = nounIds[i];
-            bytes32 hash = traitHash(trait, traitId, nounId);
+            bytes32 hash = traitHash(trait, traitId, nounIds[i]);
             uint256 traitTotal;
 
             for (uint16 j; j < recipientIds.length; j++) {
@@ -1350,7 +1358,7 @@ contract NounScout is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        bool processAnyId,
+        bool includeAnyId,
         uint256 recipientsCount
     ) internal view returns (uint256[] memory pledges) {
         unchecked {
@@ -1358,8 +1366,17 @@ contract NounScout is Ownable2Step, Pausable {
 
             bytes32 hash = traitHash(trait, traitId, nounId);
             bytes32 anyIdHash;
+            bool processAnyId = includeAnyId &&
+                nounId != ANY_AUCTION_ID &&
+                nounId != ANY_NON_AUCTION_ID;
             if (processAnyId) {
-                anyIdHash = traitHash(trait, traitId, ANY_ID);
+                anyIdHash = traitHash(
+                    trait,
+                    traitId,
+                    _isAuctionedNoun(nounId)
+                        ? ANY_AUCTION_ID
+                        : ANY_NON_AUCTION_ID
+                );
             }
             pledges = new uint256[](recipientsCount);
             for (
@@ -1383,7 +1400,7 @@ contract NounScout is Ownable2Step, Pausable {
      */
     function _pledgesForOnChainNoun(
         uint16 nounId,
-        bool processAnyId,
+        bool includeAnyId,
         uint256 recipientsCount
     ) internal view returns (uint256[][5] memory pledges) {
         INounsSeederLike.Seed memory seed = nouns.seeds(nounId);
@@ -1406,7 +1423,7 @@ contract NounScout is Ownable2Step, Pausable {
                 traitEnum,
                 traitId,
                 nounId,
-                processAnyId,
+                includeAnyId,
                 recipientsCount
             );
         }

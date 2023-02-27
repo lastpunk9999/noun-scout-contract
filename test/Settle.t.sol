@@ -17,11 +17,11 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_happyMatchCase1() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
         // 3-6 Should not match
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 0);
         nounScout.add{value: minValue}(HEAD, 8, 102, 1);
         nounScout.add{value: minValue}(HEAD, 9, 103, 2);
         nounScout.add{value: minValue}(HEAD, 9, 101, 3);
@@ -38,7 +38,7 @@ contract Settle is BaseNounScoutTest {
         mockAuctionHouse.setNounId(102);
 
         (, uint16 groupIdAnyId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
         (, uint16 groupIdSpecificId) = nounScout.pledgeGroups(
@@ -54,7 +54,7 @@ contract Settle is BaseNounScoutTest {
 
         // Pledge Group ID did not increased
         (, uint16 expectedPledgeGroupId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
         assertEq(expectedPledgeGroupId, groupIdAnyId);
@@ -78,7 +78,7 @@ contract Settle is BaseNounScoutTest {
 
         // Pledge Group ID increased
         (, expectedPledgeGroupId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
         assertEq(expectedPledgeGroupId, groupIdAnyId + 1);
@@ -98,11 +98,11 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_happyMatchCase2() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 101, 1);
         // 3-6 Should not match
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 0);
         nounScout.add{value: minValue}(HEAD, 8, 101, 1);
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
         nounScout.add{value: minValue}(HEAD, 9, 99, 1);
@@ -155,12 +155,14 @@ contract Settle is BaseNounScoutTest {
     // Auctioned Noun matches with non-auctioned match immediately before
     function test_SETTLE_happyMatchCase3() public {
         vm.startPrank(user1);
-        // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
-        // 2 Should match
-        nounScout.add{value: minValue}(HEAD, 9, 100, 1);
-        // 3-6 Should not match
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        // 1 Should match `ID 101`
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
+        // 2 Should match `ID 100`
+        nounScout.add{value: minValue}(HEAD, 9, 100, 0);
+        // 3 Should match `ID 100`
+        nounScout.add{value: minValue}(HEAD, 9, ANY_NON_AUCTION_ID, 1);
+        // 4-7 Should not match
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 0);
         nounScout.add{value: minValue}(HEAD, 8, 101, 1);
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
         nounScout.add{value: minValue}(HEAD, 9, 99, 1);
@@ -168,17 +170,23 @@ contract Settle is BaseNounScoutTest {
         vm.stopPrank();
 
         (, uint16 groupIdAnyId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
         (, uint16 groupIdSpecificId) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 101),
             1
         );
-        (, uint16 groupIdNonAuctioned) = nounScout.pledgeGroups(
+        (, uint16 groupIdSpecificNonAuctioned) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
-            1
+            0
         );
+
+        (, uint16 groupIdNonAuctioned) = nounScout.pledgeGroups(
+            nounScout.traitHash(HEAD, 9, ANY_NON_AUCTION_ID),
+           1
+        );
+
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -207,27 +215,36 @@ contract Settle is BaseNounScoutTest {
 
         mockAuctionHouse.setNounId(102);
 
+        // AUCTIONED
         // Only request 1 matches 101
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
 
         nounScout.settle(HEAD, 101, allRecipientIds);
 
-        // Only request 2 matches 100
-        vm.expectCall(address(recipient1), minValue - minReimbursement, "");
-        vm.expectCall(address(user2), minReimbursement, "");
-
-        nounScout.settle(HEAD, 100, allRecipientIds);
-
         // Pledge Group ID increased
         (, uint16 expectedPledgeGroupId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
         assertEq(expectedPledgeGroupId, groupIdAnyId + 1);
 
+        // NON-AUCTIONED
+        // Only request 2, 3 match 100
+        vm.expectCall(address(recipient0), minValue - (minReimbursement/2), "");
+        vm.expectCall(address(recipient1), minValue - (minReimbursement/2), "");
+        vm.expectCall(address(user2), minReimbursement, "");
+
+        nounScout.settle(HEAD, 100, allRecipientIds);
+
         (, expectedPledgeGroupId) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
+            0
+        );
+        assertEq(expectedPledgeGroupId, groupIdSpecificNonAuctioned + 1);
+
+        (, expectedPledgeGroupId) = nounScout.pledgeGroups(
+            nounScout.traitHash(HEAD, 9, ANY_NON_AUCTION_ID),
             1
         );
         assertEq(expectedPledgeGroupId, groupIdNonAuctioned + 1);
@@ -253,7 +270,7 @@ contract Settle is BaseNounScoutTest {
         // 1 Should match
         nounScout.add{value: minValue}(HEAD, 9, 100, 0);
         // 2 Should match
-        nounScout.add{value: minValue}(HEAD, 9, 100, 1);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_NON_AUCTION_ID, 1);
         // 3-6 Should not match
         nounScout.add{value: minValue}(HEAD, 8, 100, 0);
         nounScout.add{value: minValue}(HEAD, 8, 101, 1);
@@ -275,7 +292,7 @@ contract Settle is BaseNounScoutTest {
 
         vm.startPrank(user2);
 
-        // Cannot re-match Noun
+        // No matches for Noun 101
         vm.expectRevert(NounScout.NoMatch.selector);
         nounScout.settle(HEAD, 101, allRecipientIds);
 
@@ -297,12 +314,13 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_happyMatchCase5() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 99, 1);
-        // 3-6 Should not match
+        // 3-7 Should not match
         nounScout.add{value: minValue}(HEAD, 8, 100, 0);
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 1);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_NON_AUCTION_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 1);
         nounScout.add{value: minValue}(HEAD, 9, 101, 1);
         nounScout.add{value: minValue}(HEAD, 9, 100, 1);
 
@@ -351,7 +369,7 @@ contract Settle is BaseNounScoutTest {
         vm.prank(user1);
 
         // Send twice the value of the threshold (8 eth)
-        nounScout.add{value: thresholdValue * 2}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: thresholdValue * 2}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -384,7 +402,7 @@ contract Settle is BaseNounScoutTest {
 
         vm.prank(user1);
         // Send half the value of the threshold (0.08-1 ETH)
-        nounScout.add{value: thresholdValue - 1}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: thresholdValue - 1}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -419,7 +437,7 @@ contract Settle is BaseNounScoutTest {
 
         vm.prank(user1);
         // Send half the value of the threshold (2 eth)
-        nounScout.add{value: thresholdValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: thresholdValue}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -449,11 +467,11 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_allRecipientsInactive() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
         // 3-6 Should not match
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 0);
         nounScout.add{value: minValue}(HEAD, 8, 102, 1);
         nounScout.add{value: minValue}(HEAD, 9, 103, 1);
         nounScout.add{value: minValue}(HEAD, 9, 101, 1);
@@ -482,7 +500,7 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_oneRecipientInactive() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
 
@@ -589,7 +607,7 @@ contract Settle is BaseNounScoutTest {
         vm.startPrank(user1);
         // Each eligible Noun Id has a request for HEAD 9 sent to every recipient Id
         for (uint16 i = 0; i < allRecipientIds.length; i++) {
-            nounScout.add{value: minValue}(HEAD, 9, ANY_ID, i);
+            nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, i);
             nounScout.add{value: minValue}(HEAD, 9, 101, i);
             nounScout.add{value: minValue}(HEAD, 9, 100, i);
         }
@@ -613,13 +631,13 @@ contract Settle is BaseNounScoutTest {
         recipientIds[1] = 2;
 
         vm.startPrank(user2);
-        // recipient0 has 2 matching requets, 1) ANY_ID, 2) specific 101
+        // recipient0 has 2 matching requets, 1) ANY_AUCTION_ID, 2) specific 101
         vm.expectCall(
             address(recipient0),
             (minValue * 2) - (minReimbursement / 2),
             ""
         );
-        // recipient2 has 2 matching requets, 1) ANY_ID, 2) specific 101
+        // recipient2 has 2 matching requets, 1) ANY_AUCTION_ID, 2) specific 101
         vm.expectCall(
             address(recipient2),
             (minValue * 2) - (minReimbursement / 2),
@@ -638,7 +656,7 @@ contract Settle is BaseNounScoutTest {
             );
             assertEq(pledgeGroup1Amount, amount);
             (uint256 pledgeGroup2Amount, ) = nounScout.pledgeGroups(
-                nounScout.traitHash(HEAD, 9, ANY_ID),
+                nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
                 i
             );
             assertEq(pledgeGroup2Amount, amount);
@@ -653,7 +671,7 @@ contract Settle is BaseNounScoutTest {
     function test_SETTLE_revertsWhenPaused() public {
         vm.prank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,

@@ -65,9 +65,9 @@ contract NounScoutTest is BaseNounScoutTest {
             HEAD,
             9,
             1,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue,
             ""
         );
@@ -79,7 +79,7 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256 requestIdUser1 = nounScout.add{value: minValue}(
             HEAD,
             9,
-            ANY_ID,
+            ANY_AUCTION_ID,
             1
         );
 
@@ -91,7 +91,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(request1.trait), uint8(HEAD));
         assertEq(request1.traitId, 9);
         assertEq(request1.recipientId, 1);
-        assertEq(request1.nounId, ANY_ID);
+        assertEq(request1.nounId, ANY_AUCTION_ID);
         assertEq(request1.amount, minValue, "request1.amount, minValue");
 
         NounScout.Request[] memory requestsUser1 = nounScout
@@ -100,7 +100,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1.length, 1);
 
         (uint256 amount, ) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             1
         );
 
@@ -110,7 +110,7 @@ contract NounScoutTest is BaseNounScoutTest {
         // - adds additional request for same traits and recipient
         vm.prank(user1);
         assertEq(
-            nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1),
+            nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 1),
             requestIdUser1 + 1
         );
         requestsUser1 = nounScout.rawRequestsByAddress(address(user1));
@@ -120,7 +120,7 @@ contract NounScoutTest is BaseNounScoutTest {
         amount = nounScoutViewUtils.amountForRecipientByTrait(
             HEAD,
             9,
-            ANY_ID,
+            ANY_AUCTION_ID,
             1
         );
 
@@ -161,10 +161,11 @@ contract NounScoutTest is BaseNounScoutTest {
         // Should include user1 and user2 requests
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
-            99
+            99,
+            true
         );
 
-        // USER1 ANY_Id requested 2 times
+        // USER1 ANY_AUCTION_ID requested 2 times
         assertEq(
             pledgesByTraitId[9][1],
             minValue * 2,
@@ -188,7 +189,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(nextAuctionId, 101);
         assertEq(nextNonAuctionId, 100);
-        // USER1 ANY_Id requested 2 times + USER3 Noun Id 101 requested 1 times
+        // USER1 ANY_AUCTION_ID requested 2 times + USER3 Noun Id 101 requested 1 times
         assertEq(
             nextAuctionPledges[9][1],
             minValue * 3,
@@ -210,9 +211,9 @@ contract NounScoutTest is BaseNounScoutTest {
             HEAD,
             9,
             1,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue,
             ""
         );
@@ -221,7 +222,12 @@ contract NounScoutTest is BaseNounScoutTest {
         // - adds a request
         vm.prank(user1);
 
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         NounScout.Request memory request1 = nounScout.rawRequestById(
             address(user1),
@@ -241,9 +247,9 @@ contract NounScoutTest is BaseNounScoutTest {
             HEAD,
             9,
             1,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue,
             ""
         );
@@ -251,7 +257,12 @@ contract NounScoutTest is BaseNounScoutTest {
         // - adds another request
         vm.prank(user1);
 
-        uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         NounScout.Request memory request2 = nounScout.rawRequestById(
             address(user1),
@@ -285,9 +296,9 @@ contract NounScoutTest is BaseNounScoutTest {
             HEAD,
             9,
             1,
-            ANY_ID,
+            ANY_AUCTION_ID,
             1,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue,
             ""
         );
@@ -295,7 +306,12 @@ contract NounScoutTest is BaseNounScoutTest {
         // - adds another request
         vm.prank(user1);
 
-        uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId3 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         NounScout.Request memory request3 = nounScout.rawRequestById(
             address(user1),
@@ -309,20 +325,20 @@ contract NounScoutTest is BaseNounScoutTest {
     function test_ADD_failsWhenPaused() public {
         nounScout.pause();
         vm.expectRevert(bytes("Pausable: paused"));
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 1);
     }
 
     function test_ADD_failsBelowMinValue() public {
         vm.prank(user1);
         vm.expectRevert(NounScout.ValueTooLow.selector);
-        nounScout.add{value: minValue - 1}(HEAD, 9, ANY_ID, 1);
+        nounScout.add{value: minValue - 1}(HEAD, 9, ANY_AUCTION_ID, 1);
     }
 
     function test_ADD_failsInactiveRecipient() public {
         nounScout.setRecipientActive(1, false);
         vm.prank(user1);
         vm.expectRevert(NounScout.InactiveRecipient.selector);
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 1);
     }
 
     function test_ADDWITHMESSAGE_happyCase() public {
@@ -335,9 +351,9 @@ contract NounScoutTest is BaseNounScoutTest {
             HEAD,
             9,
             1,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             pledge,
             "hello"
         );
@@ -349,7 +365,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         uint256 requestIdUser1 = nounScout.addWithMessage{
             value: pledge + messageValue
-        }(HEAD, 9, ANY_ID, 1, "hello");
+        }(HEAD, 9, ANY_AUCTION_ID, 1, "hello");
 
         NounScout.Request memory request1 = nounScout.rawRequestById(
             address(user1),
@@ -359,7 +375,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(request1.trait), uint8(HEAD));
         assertEq(request1.traitId, 9);
         assertEq(request1.recipientId, 1);
-        assertEq(request1.nounId, ANY_ID);
+        assertEq(request1.nounId, ANY_AUCTION_ID);
         assertEq(request1.amount, pledge);
 
         NounScout.Request[] memory requestsUser1 = nounScout
@@ -368,7 +384,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1.length, 1);
 
         (uint256 amount, ) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             1
         );
 
@@ -379,7 +395,13 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.expectRevert(NounScout.ValueTooLow.selector);
         vm.prank(user1);
 
-        nounScout.addWithMessage{value: minValue}(HEAD, 9, ANY_ID, 1, "hello");
+        nounScout.addWithMessage{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1,
+            "hello"
+        );
     }
 
     function test_REMOVE_after_addWithMessage_happyCaseFIFO() public {
@@ -390,14 +412,20 @@ contract NounScoutTest is BaseNounScoutTest {
         // addWithMessage()
         uint256 requestId1 = nounScout.addWithMessage{
             value: minValue + messageValue
-        }(HEAD, 9, ANY_ID, 1, "hello");
+        }(HEAD, 9, ANY_AUCTION_ID, 1, "hello");
 
         // add()
-        uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
-            ANY_ID
+            ANY_AUCTION_ID,
+            true
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -415,10 +443,10 @@ contract NounScoutTest is BaseNounScoutTest {
             address(user1),
             HEAD,
             9,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
             1,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue
         );
 
@@ -430,7 +458,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, minValue);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], minValue);
 
         // Remove second request
@@ -440,10 +472,10 @@ contract NounScoutTest is BaseNounScoutTest {
             address(user1),
             HEAD,
             9,
-            ANY_ID,
+            ANY_AUCTION_ID,
             0,
             1,
-            nounScout.traitHash(HEAD, 9, ANY_ID),
+            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             minValue
         );
         vm.expectCall(address(user1), minValue, "");
@@ -453,7 +485,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], 0);
     }
 
@@ -462,11 +498,22 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.startPrank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
-        uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
-            ANY_ID
+            ANY_AUCTION_ID,
+            true
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -485,7 +532,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, minValue);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], minValue);
 
         // Remove second request
@@ -496,7 +547,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], 0);
     }
 
@@ -505,11 +560,22 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp + AUCTION_END_LIMIT + 1);
         vm.warp(timestamp);
         vm.startPrank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
-        uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
-            ANY_ID
+            ANY_AUCTION_ID,
+            true
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -528,7 +594,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, minValue);
         assertEq(requestsUser1[1].amount, 0);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], minValue);
 
         // Remove second request
@@ -539,7 +609,11 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requestsUser1[0].amount, 0);
         assertEq(requestsUser1[1].amount, 0);
 
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, ANY_ID);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            ANY_AUCTION_ID,
+            true
+        );
         assertEq(pledgesByTraitId[9][1], 0);
     }
 
@@ -548,7 +622,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp + AUCTION_END_LIMIT);
         vm.warp(timestamp);
         vm.startPrank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         vm.expectRevert(NounScout.AuctionEndingSoon.selector);
         nounScout.remove(requestId1);
@@ -559,7 +638,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp);
         vm.warp(timestamp);
         vm.startPrank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         vm.expectRevert(NounScout.AuctionEndingSoon.selector);
         nounScout.remove(requestId1);
@@ -570,7 +654,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.startPrank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         nounScout.remove(requestId1);
 
@@ -583,7 +672,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.prank(user1);
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
 
         vm.prank(user2);
         // Index out of bounds Error
@@ -597,10 +691,20 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.warp(timestamp);
         vm.startPrank(user1);
 
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, 103, 1);
         uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, 99, 1);
-        uint256 requestId4 = nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 1);
+        uint256 requestId4 = nounScout.add{value: minValue}(
+            HEAD,
+            8,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId5 = nounScout.add{value: minValue}(HEAD, 8, 103, 1);
         uint256 requestId6 = nounScout.add{value: minValue}(HEAD, 8, 99, 1);
 
@@ -638,10 +742,20 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.warp(timestamp);
         vm.startPrank(user1);
 
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, 99, 1);
         uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, 100, 1);
-        uint256 requestId4 = nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 1);
+        uint256 requestId4 = nounScout.add{value: minValue}(
+            HEAD,
+            8,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId5 = nounScout.add{value: minValue}(HEAD, 8, 99, 1);
         uint256 requestId6 = nounScout.add{value: minValue}(HEAD, 8, 100, 1);
 
@@ -679,10 +793,20 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.warp(timestamp);
         vm.startPrank(user1);
 
-        uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, 101, 1);
         uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, 102, 1);
-        uint256 requestId4 = nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 1);
+        uint256 requestId4 = nounScout.add{value: minValue}(
+            HEAD,
+            8,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId5 = nounScout.add{value: minValue}(HEAD, 8, 102, 1);
         uint256 requestId6 = nounScout.add{value: minValue}(HEAD, 8, 101, 1);
 
@@ -721,9 +845,19 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.startPrank(user1);
 
         uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, 100, 1);
-        uint256 requestId2 = nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 1);
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, 103, 1);
-        uint256 requestId4 = nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 1);
+        uint256 requestId4 = nounScout.add{value: minValue}(
+            HEAD,
+            8,
+            ANY_AUCTION_ID,
+            1
+        );
         uint256 requestId5 = nounScout.add{value: minValue}(HEAD, 8, 100, 1);
         uint256 requestId6 = nounScout.add{value: minValue}(HEAD, 8, 101, 1);
 
@@ -744,7 +878,7 @@ contract NounScoutTest is BaseNounScoutTest {
         nounScout.remove(requestId1);
 
         // Successful
-        nounScout.remove(requestId2); // ANY_ID requets do no match non-auctioned Nouns
+        nounScout.remove(requestId2); // ANY_AUCTION_ID requets do no match non-auctioned Nouns
         nounScout.remove(requestId3);
         nounScout.remove(requestId4);
         nounScout.remove(requestId5);
@@ -1147,15 +1281,15 @@ contract NounScoutTest is BaseNounScoutTest {
     function test_REQUESTSBYACTIVEADDRESS_happyCase() public {
         vm.startPrank(user1);
         // 1 Should match
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
         // 2 Should match
         nounScout.add{value: minValue}(HEAD, 9, 102, 1);
         // 3-4 Should not match
-        nounScout.add{value: minValue}(HEAD, 8, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 8, ANY_AUCTION_ID, 0);
         nounScout.add{value: minValue}(HEAD, 8, 102, 1);
 
         // 5 Should match, but recipient2 will be set inactive
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 2);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 2);
 
         vm.stopPrank();
 
@@ -1175,7 +1309,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(requests[0].trait), uint8(HEAD));
         assertEq(requests[0].id, 0);
         assertEq(requests[0].traitId, 9);
-        assertEq(requests[0].nounId, ANY_ID);
+        assertEq(requests[0].nounId, ANY_AUCTION_ID);
         assertEq(requests[0].recipientId, 0);
 
         assertEq(
@@ -1187,7 +1321,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(requests[4].trait), uint8(HEAD));
         assertEq(requests[4].id, 4);
         assertEq(requests[4].traitId, 9);
-        assertEq(requests[4].nounId, ANY_ID);
+        assertEq(requests[4].nounId, ANY_AUCTION_ID);
         assertEq(requests[4].recipientId, 2);
 
         assertEq(
@@ -1278,7 +1412,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(requests[2].trait), uint8(HEAD));
         assertEq(requests[2].id, 2);
         assertEq(requests[2].traitId, 8);
-        assertEq(requests[2].nounId, ANY_ID);
+        assertEq(requests[2].nounId, ANY_AUCTION_ID);
         assertEq(requests[2].recipientId, 0);
 
         assertEq(
@@ -1301,7 +1435,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(requests[4].trait), uint8(HEAD));
         assertEq(requests[4].id, 4);
         assertEq(requests[4].traitId, 9);
-        assertEq(requests[4].nounId, ANY_ID);
+        assertEq(requests[4].nounId, ANY_AUCTION_ID);
         assertEq(requests[4].recipientId, 2);
 
         assertEq(
@@ -1339,7 +1473,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(uint8(requests[3].trait), uint8(HEAD));
         assertEq(requests[3].id, 4);
         assertEq(requests[3].traitId, 9);
-        assertEq(requests[3].nounId, ANY_ID);
+        assertEq(requests[3].nounId, ANY_AUCTION_ID);
         assertEq(requests[3].recipientId, 2);
 
         // User removes request 4
@@ -1373,7 +1507,7 @@ contract NounScoutTest is BaseNounScoutTest {
     function test_REIMBURSEMENT_totalEqualToMinReimbursement() public {
         nounScout.setMinReimbursement(minValue);
         vm.prank(user1);
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -1399,7 +1533,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
     function test_REIMBURSEMENT_reimbursementLessThanMinReimbursement() public {
         vm.prank(user1);
-        nounScout.add{value: minValue}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -1426,7 +1560,7 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256 value = 5 ether;
 
         vm.prank(user1);
-        nounScout.add{value: value}(HEAD, 9, ANY_ID, 0);
+        nounScout.add{value: value}(HEAD, 9, ANY_AUCTION_ID, 0);
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -1445,5 +1579,152 @@ contract NounScoutTest is BaseNounScoutTest {
 
         vm.prank(user2);
         nounScout.settle(HEAD, 102, allRecipientIds);
+    }
+
+    function test_REQUEST_MATCHES_NOUN_allCases() public {
+        uint16 nonAuctionedId = 100;
+        uint16 auctionedId = 101;
+        bool matched;
+
+        // CASE 1: auctioned ID
+        INounsSeederLike.Seed memory seedAuctioned = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        mockNouns.setSeed(seedAuctioned, auctionedId);
+
+        // ANY_AUCTION_ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: ANY_AUCTION_ID,
+            pledgeGroupId: 0,
+            amount: 0
+        }), auctionedId);
+
+        assertEq(matched, true);
+
+        // ANY_NON_AUCTION_ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: ANY_NON_AUCTION_ID,
+            pledgeGroupId: 0,
+            amount: 0
+        }), auctionedId);
+
+        assertEq(matched, false);
+
+        // == auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: auctionedId,
+            pledgeGroupId: 0,
+            amount: 0
+        }), auctionedId);
+
+        assertEq(matched, true);
+
+        // != auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: 9999,
+            pledgeGroupId: 0,
+            amount: 0
+        }), auctionedId);
+
+        assertEq(matched, false);
+
+         // == non-auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: nonAuctionedId,
+            pledgeGroupId: 0,
+            amount: 0
+        }), auctionedId);
+
+        assertEq(matched, false);
+
+        // CASE 2: non-auctioned ID
+        INounsSeederLike.Seed memory seedNonAuctioned = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            8,
+            0
+        );
+
+        mockNouns.setSeed(seedNonAuctioned, nonAuctionedId);
+        // ANY_AUCTION_ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 8,
+            recipientId: 0,
+            nounId: ANY_AUCTION_ID,
+            pledgeGroupId: 0,
+            amount: 0
+        }), nonAuctionedId);
+
+        assertEq(matched, false);
+
+        // ANY_NON_AUCTION_ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 8,
+            recipientId: 0,
+            nounId: ANY_NON_AUCTION_ID,
+            pledgeGroupId: 0,
+            amount: 0
+        }), nonAuctionedId);
+
+        assertEq(matched, true);
+
+        // == auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 8,
+            recipientId: 0,
+            nounId: auctionedId,
+            pledgeGroupId: 0,
+            amount: 0
+        }), nonAuctionedId);
+
+        assertEq(matched, false);
+
+        // != auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 9,
+            recipientId: 0,
+            nounId: 9999,
+            pledgeGroupId: 0,
+            amount: 0
+        }), nonAuctionedId);
+
+        assertEq(matched, false);
+
+         // == non-auctioned ID
+        matched = nounScout.requestMatchesNoun(NounScout.Request({
+            trait: HEAD,
+            traitId: 8,
+            recipientId: 0,
+            nounId: nonAuctionedId,
+            pledgeGroupId: 0,
+            amount: 0
+        }), nonAuctionedId);
+
+        assertEq(matched, true);
     }
 }

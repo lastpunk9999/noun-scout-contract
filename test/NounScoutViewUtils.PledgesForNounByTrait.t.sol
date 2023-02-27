@@ -52,8 +52,8 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // For traitIds 0 - 9
         for (uint16 traitId; traitId < 10; traitId++) {
-            // add a request for ANY_ID, to recipient 0
-            nounScout.add{value: minValue}(HEAD, traitId, ANY_ID, 0);
+            // add a request for ANY_AUCTION_ID, to recipient 0
+            nounScout.add{value: minValue}(HEAD, traitId, ANY_AUCTION_ID, 0);
             // add a request for Noun 101, to recipient 1
             nounScout.add{value: minValue}(HEAD, traitId, 101, 1);
             // add a request for Noun 100, to recipient 2
@@ -84,7 +84,7 @@ contract NounScoutTest is BaseNounScoutTest {
             // Check that recipient#1 and recipient#2 are zero
             assertEq(nextAuctionPledges[traitId][1], 0);
             assertEq(nextAuctionPledges[traitId][2], 0);
-            // Check that recipient#0 is minValue because of ANY_ID request
+            // Check that recipient#0 is minValue because of ANY_AUCTION_ID request
             assertEq(nextAuctionPledges[traitId][0], minValue);
         }
     }
@@ -97,10 +97,10 @@ contract NounScoutTest is BaseNounScoutTest {
         // For Each trait, except Background
 
         for (uint16 traitId; traitId < 10; traitId++) {
-            // add a request for ANY_ID, to recipient 0
-            nounScout.add{value: minValue}(HEAD, traitId, ANY_ID, 0);
-            // add a request for Noun 101 and ANY_ID, to recipient 1
-            nounScout.add{value: minValue}(HEAD, traitId, ANY_ID, 1);
+            // add a request for ANY_AUCTION_ID, to recipient 0
+            nounScout.add{value: minValue}(HEAD, traitId, ANY_AUCTION_ID, 0);
+            // add a request for Noun 101 and ANY_AUCTION_ID, to recipient 1
+            nounScout.add{value: minValue}(HEAD, traitId, ANY_AUCTION_ID, 1);
             nounScout.add{value: minValue}(HEAD, traitId, 101, 1);
             // add a request for Noun 100, to recipient 2
             nounScout.add{value: minValue}(HEAD, traitId, 100, 2);
@@ -128,11 +128,11 @@ contract NounScoutTest is BaseNounScoutTest {
             assertEq(nextAuctionPledges[traitId].length, recipientsCount);
 
             assertEq(nextNonAuctionPledges[traitId].length, recipientsCount);
-            // recipient#0 only had ANY_ID requests
+            // recipient#0 only had ANY_AUCTION_ID requests
             assertEq(nextAuctionPledges[traitId][0], minValue);
-            // recipient#1 had specific ID and ANY_ID requests
+            // recipient#1 had specific ID and ANY_AUCTION_ID requests
             assertEq(nextAuctionPledges[traitId][1], minValue * 2);
-            // recipient#2 had no requests for ANY_ID or Noun 101
+            // recipient#2 had no requests for ANY_AUCTION_ID or Noun 101
             assertEq(nextAuctionPledges[traitId][2], 0);
 
             // recipient#0 had no requests for Noun 100
@@ -155,18 +155,18 @@ contract NounScoutTest is BaseNounScoutTest {
             for (uint16 traitId; traitId < 10; traitId++) {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
-                // add a request for ANY_ID, to recipient 0
+                // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     0
                 );
-                // add a request for Noun 101 and ANY_ID, to recipient 1
+                // add a request for Noun 101 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
@@ -205,7 +205,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 101);
         mockNouns.setSeed(seed, 102);
 
-        // Current Noun has specific ID and ANY_ID requests for GLASSES
+        // Current Noun has specific ID and ANY_AUCTION_ID requests for GLASSES
         mockAuctionHouse.setNounId(102);
         (
             uint16 currentAuctionedId,
@@ -246,18 +246,18 @@ contract NounScoutTest is BaseNounScoutTest {
         for (uint16 trait; trait < 5; trait++) {
             // For traitIds 0 - 9
             for (uint16 traitId; traitId < 10; traitId++) {
-                // add a request for ANY_ID, to recipient 0
+                // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     0
                 );
-                // add a request for Noun 101 and ANY_ID, to recipient 1
+                // add a request for Noun 101 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
@@ -295,7 +295,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 100);
         mockNouns.setSeed(seed, 101);
 
-        // Current Noun has specific ID and ANY_ID requests for GLASSES
+        // Current Noun has specific ID and ANY_AUCTION_ID requests for GLASSES
         mockAuctionHouse.setNounId(101);
         (
             uint16 currentAuctionedId,
@@ -350,18 +350,18 @@ contract NounScoutTest is BaseNounScoutTest {
             for (uint16 traitId; traitId < 10; traitId++) {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
-                // add a request for ANY_ID, to recipient 0
+                // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     0
                 );
-                // add a request for Noun 102 and ANY_ID, to recipient 1
+                // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
@@ -402,7 +402,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 102);
 
         mockAuctionHouse.setNounId(103);
-        // Current Noun has specific ID and ANY_ID requests for GLASSES
+        // Current Noun has specific ID and ANY_AUCTION_ID requests for GLASSES
         (
             uint16 auctionedNounId,
             uint16 nonAuctionedNounId,
@@ -465,18 +465,18 @@ contract NounScoutTest is BaseNounScoutTest {
             for (uint16 traitId; traitId < 10; traitId++) {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
-                // add a request for ANY_ID, to recipient 0
+                // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     0
                 );
-                // add a request for Noun 102 and ANY_ID, to recipient 1
+                // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
@@ -517,7 +517,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 101);
 
         mockAuctionHouse.setNounId(101);
-        // Current Noun has specific ID and ANY_ID requests for GLASSES
+        // Current Noun has specific ID and ANY_AUCTION_ID requests for GLASSES
         (
             uint16 auctionedNounId,
             uint16 nonAuctionedNounId,
@@ -583,18 +583,18 @@ contract NounScoutTest is BaseNounScoutTest {
             for (uint16 traitId; traitId < 10; traitId++) {
                 // BACKGROUND has only 2 variations
                 if (trait == 0 && traitId > 1) continue;
-                // add a request for ANY_ID, to recipient 0
+                // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     0
                 );
-                // add a request for Noun 102 and ANY_ID, to recipient 1
+                // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
                     NounScout.Traits(trait),
                     traitId,
-                    ANY_ID,
+                    ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
@@ -635,7 +635,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 101);
 
         mockAuctionHouse.setNounId(102);
-        // Current Noun has specific ID and ANY_ID requests for GLASSES
+        // Current Noun has specific ID and ANY_AUCTION_ID requests for GLASSES
         (
             uint16 auctionedNounId,
             uint16 nonAuctionedNounId,

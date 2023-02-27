@@ -50,7 +50,7 @@ pragma solidity ^0.8.17;
 //             // For recipients 0 - 4
 //             for (uint16 j; j < 15; j++) {
 //                 // Add a request for each head, with any id, going to recipient 0 - 4
-//                 nounSeek.add{value: minValue}(HEAD, i, ANY_ID, j);
+//                 nounSeek.add{value: minValue}(HEAD, i, ANY_AUCTION_ID, j);
 //             }
 //         }
 
@@ -71,7 +71,7 @@ pragma solidity ^0.8.17;
 //             }
 //         }
 //         // for (uint16 i; i < 241; i++) {
-//         //     nounSeek.add{value: minValue}(HEAD, i + 1, ANY_ID, i % 5);
+//         //     nounSeek.add{value: minValue}(HEAD, i + 1, ANY_AUCTION_ID, i % 5);
 //         // }
 //         // for (uint16 i; i < 241; i++) {
 //         //     nounSeek.add{value: minValue}(HEAD, i + 1, 100, i % 5);
@@ -95,9 +95,9 @@ pragma solidity ^0.8.17;
 
 //         // For all recipient slots for next auctioned Noun
 //         for (uint256 i = 0; i < 20; i++) {
-//             // For Head 0, the first 5 recipients were requested with ANY_ID and specific
+//             // For Head 0, the first 5 recipients were requested with ANY_AUCTION_ID and specific
 //             assertEq(nextAuctionPledges[0][i], i < 15 ? minValue * 2 : 0);
-//             // For Head 99, the first 5 recipients were requested with ANY_ID and specific
+//             // For Head 99, the first 5 recipients were requested with ANY_AUCTION_ID and specific
 //             assertEq(nextAuctionPledges[99][i], i < 15 ? minValue * 2 : 0);
 //             // For Head 100, no requests were made
 //             assertEq(nextAuctionPledges[100][i], 0);
