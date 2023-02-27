@@ -14,3 +14,4 @@ out/
 .vscode
 node_modules
 artifacts
+.code-workspace
