@@ -906,7 +906,7 @@ contract NounScout is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Recipient.
+     * @notice Create a request with a logged message for the specific trait and specific or open Noun ID payable to the specified Recipient. `messageValue` is sent immediately to the recipient and cannot be refunded.
      * @dev The message cost is subtracted from `msg.value` and transfered immediately to the specified Recipient.
      * The remaining value is stored as the pledged Request amount.
      * @param trait Trait Type the request is for (see `Traits` Enum)
@@ -975,17 +975,16 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Sends pledged amounts to recipients by matching a requested trait to an eligible Noun. A portion of the pledged amount is sent to `msg.sender` to offset the gas costs of settling.
      * @dev
      * - Only eligible Noun Ids are accepted. An eligible Noun Id is for the immediately preceeding auctioned Noun, or non-auctioned Noun if it was minted at the same time.
-     * - Specifying a Noun Id for an auctioned Noun will matches against requests that target `ANY_AUCTION_ID` as well as specific ID.
-     * - Specifying a Noun Id for a non-auctioned Noun will matches against requests that target `ANY_NON_AUCTION_ID` as well as specific ID.
-     * - If immediately preceeding Noun to the previously auctioned Noun is non-auctioned, only specific ID requests will match.
+     * - Specifying a Noun Id for an auctioned Noun will match requests for `ANY_AUCTION_ID` in addition to requests for `nounId`.
+     * - Specifying a Noun Id for a non-auctioned Noun will match requests for `ANY_NON_AUCTION_ID` in addition to requests for `nounId`.
      *
      * - Cases for eligible matched Nouns:
      *
      * - `Current Noun ID | Eligible Noun ID`
      * - `----------------|-------------------`
-     * - `            101 | 99 (*skips 100)`
-     * - `            102 | 101, 100 (*includes 100)`
-     * - `            103 | 102`
+     * - `            101 | 99 (*skips 100), ANY_AUCTION_ID`
+     * - `            102 | 101, 100 (*includes 100),  ANY_AUCTION_ID, ANY_NON_AUCTION_ID`
+     * - `            103 | 102, ANY_AUCTION_ID`
      * @param trait The Trait Type to fetch from an eligible Noun (see `Traits` Enum)
      * @param nounId The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
      * @param recipientIds An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.
