@@ -660,7 +660,7 @@ contract NounScout is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative pledge amounts for each Recipient scoped by possible Trait Type and Trait ID.
+     * @notice Use the next auctioned Noun Id (and non-auctioned Noun Id that may be minted in the same block) to get cumulative pledge amounts for each Recipient scoped by possible Trait Type and Trait ID. Returned values are the sum of Open ID requests (`ANY_AUCTION_ID` / `ANY_NON_AUCTION_ID`) and specific ID requests.
      * @dev See { pledgesForNounId } for detailed documentation of the nested array structure
      * @return nextAuctionId The ID of the next Noun that will be auctioned
      * @return nextNonAuctionId If two Nouns are due to be minted, this will be the ID of the non-auctioned Noun, otherwise uint16.max (65,535)
@@ -698,7 +698,7 @@ contract NounScout is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts pledged for each Recipient using requests that match the Noun's seed.
+     * @notice For the Noun that is currently on auction (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts pledged for each Recipient using requests that match the Noun's seed.  Returned values are the sum of Open ID requests (`ANY_AUCTION_ID` / `ANY_NON_AUCTION_ID`) and specific ID requests.
      * @dev Example: The Noun on auction has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
      * Calling `pledgesForNounOnAuction()` returns cumulative matching pledges for each trait that matches the seed such that:
      * - `currentAuctionPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
@@ -743,11 +743,11 @@ contract NounScout is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice For the Noun that is eligible to be matched with pledged pledges (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts for each Recipient using requests that match the Noun's seed.
+     * @notice For the Noun that is eligible to be settled (and the previous non-auctioned Noun if it was minted at the same time), get cumulative pledge amounts for each Recipient using requests that match the Noun's seed. Returned values are the sum of Open ID requests (`ANY_AUCTION_ID` / `ANY_NON_AUCTION_ID`) and specific ID requests.
      * @dev Example:
      - The Noun that is eligible to match has an ID of 99 and a seed of [1,2,3,4,5] representing background, body, accessory, head, glasses Trait Types and respective Trait IDs.
      * - Calling `pledgesForMatchableNoun()` returns cumulative matching pledges for each trait that matches the seed.
-     * - `auctionedNounPledges[0]` returns the cumulative doantions amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
+     * - `auctionedNounPledges[0]` returns the cumulative donations amounts for all requests that are seeking background (Trait Type 0) with Trait ID 1 (i.e. the actual background value) for Noun ID 99. The value in `pledges[0][2]` is in the total amount that has been pledged to Recipient ID 2.
      * - If the Noun on auction was ID 101, there would additionally be return values for Noun 100, the non-auctioned Noun minted at the same time and `nonAuctionedNounPledges` would be populated
      *
      * - Cases for eligible matched Nouns:
