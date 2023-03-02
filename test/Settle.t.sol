@@ -35,7 +35,7 @@ contract Settle is BaseNounScoutTest {
             0
         );
         mockNouns.setSeed(seed, 102);
-        mockAuctionHouse.setNounId(102);
+        mockAuctionHouse.setNounId(103);
 
         (, uint16 groupIdAnyId) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
@@ -48,25 +48,6 @@ contract Settle is BaseNounScoutTest {
 
         vm.startPrank(user2);
 
-        // Cannot match Noun on auction
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 102, allRecipientIds);
-
-        // Pledge Group ID did not increased
-        (, uint16 expectedPledgeGroupId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
-            0
-        );
-        assertEq(expectedPledgeGroupId, groupIdAnyId);
-
-        (, expectedPledgeGroupId) = nounScout.pledgeGroups(
-            nounScout.traitHash(HEAD, 9, 102),
-            1
-        );
-        assertEq(expectedPledgeGroupId, groupIdSpecificId);
-
-        mockAuctionHouse.setNounId(103);
-
         // reqeust 1
         vm.expectCall(address(recipient0), minValue - minReimbursement / 2, "");
         // request 2
@@ -74,10 +55,10 @@ contract Settle is BaseNounScoutTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Pledge Group ID increased
-        (, expectedPledgeGroupId) = nounScout.pledgeGroups(
+        (, uint16 expectedPledgeGroupId) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, ANY_AUCTION_ID),
             0
         );
@@ -91,7 +72,7 @@ contract Settle is BaseNounScoutTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     // Auctioned Noun matches with non-auctioned non-match immediately before
@@ -116,27 +97,13 @@ contract Settle is BaseNounScoutTest {
             0
         );
         mockNouns.setSeed(seed, 101);
-        mockAuctionHouse.setNounId(101);
+        mockAuctionHouse.setNounId(102);
 
         vm.startPrank(user2);
 
-        // Cannot match Noun on auction
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
-
-        // Cannot match previous non-auctioned Noun
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
-
-        // Cannot match uint16.max
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, type(uint16).max, allRecipientIds);
-
-        mockAuctionHouse.setNounId(102);
-
         // No matches for non-auctioned Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         // reqeust 1
         vm.expectCall(address(recipient0), minValue - minReimbursement / 2, "");
@@ -145,11 +112,11 @@ contract Settle is BaseNounScoutTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     // Auctioned Noun matches with non-auctioned match immediately before
@@ -184,9 +151,8 @@ contract Settle is BaseNounScoutTest {
 
         (, uint16 groupIdNonAuctioned) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, ANY_NON_AUCTION_ID),
-           1
+            1
         );
-
 
         INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
             0,
@@ -197,30 +163,16 @@ contract Settle is BaseNounScoutTest {
         );
         mockNouns.setSeed(seed, 100);
         mockNouns.setSeed(seed, 101);
-        mockAuctionHouse.setNounId(101);
+        mockAuctionHouse.setNounId(102);
 
         vm.startPrank(user2);
-
-        // Cannot match Noun on auction
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
-
-        // Cannot match previous non-auctioned Noun
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
-
-        // Cannot match uint16.max
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, type(uint16).max, allRecipientIds);
-
-        mockAuctionHouse.setNounId(102);
 
         // AUCTIONED
         // Only request 1 matches 101
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Pledge Group ID increased
         (, uint16 expectedPledgeGroupId) = nounScout.pledgeGroups(
@@ -231,11 +183,19 @@ contract Settle is BaseNounScoutTest {
 
         // NON-AUCTIONED
         // Only request 2, 3 match 100
-        vm.expectCall(address(recipient0), minValue - (minReimbursement/2), "");
-        vm.expectCall(address(recipient1), minValue - (minReimbursement/2), "");
+        vm.expectCall(
+            address(recipient0),
+            minValue - (minReimbursement / 2),
+            ""
+        );
+        vm.expectCall(
+            address(recipient1),
+            minValue - (minReimbursement / 2),
+            ""
+        );
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         (, expectedPledgeGroupId) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
@@ -258,10 +218,10 @@ contract Settle is BaseNounScoutTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     // Auctioned Noun non-match with non-auctioned match immediately before
@@ -294,7 +254,7 @@ contract Settle is BaseNounScoutTest {
 
         // No matches for Noun 101
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // reqeust 1
         vm.expectCall(address(recipient0), minValue - minReimbursement / 2, "");
@@ -303,14 +263,14 @@ contract Settle is BaseNounScoutTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
     }
 
-    // Previous Noun is non-auctioned, previous auctioned matches
+    // // Previous Noun is non-auctioned, previous auctioned matches
     function test_SETTLE_happyMatchCase5() public {
         vm.startPrank(user1);
         // 1 Should match
@@ -335,16 +295,9 @@ contract Settle is BaseNounScoutTest {
 
         mockNouns.setSeed(seed, 99);
 
-        mockAuctionHouse.setNounId(99);
+        mockAuctionHouse.setNounId(101);
 
         vm.startPrank(user2);
-
-        // Cannot match Noun on auction
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-
-        nounScout.settle(HEAD, 99, allRecipientIds);
-
-        mockAuctionHouse.setNounId(101);
 
         // reqeust 1
         vm.expectCall(address(recipient0), minValue - minReimbursement / 2, "");
@@ -353,11 +306,11 @@ contract Settle is BaseNounScoutTest {
         // request 1 + 2
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 99, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 99, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     // If the amount sent produces reimburesement greater than `maxReimbursement`
@@ -392,7 +345,7 @@ contract Settle is BaseNounScoutTest {
         vm.expectCall(address(user2), maxReimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_SETTLE_HappyBelowMinReimbursement() public {
@@ -426,7 +379,7 @@ contract Settle is BaseNounScoutTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_SETTLE_HappyAboveMinReimbursementBelowMaxReimbursement()
@@ -461,7 +414,7 @@ contract Settle is BaseNounScoutTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_SETTLE_allRecipientsInactive() public {
@@ -494,7 +447,7 @@ contract Settle is BaseNounScoutTest {
         // No pledges to send; all recipients inactive
         vm.expectRevert(NounScout.NoMatch.selector);
 
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_SETTLE_oneRecipientInactive() public {
@@ -524,7 +477,7 @@ contract Settle is BaseNounScoutTest {
         vm.expectCall(address(user2), minReimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         (uint256 recipient0Amount, ) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 0),
@@ -541,7 +494,7 @@ contract Settle is BaseNounScoutTest {
 
         // Cannot re-match Noun
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Set recipient1 active
         nounScout.setRecipientActive(1, true);
@@ -553,7 +506,7 @@ contract Settle is BaseNounScoutTest {
 
         // can re-match noun
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // recipient1 amounts are 0
         (recipient1Amount, ) = nounScout.pledgeGroups(
@@ -564,43 +517,26 @@ contract Settle is BaseNounScoutTest {
     }
 
     function test_SETTLE_failsIneligibleImmediateAuctionedNounId() public {
-        // only 99 is eligible
+        // only matchAuctionedNoun=true is eligible
         mockAuctionHouse.setNounId(101);
+
         // ineligible
         vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, type(uint16).max, allRecipientIds);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 102, allRecipientIds);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
         // eligible
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 99, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_SETTLE_failsIneligibleNonAuctionedNounId() public {
         // only 100 and 101 are eligible
         mockAuctionHouse.setNounId(102);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, type(uint16).max, allRecipientIds);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 102, allRecipientIds);
         // eligible
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
         // eligible
         vm.expectRevert(NounScout.NoMatch.selector);
-        nounScout.settle(HEAD, 100, allRecipientIds);
-        // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
-        nounScout.settle(HEAD, 99, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
     }
 
     function test_SETTLE_matchesOnlySpecifiedRecipientIds() public {
@@ -645,7 +581,7 @@ contract Settle is BaseNounScoutTest {
         );
         vm.expectCall(address(user2), minReimbursement, "");
 
-        nounScout.settle(HEAD, 101, recipientIds);
+        nounScout.settle(HEAD, true, recipientIds);
 
         for (uint16 i; i < allRecipientIds.length; i++) {
             uint256 amount = minValue;
@@ -686,12 +622,12 @@ contract Settle is BaseNounScoutTest {
         nounScout.pause();
 
         vm.expectRevert(bytes("Pausable: paused"));
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         nounScout.unpause();
 
         vm.startPrank(user2);
         vm.expectCall(address(user2), minReimbursement, "");
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 }

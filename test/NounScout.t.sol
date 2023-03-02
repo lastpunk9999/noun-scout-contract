@@ -286,7 +286,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // User2 settles
         vm.prank(user2);
-        nounScout.settle(HEAD, 101, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // User 1 adds another request, pledgeGroupId should increase
         vm.expectEmit(true, true, true, true);
@@ -907,7 +907,7 @@ contract NounScoutTest is BaseNounScoutTest {
         // Sanity check match occured
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         vm.startPrank(user1);
         vm.expectRevert(NounScout.PledgeSent.selector);
@@ -962,7 +962,7 @@ contract NounScoutTest is BaseNounScoutTest {
         // Sanity check match occured
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         (recipient0Amount, ) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
@@ -1046,7 +1046,7 @@ contract NounScoutTest is BaseNounScoutTest {
         // Sanity check match occured
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         (recipient0Amount, ) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
@@ -1067,7 +1067,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         vm.prank(user2);
         vm.expectCall(address(recipient1), minValue - minReimbursement, "");
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         (recipient1Amount, ) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
@@ -1123,7 +1123,7 @@ contract NounScoutTest is BaseNounScoutTest {
         // Sanity check match occured
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user2), minReimbursement, "");
-        nounScout.settle(HEAD, 100, allRecipientIds);
+        nounScout.settle(HEAD, false, allRecipientIds);
 
         (recipient0Amount, ) = nounScout.pledgeGroups(
             nounScout.traitHash(HEAD, 9, 100),
@@ -1235,7 +1235,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.startPrank(user3);
         vm.expectCall(address(recipient0), minValue - minReimbursement, "");
         vm.expectCall(address(user3), minReimbursement, "");
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
         vm.stopPrank();
 
         // Allow Requests for Head 0 to be removed
@@ -1387,7 +1387,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // User2 performs the match; request 1 and 2 should match
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
 
         // Case 5
         // After Match
@@ -1528,7 +1528,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_REIMBURSEMENT_reimbursementLessThanMinReimbursement() public {
@@ -1551,7 +1551,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_REIMBURSEMENT_reimbursementGreaterThanMaxReimbursement()
@@ -1578,7 +1578,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.expectCall(address(user2), reimbursement, "");
 
         vm.prank(user2);
-        nounScout.settle(HEAD, 102, allRecipientIds);
+        nounScout.settle(HEAD, true, allRecipientIds);
     }
 
     function test_REQUEST_MATCHES_NOUN_allCases() public {
@@ -1598,62 +1598,77 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seedAuctioned, auctionedId);
 
         // ANY_AUCTION_ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: ANY_AUCTION_ID,
-            pledgeGroupId: 0,
-            amount: 0
-        }), auctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: ANY_AUCTION_ID,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            auctionedId
+        );
 
         assertEq(matched, true);
 
         // ANY_NON_AUCTION_ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: ANY_NON_AUCTION_ID,
-            pledgeGroupId: 0,
-            amount: 0
-        }), auctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: ANY_NON_AUCTION_ID,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            auctionedId
+        );
 
         assertEq(matched, false);
 
         // == auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: auctionedId,
-            pledgeGroupId: 0,
-            amount: 0
-        }), auctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: auctionedId,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            auctionedId
+        );
 
         assertEq(matched, true);
 
         // != auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: 9999,
-            pledgeGroupId: 0,
-            amount: 0
-        }), auctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: 9999,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            auctionedId
+        );
 
         assertEq(matched, false);
 
-         // == non-auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: nonAuctionedId,
-            pledgeGroupId: 0,
-            amount: 0
-        }), auctionedId);
+        // == non-auctioned ID
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: nonAuctionedId,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            auctionedId
+        );
 
         assertEq(matched, false);
 
@@ -1668,62 +1683,77 @@ contract NounScoutTest is BaseNounScoutTest {
 
         mockNouns.setSeed(seedNonAuctioned, nonAuctionedId);
         // ANY_AUCTION_ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 8,
-            recipientId: 0,
-            nounId: ANY_AUCTION_ID,
-            pledgeGroupId: 0,
-            amount: 0
-        }), nonAuctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 8,
+                recipientId: 0,
+                nounId: ANY_AUCTION_ID,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            nonAuctionedId
+        );
 
         assertEq(matched, false);
 
         // ANY_NON_AUCTION_ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 8,
-            recipientId: 0,
-            nounId: ANY_NON_AUCTION_ID,
-            pledgeGroupId: 0,
-            amount: 0
-        }), nonAuctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 8,
+                recipientId: 0,
+                nounId: ANY_NON_AUCTION_ID,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            nonAuctionedId
+        );
 
         assertEq(matched, true);
 
         // == auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 8,
-            recipientId: 0,
-            nounId: auctionedId,
-            pledgeGroupId: 0,
-            amount: 0
-        }), nonAuctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 8,
+                recipientId: 0,
+                nounId: auctionedId,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            nonAuctionedId
+        );
 
         assertEq(matched, false);
 
         // != auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 9,
-            recipientId: 0,
-            nounId: 9999,
-            pledgeGroupId: 0,
-            amount: 0
-        }), nonAuctionedId);
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 9,
+                recipientId: 0,
+                nounId: 9999,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            nonAuctionedId
+        );
 
         assertEq(matched, false);
 
-         // == non-auctioned ID
-        matched = nounScout.requestMatchesNoun(NounScout.Request({
-            trait: HEAD,
-            traitId: 8,
-            recipientId: 0,
-            nounId: nonAuctionedId,
-            pledgeGroupId: 0,
-            amount: 0
-        }), nonAuctionedId);
+        // == non-auctioned ID
+        matched = nounScout.requestMatchesNoun(
+            NounScout.Request({
+                trait: HEAD,
+                traitId: 8,
+                recipientId: 0,
+                nounId: nonAuctionedId,
+                pledgeGroupId: 0,
+                amount: 0
+            }),
+            nonAuctionedId
+        );
 
         assertEq(matched, true);
     }

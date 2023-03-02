@@ -986,43 +986,44 @@ contract NounScout is Ownable2Step, Pausable {
      * - `            102 | 101, 100 (*includes 100),  ANY_AUCTION_ID, ANY_NON_AUCTION_ID`
      * - `            103 | 102, ANY_AUCTION_ID`
      * @param trait The Trait Type to fetch from an eligible Noun (see `Traits` Enum)
-     * @param nounId The Noun to fetch the trait from. Must be the previous auctioned Noun ID or the previous non-auctioned Noun ID if it was minted at the same time.
+     * @param matchAuctionedNoun If `true` fetch the trait from the previous auctioned Noun. If `false` fetch the trait from the previous non-auctioned Noun.
      * @param recipientIds An array of recipient IDs that have been pledged an amount if a Noun matches the specified trait.
      * @return total Total donated funds before reimbursement
      * @return reimbursement Reimbursement amount
      */
     function settle(
         Traits trait,
-        uint16 nounId,
+        bool matchAuctionedNoun,
         uint16[] memory recipientIds
     ) public whenNotPaused returns (uint256 total, uint256 reimbursement) {
         /// The Noun ID of the previous to the current Noun on auction
-        uint16 auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
-        /// Setup a parameter to detect if a non-auctioned Noun should be matched
-        uint16 nonAuctionedNounId = UINT16_MAX;
+        uint16 nounId = uint16(auctionHouse.auction().nounId) - 1;
 
-        /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
-        /// Example:
-        ///   Current Noun: 101
-        ///   Previous Noun: 100
-        ///   `auctionedNounId` should be 99
-        if (_isNonAuctionedNoun(auctionedNounId)) {
-            auctionedNounId = auctionedNounId - 1;
-        }
-        // If the previous Noun to the previous auctioned Noun is non-auctioned, set the non-auctioned Noun ID to the preceeding Noun
-        /// Example:
-        ///   Current Noun: 102
-        ///   Previous Noun: 101
-        ///   `nonAuctionedNounId` should be 100
-        if (_isNonAuctionedNoun(auctionedNounId - 1)) {
-            nonAuctionedNounId = auctionedNounId - 1;
-        }
+        if (matchAuctionedNoun) {
+            /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+            /// Example:
+            ///   Current Noun on Auction: 101
+            ///   `nounId`: 100
+            ///   `nounId` should be 99
+            if (_isNonAuctionedNoun(nounId)) {
+                nounId = nounId - 1;
+            }
+        } else {
+            /// If the previous Noun is non-auctioned, it's ineligible because it was minted at the same time as the current Noun
+            /// Example:
+            ///   Current Noun on Auction: 101
+            ///   `nounId`: 100
+            if (_isNonAuctionedNoun(nounId)) {
+                revert IneligibleNounId();
+            }
 
-        if (
-            nounId != auctionedNounId &&
-            (nounId != nonAuctionedNounId || nonAuctionedNounId == UINT16_MAX)
-        ) {
-            revert IneligibleNounId();
+            /// Get the previous, previous Noun ID
+            nounId = nounId - 1;
+
+            /// If this Noun is auctioned, then there is no non-auctioned Noun that can be matched.
+            if (_isAuctionedNoun(nounId)) {
+                revert IneligibleNounId();
+            }
         }
 
         uint16 traitId = _fetchOnChainNounTraitId(trait, nounId);
@@ -1032,7 +1033,8 @@ contract NounScout is Ownable2Step, Pausable {
             trait,
             traitId,
             nounId,
-            recipientIds
+            recipientIds,
+            matchAuctionedNoun
         );
 
         if (total < 1) {
@@ -1289,6 +1291,7 @@ contract NounScout is Ownable2Step, Pausable {
      * @param traitId Specific trait ID
      * @param nounId Specific Noun ID
      * @param recipientIds Specific set of recipients
+     * @param matchAuctionedNoun If `true` matching Noun is auctioned. If `false` matching Noun is non-auctioned.
      * @return pledges Mutated pledges array
      * @return total total
      */
@@ -1296,12 +1299,13 @@ contract NounScout is Ownable2Step, Pausable {
         Traits trait,
         uint16 traitId,
         uint16 nounId,
-        uint16[] memory recipientIds
+        uint16[] memory recipientIds,
+        bool matchAuctionedNoun
     ) internal returns (uint256[] memory pledges, uint256 total) {
         // Lookup specific and Open ID requests
         uint16[2] memory nounIds = [
             nounId,
-            _isAuctionedNoun(nounId) ? ANY_AUCTION_ID : ANY_NON_AUCTION_ID
+            matchAuctionedNoun ? ANY_AUCTION_ID : ANY_NON_AUCTION_ID
         ];
         pledges = new uint256[](_recipients.length);
 
