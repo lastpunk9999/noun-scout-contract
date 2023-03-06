@@ -535,12 +535,15 @@ contract NounScout is Ownable2Step, Pausable {
      * The length of the first array is 5 (five) representing all Trait Types.
      * The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads).
      * The length of the third is dependant on the number of recipients added to this contract.
-     * Example lengths:
-     * - `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
-     * - `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background.
-     * Calling `pledgesForNounId(101) returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:`
-     * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
-     * - the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * ##### For example:
+     * 1) `pledges.length` == 5 representing the five unique Noun Trait Types
+     * 2) `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
+     * 3) `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background.
+     * ##### Practical use-case
+     * Calling `pledgesForNounId(101)` returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:
+     * 1) the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * 2) the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+     * 3) looping through `pledges[0][1]` and summing each item represents the total value pledged for a warm background (pledges[0][1][0] + pledges[0][1][1]  + pledges[0][1][2] + .... = n ETH)
      * @param nounId The ID of the Noun requests should match.
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID
@@ -776,24 +779,24 @@ contract NounScout is Ownable2Step, Pausable {
             uint256[5] memory nonAuctionNounTotalReimbursement
         )
     {
-        /// The Noun ID of the previous to the current Noun on auction
+        // The Noun ID of the previous to the current Noun on auction
         auctionedNounId = uint16(auctionHouse.auction().nounId) - 1;
-        /// Setup a parameter to detect if a non-auctioned Noun should be matched
+        // Setup a parameter to detect if a non-auctioned Noun should be matched
         nonAuctionedNounId = UINT16_MAX;
 
-        /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
-        /// Example:
-        ///   Current Noun: 101
-        ///   Previous Noun: 100
-        ///   `auctionedNounId` should be 99
+        // If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+        // Example:
+        //   Current Noun: 101
+        //   Previous Noun: 100
+        //   `auctionedNounId` should be 99
         if (_isNonAuctionedNoun(auctionedNounId)) {
             auctionedNounId = auctionedNounId - 1;
         }
         // If the previous Noun to the previous auctioned Noun is non-auctioned, set the non-auctioned Noun ID to the preceeding Noun
-        /// Example:
-        ///   Current Noun: 102
-        ///   Previous Noun: 101
-        ///   `nonAuctionedNounId` should be 100
+        // Example:
+        //   Current Noun: 102
+        //   Previous Noun: 101
+        //   `nonAuctionedNounId` should be 100
         if (_isNonAuctionedNoun(auctionedNounId - 1)) {
             nonAuctionedNounId = auctionedNounId - 1;
         }
@@ -996,31 +999,31 @@ contract NounScout is Ownable2Step, Pausable {
         bool matchAuctionedNoun,
         uint16[] memory recipientIds
     ) public whenNotPaused returns (uint256 total, uint256 reimbursement) {
-        /// The Noun ID of the previous to the current Noun on auction
+        // The Noun ID of the previous to the current Noun on auction
         uint16 nounId = uint16(auctionHouse.auction().nounId) - 1;
 
         if (matchAuctionedNoun) {
-            /// If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
-            /// Example:
-            ///   Current Noun on Auction: 101
-            ///   `nounId`: 100
-            ///   `nounId` should be 99
+            // If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
+            // Example:
+            //   Current Noun on Auction: 101
+            //   `nounId`: 100
+            //   `nounId` should be 99
             if (_isNonAuctionedNoun(nounId)) {
                 nounId = nounId - 1;
             }
         } else {
-            /// If the previous Noun is non-auctioned, it's ineligible because it was minted at the same time as the current Noun
-            /// Example:
-            ///   Current Noun on Auction: 101
-            ///   `nounId`: 100
+            // If the previous Noun is non-auctioned, it's ineligible because it was minted at the same time as the current Noun
+            // Example:
+            //   Current Noun on Auction: 101
+            //   `nounId`: 100
             if (_isNonAuctionedNoun(nounId)) {
                 revert IneligibleNounId();
             }
 
-            /// Get the previous, previous Noun ID
+            // Get the previous, previous Noun ID
             nounId = nounId - 1;
 
-            /// If this Noun is auctioned, then there is no non-auctioned Noun that can be matched.
+            // If this Noun is auctioned, then there is no non-auctioned Noun that can be matched.
             if (_isAuctionedNoun(nounId)) {
                 revert IneligibleNounId();
             }
@@ -1150,7 +1153,7 @@ contract NounScout is Ownable2Step, Pausable {
         external
         onlyOwner
     {
-        /// BPS cannot be less than 0.1% or greater than 10%
+        // BPS cannot be less than 0.1% or greater than 10%
         if (newReimbursementBPS < 10 || newReimbursementBPS > 1000) {
             revert();
         }
@@ -1581,8 +1584,8 @@ contract NounScout is Ownable2Step, Pausable {
             return (effectiveBPS, reimbursement);
         }
 
-        /// Add 2 digits extra precision to better derive `effectiveBPS` from total
-        /// Extra precision basis point = 10_000 * 100 = 1_000_000
+        // Add 2 digits extra precision to better derive `effectiveBPS` from total
+        // Extra precision basis point = 10_000 * 100 = 1_000_000
         effectiveBPS = baseReimbursementBPS * 100;
         reimbursement = (total * effectiveBPS) / 1_000_000;
 

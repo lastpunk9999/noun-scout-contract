@@ -1,5 +1,5 @@
 # NounScout
-[Git Source](https://github.com/lastpunk9999/noun-seek/blob/0cd1461637462dabb3d6ad0c144d61fa23626851/src/NounScout.sol)
+[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/NounScout.sol)
 
 **Inherits:**
 Ownable2Step, Pausable
@@ -333,12 +333,15 @@ For a given Noun ID, get cumulative pledge amounts for each Recipient scoped by 
 The length of the first array is 5 (five) representing all Trait Types.
 The length of the second is dependant on the number of traits for that trait type (e.g. 242 for Trait Type 3 aka heads).
 The length of the third is dependant on the number of recipients added to this contract.
-Example lengths:
-- `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
-- `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background.
-Calling `pledgesForNounId(101) returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:`
-- the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
-- the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)*
+##### For example:
+1) `pledges.length` == 5 representing the five unique Noun Trait Types
+2) `pledges[0].length` == 2 representing the two traits possible for a background `cool` (Trait ID 0) and `warm` (Trait ID 1)
+3) `pledges[0][0].length` == the size of the number of recipients that have been added to this contract. Each value is the amount that has been pledged to a specific recipient, indexed by its ID, if a Noun is minted with a cool background.
+##### Practical use-case
+Calling `pledgesForNounId(101)` returns cumulative matching pledges for each Trait Type, Trait ID and Recipient ID such that:
+1) the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+2) the value at `pledges[0][1][2]` is in the total amount that has been pledged to Recipient ID 0 if Noun 101 is minted with a warm background (Trait 0, traitId 1)
+3) looping through `pledges[0][1]` and summing each item represents the total value pledged for a warm background (pledges[0][1][0] + pledges[0][1][1]  + pledges[0][1][2] + .... = n ETH)*
 
 
 ```solidity
@@ -545,18 +548,6 @@ function pledgesForMatchableNoun()
 
 ### rawRequestsByAddress
 
-The Noun ID of the previous to the current Noun on auction
-Setup a parameter to detect if a non-auctioned Noun should be matched
-If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
-Example:
-Current Noun: 101
-Previous Noun: 100
-`auctionedNounId` should be 99
-Example:
-Current Noun: 102
-Previous Noun: 101
-`nonAuctionedNounId` should be 100
-
 Get all raw Requests (without status, includes deleted Requests)
 
 *Exists for low-level queries. The function { requestsByAddress } is better in most use-cases*
@@ -723,19 +714,6 @@ function settle(Traits trait, bool matchAuctionedNoun, uint16[] memory recipient
 
 ### updateTraitCounts
 
-The Noun ID of the previous to the current Noun on auction
-If the previous Noun is non-auctioned, set the ID to the the preceeding Noun
-Example:
-Current Noun on Auction: 101
-`nounId`: 100
-`nounId` should be 99
-If the previous Noun is non-auctioned, it's ineligible because it was minted at the same time as the current Noun
-Example:
-Current Noun on Auction: 101
-`nounId`: 100
-Get the previous, previous Noun ID
-If this Noun is auctioned, then there is no non-auctioned Noun that can be matched.
-
 Update local Trait counts based on Noun Descriptor totals
 
 
@@ -826,8 +804,6 @@ function setReimbursementBPS(uint16 newReimbursementBPS) external onlyOwner;
 
 
 ### setMinReimbursement
-
-BPS cannot be less than 0.1% or greater than 10%
 
 Sets the minium reimbursement amount when settling
 
@@ -1063,9 +1039,6 @@ function _effectiveHighPrecisionBPSForPledgeTotal(uint256 total)
 
 
 ### _mapRecipientActive
-
-Add 2 digits extra precision to better derive `effectiveBPS` from total
-Extra precision basis point = 10_000 * 100 = 1_000_000
 
 Maps array of Recipients to array of active status booleans
 
