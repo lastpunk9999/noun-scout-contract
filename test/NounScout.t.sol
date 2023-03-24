@@ -838,13 +838,69 @@ contract NounScoutTest is BaseNounScoutTest {
         nounScout.remove(requestId6);
     }
 
-    function test_REMOVE_revertsPreviousNonAuctionedMatchFound() public {
+    function test_REMOVE_revertsPreviousNonAuctionedSpecificIDMatchFound()
+        public
+    {
         uint256 timestamp = 1_000_000;
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
         vm.warp(timestamp);
         vm.startPrank(user1);
 
         uint256 requestId1 = nounScout.add{value: minValue}(HEAD, 9, 100, 1);
+        uint256 requestId2 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_AUCTION_ID,
+            1
+        );
+        uint256 requestId3 = nounScout.add{value: minValue}(HEAD, 9, 103, 1);
+        uint256 requestId4 = nounScout.add{value: minValue}(
+            HEAD,
+            8,
+            ANY_AUCTION_ID,
+            1
+        );
+        uint256 requestId5 = nounScout.add{value: minValue}(HEAD, 8, 100, 1);
+        uint256 requestId6 = nounScout.add{value: minValue}(HEAD, 8, 101, 1);
+
+        INounsSeederLike.Seed memory seed = INounsSeederLike.Seed(
+            0,
+            0,
+            0,
+            9,
+            0
+        );
+
+        // Previous non-auctioned Noun has seed
+        mockNouns.setSeed(seed, 100);
+        mockAuctionHouse.setNounId(102);
+        vm.expectRevert(
+            abi.encodeWithSelector(NounScout.MatchFound.selector, 100)
+        );
+        nounScout.remove(requestId1);
+
+        // Successful
+        nounScout.remove(requestId2); // ANY_AUCTION_ID requets do no match non-auctioned Nouns
+        nounScout.remove(requestId3);
+        nounScout.remove(requestId4);
+        nounScout.remove(requestId5);
+        nounScout.remove(requestId6);
+    }
+
+    function test_REMOVE_revertsPreviousNonAuctionedNoSpecificIDMatchFound()
+        public
+    {
+        uint256 timestamp = 1_000_000;
+        mockAuctionHouse.setEndTime(timestamp + 24 hours);
+        vm.warp(timestamp);
+        vm.startPrank(user1);
+
+        uint256 requestId1 = nounScout.add{value: minValue}(
+            HEAD,
+            9,
+            ANY_NON_AUCTION_ID,
+            1
+        );
         uint256 requestId2 = nounScout.add{value: minValue}(
             HEAD,
             9,
