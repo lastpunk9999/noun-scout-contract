@@ -1170,7 +1170,9 @@ contract NounScout is Ownable2Step, Pausable {
         onlyOwner
     {
         // Reimbursement cannot be greater than minimum Request value
-        if (minReimbursement > minValue) revert();
+        if (newMinReimbursement > minValue) revert();
+        // Prevent owner from setting reimbursement too high.
+        if (newMinReimbursement > 0.05 ether) revert();
         minReimbursement = newMinReimbursement;
         emit MinReimbursementChanged(newMinReimbursement);
     }
@@ -1183,6 +1185,8 @@ contract NounScout is Ownable2Step, Pausable {
         external
         onlyOwner
     {
+        // Prevent owner from setting reimbursement too high.
+        if (newMaxReimbursement > 1 ether) revert();
         maxReimbursement = newMaxReimbursement;
         emit MaxReimbursementChanged(newMaxReimbursement);
     }
