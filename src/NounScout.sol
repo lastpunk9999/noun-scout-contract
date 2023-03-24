@@ -406,11 +406,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @param requester The address of the requester
      * @return requests An array of RequestWithStatus Structs
      */
-    function requestsByAddress(address requester)
-        public
-        view
-        returns (RequestWithStatus[] memory requests)
-    {
+    function requestsByAddress(
+        address requester
+    ) public view returns (RequestWithStatus[] memory requests) {
         unchecked {
             uint256 activeRequestCount;
             uint256 requestCount = _requests[requester].length;
@@ -478,11 +476,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @return effectiveBPS The basis point used to cacluate the reimbursement fee
      * @return reimbursement The reimbursement amount
      */
-    function effectiveBPSAndReimbursementForPledgeTotal(uint256 total)
-        public
-        view
-        returns (uint256 effectiveBPS, uint256 reimbursement)
-    {
+    function effectiveBPSAndReimbursementForPledgeTotal(
+        uint256 total
+    ) public view returns (uint256 effectiveBPS, uint256 reimbursement) {
         (
             effectiveBPS,
             reimbursement
@@ -496,11 +492,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @param nounId Noun ID to fetch the seed and compare against the given request parameters
      * @return boolean True if the specified Noun has the specified trait and the request Noun ID matches the given Noun ID
      */
-    function requestMatchesNoun(Request memory request, uint16 nounId)
-        public
-        view
-        returns (bool)
-    {
+    function requestMatchesNoun(
+        Request memory request,
+        uint16 nounId
+    ) public view returns (bool) {
         // open IDs can't be used as Noun Ids
         if (nounId == ANY_AUCTION_ID || nounId == ANY_NON_AUCTION_ID) {
             revert IneligibleNounId();
@@ -548,11 +543,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID
      */
-    function pledgesForNounId(uint16 nounId, bool includeAnyId)
-        public
-        view
-        returns (uint256[][][5] memory pledges)
-    {
+    function pledgesForNounId(
+        uint16 nounId,
+        bool includeAnyId
+    ) public view returns (uint256[][][5] memory pledges) {
         for (uint256 trait; trait < 5; trait++) {
             uint256 traitCount;
             Traits traitEnum = Traits(trait);
@@ -654,11 +648,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient that matches the on-chain Noun seed indexed by Trait Type and Recipient ID
      */
-    function pledgesForOnChainNoun(uint16 nounId, bool includeAnyId)
-        public
-        view
-        returns (uint256[][5] memory pledges)
-    {
+    function pledgesForOnChainNoun(
+        uint16 nounId,
+        bool includeAnyId
+    ) public view returns (uint256[][5] memory pledges) {
         return _pledgesForOnChainNoun(nounId, includeAnyId, _recipients.length);
     }
 
@@ -857,11 +850,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @param requester The address of the requester
      * @return requests An array of Request structs
      */
-    function rawRequestsByAddress(address requester)
-        public
-        view
-        returns (Request[] memory requests)
-    {
+    function rawRequestsByAddress(
+        address requester
+    ) public view returns (Request[] memory requests) {
         requests = _requests[requester];
     }
 
@@ -872,11 +863,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @param requestId The ID of the request
      * @return request The Request struct
      */
-    function rawRequestById(address requester, uint256 requestId)
-        public
-        view
-        returns (Request memory request)
-    {
+    function rawRequestById(
+        address requester,
+        uint256 requestId
+    ) public view returns (Request memory request) {
         request = _requests[requester][requestId];
     }
 
@@ -1113,10 +1103,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @param active Active state
      * @dev If the Done is not configured, a revert will be triggered
      */
-    function setRecipientActive(uint256 recipientId, bool active)
-        external
-        onlyOwner
-    {
+    function setRecipientActive(
+        uint256 recipientId,
+        bool active
+    ) external onlyOwner {
         if (active == _recipients[recipientId].active) return;
         _recipients[recipientId].active = active;
         emit RecipientActiveStatusChanged({
@@ -1149,10 +1139,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Sets the standard reimbursement basis points
      * @param newReimbursementBPS new basis point value
      */
-    function setReimbursementBPS(uint16 newReimbursementBPS)
-        external
-        onlyOwner
-    {
+    function setReimbursementBPS(
+        uint16 newReimbursementBPS
+    ) external onlyOwner {
         // BPS cannot be less than 0.1% or greater than 10%
         if (newReimbursementBPS < 10 || newReimbursementBPS > 1000) {
             revert();
@@ -1165,10 +1154,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Sets the minium reimbursement amount when settling
      * @param newMinReimbursement new minimum value
      */
-    function setMinReimbursement(uint256 newMinReimbursement)
-        external
-        onlyOwner
-    {
+    function setMinReimbursement(
+        uint256 newMinReimbursement
+    ) external onlyOwner {
         // Reimbursement cannot be greater than minimum Request value
         if (newMinReimbursement > minValue) revert();
         // Prevent owner from setting reimbursement too high.
@@ -1181,10 +1169,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Sets the maximum reimbursement amount when settling
      * @param newMaxReimbursement new maximum value
      */
-    function setMaxReimbursement(uint256 newMaxReimbursement)
-        external
-        onlyOwner
-    {
+    function setMaxReimbursement(
+        uint256 newMaxReimbursement
+    ) external onlyOwner {
         // Prevent owner from setting reimbursement too high.
         if (newMaxReimbursement > 1 ether) revert();
         maxReimbursement = newMaxReimbursement;
@@ -1469,14 +1456,12 @@ contract NounScout is Ownable2Step, Pausable {
      * @return hash generated trait hash to minimize gas ussage
      * @return nounId
      */
-    function _getRequestStatusAndParams(Request memory request)
+    function _getRequestStatusAndParams(
+        Request memory request
+    )
         internal
         view
-        returns (
-            RequestStatus requestStatus,
-            bytes32 hash,
-            uint16 nounId
-        )
+        returns (RequestStatus requestStatus, bytes32 hash, uint16 nounId)
     {
         if (request.amount < 1) {
             return (RequestStatus.REMOVED, hash, nounId);
@@ -1552,11 +1537,10 @@ contract NounScout is Ownable2Step, Pausable {
     /**
      * @notice Get the specified on-chain Noun's seed and return the Trait ID for a Trait Type
      */
-    function _fetchOnChainNounTraitId(Traits trait, uint16 nounId)
-        internal
-        view
-        returns (uint16 traitId)
-    {
+    function _fetchOnChainNounTraitId(
+        Traits trait,
+        uint16 nounId
+    ) internal view returns (uint16 traitId) {
         if (trait == Traits.BACKGROUND) {
             traitId = uint16(nouns.seeds(nounId).background);
         } else if (trait == Traits.BODY) {
@@ -1579,11 +1563,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @return effectiveBPS The basis point value used to calculate the reimbursement given the total
      * @return reimbursement The amount to reimburse based on the total and effectiveBPS
      */
-    function _effectiveHighPrecisionBPSForPledgeTotal(uint256 total)
-        internal
-        view
-        returns (uint256 effectiveBPS, uint256 reimbursement)
-    {
+    function _effectiveHighPrecisionBPSForPledgeTotal(
+        uint256 total
+    ) internal view returns (uint256 effectiveBPS, uint256 reimbursement) {
         if (total < 1) {
             return (effectiveBPS, reimbursement);
         }
@@ -1614,11 +1596,9 @@ contract NounScout is Ownable2Step, Pausable {
      * @param recipientsCount Cached length of _recipients array
      * @return isActive Array of active status booleans
      */
-    function _mapRecipientActive(uint256 recipientsCount)
-        internal
-        view
-        returns (bool[] memory isActive)
-    {
+    function _mapRecipientActive(
+        uint256 recipientsCount
+    ) internal view returns (bool[] memory isActive) {
         unchecked {
             isActive = new bool[](recipientsCount);
             for (uint256 i; i < recipientsCount; i++) {
@@ -1641,10 +1621,10 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Transfer ETH and return the success status.
      * @dev This function forwards 10,000 gas to the callee.
      */
-    function _safeTransferETH(address to, uint256 value)
-        internal
-        returns (bool)
-    {
+    function _safeTransferETH(
+        address to,
+        uint256 value
+    ) internal returns (bool) {
         (bool success, ) = to.call{value: value, gas: 10_000}("");
         return success;
     }
