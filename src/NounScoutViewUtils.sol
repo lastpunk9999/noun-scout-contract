@@ -170,7 +170,7 @@ contract NounScoutViewUtils {
      * @notice Evaluate if the provided Request parameters matches the specified Noun
      * @param requestTrait The trait type to compare the given Noun ID with
      * @param requestTraitId The ID of the provided trait type to compare the given Noun ID with
-     * @param requestNounId The NounID parameter from a Noun Seek Request (may be ANY_AUCTION_ID)
+     * @param requestNounId The NounID parameter from a Noun Scout Request (may be ANY_AUCTION_ID)
      * @param onChainNounId Noun ID to fetch the attributes of to compare against the given request properties
      * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
      */
