@@ -358,7 +358,7 @@ contract NounScout is Ownable2Step, Pausable {
     uint16 public glassesCount;
 
     /**
-     * @notice Cumulative funds to be sent to a specific recipient scoped to trait type, trait ID, and  Noun ID.
+     * @notice Cumulative funds to be sent to a specific recipient scoped to trait type, Trait ID, and  Noun ID.
      * @dev The first mapping key is can be generated with the `traitsHash` function
      * and the second is recipientId.
      * `id` tracks which group of pledges have been sent. When a pledge is sent, the ID is incremented. See `_combineAmountsAndDelete()`
@@ -676,7 +676,7 @@ contract NounScout is Ownable2Step, Pausable {
      * @notice Get cumulative pledge amounts scoped to Noun ID, Trait Type, and Trait ID
      * @dev Example: `pledgesForNounIdByTraitId(0, 1, 25)` accumulates all pledged pledge amounts for background (Trait Type 0) with Trait ID 1 for Noun ID 25. The value in `pledges[2]` is in the total amount that has been pledged to Recipient ID 2
      * @param trait The trait type to scope requests to (See `Traits` Enum)
-     * @param traitId The trait ID  of the trait to scope requests
+     * @param traitId The Trait ID  of the trait to scope requests
      * @param nounId The Noun ID to scope requests to
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Recipient ID
@@ -1358,7 +1358,7 @@ contract NounScout is Ownable2Step, Pausable {
     /**
      * @notice Retrieves requests with params `trait`, `traitId`, and `nounId` to calculate pledge and reimubersement amounts, sets a new PledgeGroup record with amount set to 0 and pledgeGroupId increased by 1.
      * @param trait The trait type requests should match (see `Traits` Enum)
-     * @param traitId Specific trait ID
+     * @param traitId Specific Trait ID
      * @param nounId Specific Noun ID
      * @param recipientIds Specific set of recipients
      * @param matchAuctionedNoun If `true` matching Noun is auctioned. If `false` matching Noun is non-auctioned.
