@@ -92,7 +92,8 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             101,
-            true
+            true,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.headCount());
@@ -108,7 +109,12 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // HEAD with Specific Id 101 NOT including any auction ID
-        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(HEAD, 101, false);
+        pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
+            HEAD,
+            101,
+            false,
+            new uint16[](0)
+        );
 
         assertEq(pledgesByTraitId.length, nounScout.headCount());
 
@@ -126,7 +132,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.headCount());
@@ -145,7 +152,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             101,
-            true
+            true,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());
@@ -163,7 +171,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             101,
-            false
+            false,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());
@@ -181,7 +190,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());
@@ -199,7 +209,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             100,
-            true
+            true,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());
@@ -217,7 +228,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             100,
-            false
+            false,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());
@@ -235,7 +247,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             GLASSES,
             ANY_NON_AUCTION_ID,
-            false
+            false,
+            new uint16[](0)
         );
 
         assertEq(pledgesByTraitId.length, nounScout.glassesCount());

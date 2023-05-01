@@ -18,7 +18,9 @@ contract NounScoutViewUtils {
         ANY_AUCTION_ID = nounScout.ANY_AUCTION_ID();
     }
 
-    function pledgesForUpcomingNounByTrait(NounScout.Traits trait)
+    function pledgesForUpcomingNounByTrait(
+        NounScout.Traits trait
+    )
         public
         view
         returns (
@@ -38,19 +40,23 @@ contract NounScoutViewUtils {
             nextAuctionPledges = nounScout.pledgesForNounIdByTrait(
                 trait,
                 nextAuctionId,
-                true
+                true,
+                new uint16[](0)
             );
             if (nextNonAuctionId < UINT16_MAX) {
                 nextNonAuctionPledges = nounScout.pledgesForNounIdByTrait(
                     trait,
                     nextNonAuctionId,
-                    true
+                    true,
+                    new uint16[](0)
                 );
             }
         }
     }
 
-    function pledgesForNounOnAuctionByTrait(NounScout.Traits trait)
+    function pledgesForNounOnAuctionByTrait(
+        NounScout.Traits trait
+    )
         public
         view
         returns (
@@ -85,7 +91,9 @@ contract NounScoutViewUtils {
         }
     }
 
-    function pledgesForMatchableNounByTrait(NounScout.Traits trait)
+    function pledgesForMatchableNounByTrait(
+        NounScout.Traits trait
+    )
         public
         view
         returns (
@@ -249,11 +257,10 @@ contract NounScoutViewUtils {
         return nounId % 10 > 0 || nounId > 1820;
     }
 
-    function _fetchTraitId(NounScout.Traits trait, uint16 nounId)
-        internal
-        view
-        returns (uint16 traitId)
-    {
+    function _fetchTraitId(
+        NounScout.Traits trait,
+        uint16 nounId
+    ) internal view returns (uint16 traitId) {
         if (trait == NounScout.Traits.BACKGROUND) {
             traitId = uint16(nouns.seeds(nounId).background);
         } else if (trait == NounScout.Traits.BODY) {
@@ -272,11 +279,9 @@ contract NounScoutViewUtils {
      * @param recipientsCount Cached length of _recipients array
      * @return isActive Array of active status booleans
      */
-    function _mapRecipientActive(uint256 recipientsCount)
-        internal
-        view
-        returns (bool[] memory isActive)
-    {
+    function _mapRecipientActive(
+        uint256 recipientsCount
+    ) internal view returns (bool[] memory isActive) {
         unchecked {
             isActive = new bool[](recipientsCount);
             NounScout.Recipient[] memory recipients = nounScout.recipients();

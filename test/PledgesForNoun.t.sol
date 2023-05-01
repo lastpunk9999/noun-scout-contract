@@ -92,7 +92,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // ANY_AUCTION_ID and specific Id = 101
-        uint256[][][5] memory pledges = nounScout.pledgesForNounId(101, true);
+        uint256[][][5] memory pledges = nounScout.pledgesForNounId(
+            101,
+            true,
+            new INounsSeederLike.Seed[](0)
+        );
 
         // For all recipient slots for next auctioned Noun
         for (uint256 i = 0; i < 20; i++) {
@@ -114,7 +118,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // ONLY specific Id = 101
-        pledges = nounScout.pledgesForNounId(101, false);
+        pledges = nounScout.pledgesForNounId(
+            101,
+            false,
+            new INounsSeederLike.Seed[](0)
+        );
 
         // For all recipient slots for next auctioned Noun
         for (uint256 i = 0; i < 20; i++) {
@@ -136,7 +144,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // ONLY any auction ID
-        pledges = nounScout.pledgesForNounId(ANY_AUCTION_ID, false);
+        pledges = nounScout.pledgesForNounId(
+            ANY_AUCTION_ID,
+            false,
+            new INounsSeederLike.Seed[](0)
+        );
 
         // For all recipient slots for next auctioned Noun
         for (uint256 i = 0; i < 20; i++) {
@@ -158,7 +170,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // Specific Id = 100 and any non-auction ID
-        pledges = nounScout.pledgesForNounId(100, true);
+        pledges = nounScout.pledgesForNounId(
+            100,
+            true,
+            new INounsSeederLike.Seed[](0)
+        );
         for (uint256 i = 0; i < 20; i++) {
             // No HEAD requests
             assertEq(pledges[3][0][i], 0);
@@ -172,7 +188,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // Specific Id = 100
-        pledges = nounScout.pledgesForNounId(100, false);
+        pledges = nounScout.pledgesForNounId(
+            100,
+            false,
+            new INounsSeederLike.Seed[](0)
+        );
         for (uint256 i = 0; i < 20; i++) {
             // No HEAD requests
             assertEq(pledges[3][0][i], 0);
@@ -186,7 +206,11 @@ contract NounScoutTest is BaseNounScoutTest {
         }
 
         // Any non-auction ID
-        pledges = nounScout.pledgesForNounId(ANY_NON_AUCTION_ID, false);
+        pledges = nounScout.pledgesForNounId(
+            ANY_NON_AUCTION_ID,
+            false,
+            new INounsSeederLike.Seed[](0)
+        );
         for (uint256 i = 0; i < 20; i++) {
             // No HEAD requests
             assertEq(pledges[3][0][i], 0);
@@ -233,7 +257,18 @@ contract NounScoutTest is BaseNounScoutTest {
 
         uint256 recipientsCount = nounScout.recipients().length;
 
-        // Next Noun has No Requests
+        // Matched Noun (97) and current auction Noun (98) must not match any pledges for upcoming auctioned Noun (99). Set their seeds to traitIds outside the above for loop of 0-9
+        INounsSeederLike.Seed memory nonMatchingSeed = INounsSeederLike.Seed(
+            1,
+            10,
+            10,
+            10,
+            10
+        );
+        mockNouns.setSeed(nonMatchingSeed, 97);
+        mockNouns.setSeed(nonMatchingSeed, 98);
+
+        // Next Noun has no pledges
         mockAuctionHouse.setNounId(98);
         (
             uint16 nextAuctionedId,
@@ -317,10 +352,22 @@ contract NounScoutTest is BaseNounScoutTest {
             }
         }
 
-        uint256 recipientsCount = nounScout.recipients().length;
-
         // Next Noun has Non-Auctioned Noun and Specific Id Requests
         mockAuctionHouse.setNounId(99);
+
+        // Matched Noun (98) and current auction Noun (99) must not match any pledges for upcoming auctioned Noun (101). Set their seeds to traitIds outside the above for loop of 0-9
+        INounsSeederLike.Seed memory nonMatchingSeed = INounsSeederLike.Seed(
+            1,
+            10,
+            10,
+            10,
+            10
+        );
+        mockNouns.setSeed(nonMatchingSeed, 98);
+        mockNouns.setSeed(nonMatchingSeed, 99);
+
+        uint256 recipientsCount = nounScout.recipients().length;
+
         (
             uint16 nextAuctionedId,
             uint16 nextNonAuctionedId,
@@ -418,6 +465,18 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // Next Noun matches ANY_AUCTION_ID requests
         mockAuctionHouse.setNounId(98);
+
+        // Matched Noun (97) and current auction Noun (98) must not match any pledges for upcoming auctioned Noun (99). Set their seeds to traitIds outside the above for loop of 0-9
+        INounsSeederLike.Seed memory nonMatchingSeed = INounsSeederLike.Seed(
+            1,
+            10,
+            10,
+            10,
+            10
+        );
+        mockNouns.setSeed(nonMatchingSeed, 97);
+        mockNouns.setSeed(nonMatchingSeed, 98);
+
         (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
             .pledgesForUpcomingNoun();
 
@@ -1219,5 +1278,213 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(auctionNounTotalReimbursement[2], minReimbursement);
         assertEq(auctionNounTotalReimbursement[3], minReimbursement);
         assertEq(auctionNounTotalReimbursement[4], minReimbursement);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesMatchedNounPledgesNoSpecific()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 97, not Noun 98
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will NOT match Noun 97 or Noun 98
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Matched Noun (97) has traits which match the first pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 97);
+
+        // Current Noun has no pledges
+        mockAuctionHouse.setNounId(98);
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out
+        assertEq(nextAuctionPledges[3][33][0], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesCurrentNounPledgesNoSpecific()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 98, not Noun 97
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will NOT match Noun 97 or Noun 98
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Current Noun (98) has traits which match the first pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 98);
+
+        // Current Noun has no pledges
+        mockAuctionHouse.setNounId(98);
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out
+        assertEq(nextAuctionPledges[3][33][0], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesMatchedNounPledgesWithSpecific()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 97, for Recipient 0
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will match Noun 97, for Recipient 1
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 1);
+        // Trait matches Noun 97, but specific pledge for 99
+        nounScout.add{value: minValue}(HEAD, 33, 99, 0);
+        // Will NOT match Noun 97 or Noun 98
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Matched Noun (97) has traits which match the first pledge and second pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 97);
+
+        // Current Noun has no pledges
+        mockAuctionHouse.setNounId(98);
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out, only second pledge is returned
+        assertEq(nextAuctionPledges[3][33][0], minValue);
+
+        // Recipient 1 only has NonSpecific pledges
+        assertEq(nextAuctionPledges[3][33][1], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesCurrentNounPledgesWithSpecific()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 98, for Recipient 0
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will match Noun 98, for Recipient 1
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 1);
+        // Trait matches Noun 98, but specific pledge for 99
+        nounScout.add{value: minValue}(HEAD, 33, 99, 0);
+        // Will NOT match Noun 97 or Noun 98
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Matched Noun (98) has traits which match the first pledge and second pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 98);
+
+        // Current Noun has no pledges
+        mockAuctionHouse.setNounId(98);
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out, only second pledge is returned
+        assertEq(nextAuctionPledges[3][33][0], minValue);
+
+        // Recipient 1 only has NonSpecific pledges
+        assertEq(nextAuctionPledges[3][33][1], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesMatchedNounPledgesWhenDoubleMint()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 99, for Recipient 0
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will match Noun 99, for Recipient 1
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 1);
+        // Trait matches Noun 99, but specific pledge for the next Noun (102)
+        nounScout.add{value: minValue}(HEAD, 33, 102, 0);
+        // Will NOT match Noun 99 or Noun 101
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Matched Noun (99) has traits which match the first pledge and second pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 99);
+
+        // Current Noun is part of double mint; has no pledges
+        mockAuctionHouse.setNounId(101);
+
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out, only second pledge is returned
+        assertEq(nextAuctionPledges[3][33][0], minValue);
+
+        // Recipient 1 only has NonSpecific pledges
+        assertEq(nextAuctionPledges[3][33][1], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_excludesCurrentNounPledgesWhenDoubleMint()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Will match Noun 101, for Recipient 0
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 0);
+        // Will match Noun 101, for Recipient 1
+        nounScout.add{value: minValue}(HEAD, 33, ANY_AUCTION_ID, 1);
+        // Trait matches Noun 101, but specific pledge for the next Noun (102)
+        nounScout.add{value: minValue}(HEAD, 33, 102, 0);
+        // Will NOT match Noun 99 or Noun 101
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+
+        // Matched Noun (99) has traits which match the first pledge and second pledge (HEAD 33)
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 101);
+
+        // Current Noun is part of double mint; has no pledges
+        mockAuctionHouse.setNounId(101);
+
+        (, , uint256[][][5] memory nextAuctionPledges, ) = nounScout
+            .pledgesForUpcomingNoun();
+
+        // first pledge is filetered out, only second pledge is returned
+        assertEq(nextAuctionPledges[3][33][0], minValue);
+
+        // Recipient 1 only has NonSpecific pledges
+        assertEq(nextAuctionPledges[3][33][1], 0);
+
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+    }
+
+    function test_PLEDGESFORUPCOMINGNOUN_doesNotExcludeNonAuctionNounPledges()
+        public
+    {
+        vm.startPrank(user1);
+
+        // Trait matches Noun 99, but OPEN ID for non-auctioned Noun
+        nounScout.add{value: minValue}(HEAD, 33, ANY_NON_AUCTION_ID, 0);
+        // Trait matches Noun 99, but specific pledge for the next non-auctioned Noun (100)
+        nounScout.add{value: minValue}(HEAD, 33, 100, 0);
+        // Will NOT match Noun 99 or Noun 100
+        nounScout.add{value: minValue}(HEAD, 1, ANY_AUCTION_ID, 0);
+        // Will NOT match Noun 99 or Noun 100
+        nounScout.add{value: minValue}(HEAD, 1, 101, 1);
+
+        mockNouns.setSeed(INounsSeederLike.Seed(0, 0, 0, 33, 0), 99);
+
+        // Current Noun is part of double mint; has no pledges
+        mockAuctionHouse.setNounId(99);
+
+        (
+            ,
+            ,
+            uint256[][][5] memory nextAuctionPledges,
+            uint256[][][5] memory nextNonAuctionPledges
+        ) = nounScout.pledgesForUpcomingNoun();
+
+        // first pledge is filetered out, only second pledge is returned
+        assertEq(nextNonAuctionPledges[3][33][0], minValue * 2);
+
+        // Only pledges for auctioned Noun
+        assertEq(nextAuctionPledges[3][1][0], minValue);
+        assertEq(nextAuctionPledges[3][1][1], minValue);
     }
 }

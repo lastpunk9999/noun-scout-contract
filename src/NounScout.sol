@@ -541,12 +541,19 @@ contract NounScout is Ownable2Step, Pausable {
      * 3) looping through `pledges[0][1]` and summing each item represents the total value pledged for a warm background (pledges[0][1][0] + pledges[0][1][1]  + pledges[0][1][2] + .... = n ETH)
      * @param nounId The ID of the Noun requests should match.
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
+     * @param excludeSeeds Filters out pledges for any Trait in the array of Noun Seeds.
+     * This is useful when fetching pledges that have not been matched by the previously auctioned Nouns (See `pledgesForUpcomingNoun()` for why that is needed).
+     * A special case exists to accomediate `pledgesForUpcomingNoun()`: if `nounId` is not an open ID (ANY_AUCTION_ID, ANY_NON_AUCTION_ID) and `includeAnyId` is true, only open ID pledges will be filtered and specific ID pledges for `nounId` will be included.
      * @return pledges Cumulative amounts pledged for each Recipient, indexed by Trait Type, Trait ID and Recipient ID
      */
     function pledgesForNounId(
         uint16 nounId,
-        bool includeAnyId
+        bool includeAnyId,
+        INounsSeederLike.Seed[] memory excludeSeeds
     ) public view returns (uint256[][][5] memory pledges) {
+        uint256 excludeLength = excludeSeeds.length;
+        uint16[] memory excludeTraitIds = new uint16[](excludeLength);
+
         for (uint256 trait; trait < 5; trait++) {
             uint256 traitCount;
             Traits traitEnum = Traits(trait);
@@ -562,11 +569,27 @@ contract NounScout is Ownable2Step, Pausable {
                 traitCount = glassesCount;
             }
 
+            // Find the specific Trait IDs for the current Trait within the array of Seeds
+            for (uint256 i; i < excludeLength; i++) {
+                if (traitEnum == Traits.BACKGROUND) {
+                    excludeTraitIds[i] = uint16(excludeSeeds[i].background);
+                } else if (traitEnum == Traits.BODY) {
+                    excludeTraitIds[i] = uint16(excludeSeeds[i].body);
+                } else if (traitEnum == Traits.ACCESSORY) {
+                    excludeTraitIds[i] = uint16(excludeSeeds[i].accessory);
+                } else if (traitEnum == Traits.HEAD) {
+                    excludeTraitIds[i] = uint16(excludeSeeds[i].head);
+                } else if (traitEnum == Traits.GLASSES) {
+                    excludeTraitIds[i] = uint16(excludeSeeds[i].glasses);
+                }
+            }
+
             pledges[trait] = new uint256[][](traitCount);
             pledges[trait] = pledgesForNounIdByTrait(
                 traitEnum,
                 nounId,
-                includeAnyId
+                includeAnyId,
+                excludeTraitIds
             );
         }
     }
@@ -578,12 +601,16 @@ contract NounScout is Ownable2Step, Pausable {
      * @param trait The trait type to scope requests to (See `Traits` Enum)
      * @param nounId The Noun ID to scope requests to
      * @param includeAnyId If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`
+     * @param excludeTraitIds The pledges for any Trait ID in the array will not be added to `pledgesByTraitId`.
+     * A special case exists: if `nounId` is not an open ID (ANY_AUCTION_ID, ANY_NON_AUCTION_ID) and `includeAnyId` is true, only open ID pledges will be excluded, while the specific Id pledges for `nounId` will not.
+     * Example: If there two pledges for HEAD 7, one with `nounId` set to `ANY_AUCTION_ID` and the other set to the specific Noun Id 99, when calling `pledgesForNounIdByTrait(3, 99, true, [7])` (get HEAD pledges for Noun 99 including open Id pledges), only the specific Noun ID pledge will be returned for HEAD 7  (the open ID pledge will be filtered out).
      * @return pledgesByTraitId Cumulative amounts pledged for each Recipient, indexed by Trait ID and Recipient ID
      */
     function pledgesForNounIdByTrait(
         Traits trait,
         uint16 nounId,
-        bool includeAnyId
+        bool includeAnyId,
+        uint16[] memory excludeTraitIds
     ) public view returns (uint256[][] memory pledgesByTraitId) {
         unchecked {
             uint16 traitCount;
@@ -602,14 +629,45 @@ contract NounScout is Ownable2Step, Pausable {
             uint256 recipientsCount = _recipients.length;
             pledgesByTraitId = new uint256[][](traitCount);
 
+            uint256 excludeLength = excludeTraitIds.length;
+
             for (uint16 traitId; traitId < traitCount; traitId++) {
-                pledgesByTraitId[traitId] = _pledgesForNounIdByTraitId(
-                    trait,
-                    traitId,
-                    nounId,
-                    includeAnyId,
-                    recipientsCount
-                );
+                bool exclude;
+                for (uint256 i; i < excludeLength; i++) {
+                    if (traitId == excludeTraitIds[i]) exclude = true;
+                }
+
+                // If a Trait ID in the array matches the current Trait ID...
+                if (exclude) {
+                    bool isSpecificNounId = nounId != ANY_AUCTION_ID &&
+                        nounId != ANY_NON_AUCTION_ID;
+
+                    // If the `nounId` is a specific ID and it should be bundled with an open ID...
+                    if (isSpecificNounId && includeAnyId) {
+                        // Modify the request to only fetch pledges for the specific ID
+                        pledgesByTraitId[traitId] = _pledgesForNounIdByTraitId(
+                            trait,
+                            traitId,
+                            nounId,
+                            false,
+                            recipientsCount
+                        );
+                        // Otherwise include an empty set of pledges
+                    } else {
+                        pledgesByTraitId[traitId] = new uint256[](
+                            recipientsCount
+                        );
+                    }
+                    // Otherwise the pledges for this Trait ID should be included
+                } else {
+                    pledgesByTraitId[traitId] = _pledgesForNounIdByTraitId(
+                        trait,
+                        traitId,
+                        nounId,
+                        includeAnyId,
+                        recipientsCount
+                    );
+                }
             }
         }
     }
@@ -674,20 +732,38 @@ contract NounScout is Ownable2Step, Pausable {
         )
     {
         unchecked {
-            nextAuctionId = uint16(auctionHouse.auction().nounId) + 1;
+            uint16 currentAuctionNounId = uint16(auctionHouse.auction().nounId);
+            uint16 prevAuctionNounId = currentAuctionNounId - 1;
+            nextAuctionId = currentAuctionNounId + 1;
             nextNonAuctionId = UINT16_MAX;
 
+            if (_isNonAuctionedNoun(prevAuctionNounId)) {
+                prevAuctionNounId = prevAuctionNounId - 1;
+            }
             if (_isNonAuctionedNoun(nextAuctionId)) {
                 nextNonAuctionId = nextAuctionId;
                 nextAuctionId++;
             }
 
-            nextAuctionPledges = pledgesForNounId(nextAuctionId, true);
+            // Exclude the Noun Seeds for the current Noun on auction and the previously auctioned Noun.
+            // Pledges for these Noun traits have already been matched, and so will not be included in the reporting of open (unmatched) pledges for the upcoming Noun.
+            // This does not apply to non-auctioned Noun pledges because non-auctioned Nouns are not consecutive and can only be matched with pledges that specify non-auctioned IDs.
+            INounsSeederLike.Seed[]
+                memory excludeSeeds = new INounsSeederLike.Seed[](2);
+            excludeSeeds[0] = nouns.seeds(currentAuctionNounId);
+            excludeSeeds[1] = nouns.seeds(prevAuctionNounId);
+
+            nextAuctionPledges = pledgesForNounId(
+                nextAuctionId,
+                true,
+                excludeSeeds
+            );
 
             if (nextNonAuctionId < UINT16_MAX) {
                 nextNonAuctionPledges = pledgesForNounId(
                     nextNonAuctionId,
-                    true
+                    true,
+                    new INounsSeederLike.Seed[](0)
                 );
             }
         }

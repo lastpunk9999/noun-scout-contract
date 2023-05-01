@@ -162,7 +162,8 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             99,
-            true
+            true,
+            new uint16[](0)
         );
 
         // USER1 ANY_AUCTION_ID requested 2 times
@@ -425,7 +426,8 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -461,7 +463,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], minValue);
 
@@ -488,7 +491,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], 0);
     }
@@ -513,7 +517,8 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -535,7 +540,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], minValue);
 
@@ -550,7 +556,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], 0);
     }
@@ -575,7 +582,8 @@ contract NounScoutTest is BaseNounScoutTest {
         uint256[][] memory pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         NounScout.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
@@ -597,7 +605,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], minValue);
 
@@ -612,7 +621,8 @@ contract NounScoutTest is BaseNounScoutTest {
         pledgesByTraitId = nounScout.pledgesForNounIdByTrait(
             HEAD,
             ANY_AUCTION_ID,
-            true
+            true,
+            new uint16[](0)
         );
         assertEq(pledgesByTraitId[9][1], 0);
     }
