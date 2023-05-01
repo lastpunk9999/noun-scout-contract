@@ -1,5 +1,5 @@
 # INounsSeederLike
-[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/Interfaces.sol)
+[Git Source](https://github.com/lastpunk9999/noun-scout-contract/blob/4931ca85f3f8c4a5eb8112a354fc4bbc71b200a3/src/Interfaces.sol)
 
 
 ## Structs

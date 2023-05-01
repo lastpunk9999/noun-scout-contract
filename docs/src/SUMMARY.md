@@ -6,5 +6,5 @@
   - [INounsDescriptorLike](src/Interfaces.sol/contract.INounsDescriptorLike.md)
   - [INounsTokenLike](src/Interfaces.sol/contract.INounsTokenLike.md)
   - [IWETH](src/Interfaces.sol/contract.IWETH.md)
-  - [NounScout](src/NounScout.sol/contract.NounScout.md)
+  - [NounScoutV2](src/NounScoutV2.sol/contract.NounScoutV2.md)
   - [NounScoutViewUtils](src/NounScoutViewUtils.sol/contract.NounScoutViewUtils.md)

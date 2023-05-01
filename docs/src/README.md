@@ -6,7 +6,7 @@ Allows anyone to put up a reward for minting a Noun with a specific trait and do
 
 ### Contract Documentation
 
-[NounScout.sol](/docs/src/src/NounScout.sol/contract.NounScout.md)
+[NounScoutV2.sol](/docs/src/src/NounScoutV2.sol/contract.NounScoutV2.md)
 
 ### Flow
 
