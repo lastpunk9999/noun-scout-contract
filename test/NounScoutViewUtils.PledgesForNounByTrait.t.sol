@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
 import "./BaseNounScoutTest.sol";
@@ -157,27 +157,27 @@ contract NounScoutTest is BaseNounScoutTest {
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     0
                 );
                 // add a request for Noun 101 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     102,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     100,
                     2
@@ -185,7 +185,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
                 // add a request for Noun 101, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     101,
                     3
@@ -248,27 +248,27 @@ contract NounScoutTest is BaseNounScoutTest {
             for (uint16 traitId; traitId < 10; traitId++) {
                 // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     0
                 );
                 // add a request for Noun 101 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     100,
                     2
@@ -276,7 +276,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
                 // add a request for Noun 102, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     102,
                     3
@@ -352,27 +352,27 @@ contract NounScoutTest is BaseNounScoutTest {
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     102,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     100,
                     2
@@ -380,7 +380,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
                 // add a request for Noun 101, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     101,
                     3
@@ -467,27 +467,27 @@ contract NounScoutTest is BaseNounScoutTest {
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     99,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     100,
                     2
@@ -495,7 +495,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
                 // add a request for Noun 101, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     101,
                     3
@@ -585,27 +585,27 @@ contract NounScoutTest is BaseNounScoutTest {
                 if (trait == 0 && traitId > 1) continue;
                 // add a request for ANY_AUCTION_ID, to recipient 0
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     0
                 );
                 // add a request for Noun 102 and ANY_AUCTION_ID, to recipient 1
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     ANY_AUCTION_ID,
                     1
                 );
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     101,
                     1
                 );
                 // add a request for Noun 100, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     100,
                     2
@@ -613,7 +613,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
                 // add a request for Noun 101, to recipient 2
                 nounScout.add{value: minValue}(
-                    NounScout.Traits(trait),
+                    NounScoutV2.Traits(trait),
                     traitId,
                     99,
                     3

@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
 import "./BaseNounScoutTest.sol";
@@ -71,7 +71,7 @@ contract Settle is BaseNounScoutTest {
         assertEq(expectedPledgeGroupId, groupIdSpecificId + 1);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
     }
 
@@ -102,7 +102,7 @@ contract Settle is BaseNounScoutTest {
         vm.startPrank(user2);
 
         // No matches for non-auctioned Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, false, allRecipientIds);
 
         // reqeust 1
@@ -115,7 +115,7 @@ contract Settle is BaseNounScoutTest {
         nounScout.settle(HEAD, true, allRecipientIds);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
     }
 
@@ -217,10 +217,10 @@ contract Settle is BaseNounScoutTest {
         assertEq(expectedPledgeGroupId, groupIdSpecificId);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, false, allRecipientIds);
 
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
     }
 
@@ -253,7 +253,7 @@ contract Settle is BaseNounScoutTest {
         vm.startPrank(user2);
 
         // No matches for Noun 101
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
 
         // reqeust 1
@@ -266,7 +266,7 @@ contract Settle is BaseNounScoutTest {
         nounScout.settle(HEAD, false, allRecipientIds);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, false, allRecipientIds);
     }
 
@@ -309,7 +309,7 @@ contract Settle is BaseNounScoutTest {
         nounScout.settle(HEAD, true, allRecipientIds);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
     }
 
@@ -445,7 +445,7 @@ contract Settle is BaseNounScoutTest {
         vm.startPrank(user2);
 
         // No pledges to send; all recipients inactive
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
 
         nounScout.settle(HEAD, true, allRecipientIds);
     }
@@ -493,7 +493,7 @@ contract Settle is BaseNounScoutTest {
         assertEq(recipient1Amount, minValue);
 
         // Cannot re-match Noun
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
 
         // Set recipient1 active
@@ -521,10 +521,10 @@ contract Settle is BaseNounScoutTest {
         mockAuctionHouse.setNounId(101);
 
         // ineligible
-        vm.expectRevert(NounScout.IneligibleNounId.selector);
+        vm.expectRevert(NounScoutV2.IneligibleNounId.selector);
         nounScout.settle(HEAD, false, allRecipientIds);
         // eligible
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
     }
 
@@ -532,10 +532,10 @@ contract Settle is BaseNounScoutTest {
         // only 100 and 101 are eligible
         mockAuctionHouse.setNounId(102);
         // eligible
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, true, allRecipientIds);
         // eligible
-        vm.expectRevert(NounScout.NoMatch.selector);
+        vm.expectRevert(NounScoutV2.NoMatch.selector);
         nounScout.settle(HEAD, false, allRecipientIds);
     }
 

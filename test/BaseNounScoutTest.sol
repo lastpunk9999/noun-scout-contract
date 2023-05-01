@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 import "../src/NounScoutViewUtils.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
@@ -20,7 +20,7 @@ contract EnhancedTest is Test {
 }
 
 contract BaseNounScoutTest is EnhancedTest {
-    NounScout nounScout;
+    NounScoutV2 nounScout;
     MockNouns mockNouns;
     MockAuctionHouse mockAuctionHouse;
     MockDescriptor mockDescriptor;
@@ -45,14 +45,14 @@ contract BaseNounScoutTest is EnhancedTest {
 
     uint256 maxReimbursement;
     uint256 minReimbursement;
-    NounScout.Traits HEAD = NounScout.Traits.HEAD;
-    NounScout.Traits GLASSES = NounScout.Traits.GLASSES;
+    NounScoutV2.Traits HEAD = NounScoutV2.Traits.HEAD;
+    NounScoutV2.Traits GLASSES = NounScoutV2.Traits.GLASSES;
 
     function setUp() public virtual {
         mockAuctionHouse = new MockAuctionHouse();
         mockDescriptor = new MockDescriptor();
         mockNouns = new MockNouns(address(mockDescriptor));
-        nounScout = new NounScout(
+        nounScout = new NounScoutV2(
             mockNouns,
             mockAuctionHouse,
             IWETH(address(0))

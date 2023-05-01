@@ -3,11 +3,11 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 
 /* Add Recipients */
 contract MainnetDeploy2 is Script {
-    NounScout nounScout = NounScout(0x30Dc2c9F7FC9aFEcd4f8146ba2461D81B7C1De5e);
+    NounScoutV2 nounScout = NounScoutV2(0x30Dc2c9F7FC9aFEcd4f8146ba2461D81B7C1De5e);
 
     function setUp() public {}
 

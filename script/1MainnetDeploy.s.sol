@@ -3,12 +3,12 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 import "../src/Interfaces.sol";
 
-/* Deploy NounScout */
+/* Deploy NounScoutV2 */
 contract MainnetDeploy1 is Script {
-    NounScout nounScout;
+    NounScoutV2 nounScout;
     INounsTokenLike nouns =
         INounsTokenLike(0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03);
     INounsAuctionHouseLike auctionHouse =
@@ -19,7 +19,7 @@ contract MainnetDeploy1 is Script {
 
     function run() public {
         vm.startBroadcast();
-        nounScout = new NounScout(nouns, auctionHouse, weth);
+        nounScout = new NounScoutV2(nouns, auctionHouse, weth);
 
         vm.stopBroadcast();
         console2.log("nounScout", address(nounScout));

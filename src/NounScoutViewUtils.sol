@@ -1,17 +1,17 @@
 // // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import "./NounScout.sol";
+import "./NounScoutV2.sol";
 import "./Interfaces.sol";
 
 contract NounScoutViewUtils {
-    NounScout public immutable nounScout;
+    NounScoutV2 public immutable nounScout;
     INounsTokenLike public immutable nouns;
     INounsAuctionHouseLike public immutable auctionHouse;
     uint16 public immutable ANY_AUCTION_ID;
     uint16 private constant UINT16_MAX = type(uint16).max;
 
-    constructor(NounScout _nounScout) {
+    constructor(NounScoutV2 _nounScout) {
         nounScout = _nounScout;
         nouns = INounsTokenLike(nounScout.nouns());
         auctionHouse = INounsAuctionHouseLike(nounScout.auctionHouse());
@@ -19,7 +19,7 @@ contract NounScoutViewUtils {
     }
 
     function pledgesForUpcomingNounByTrait(
-        NounScout.Traits trait
+        NounScoutV2.Traits trait
     )
         public
         view
@@ -55,7 +55,7 @@ contract NounScoutViewUtils {
     }
 
     function pledgesForNounOnAuctionByTrait(
-        NounScout.Traits trait
+        NounScoutV2.Traits trait
     )
         public
         view
@@ -92,7 +92,7 @@ contract NounScoutViewUtils {
     }
 
     function pledgesForMatchableNounByTrait(
-        NounScout.Traits trait
+        NounScoutV2.Traits trait
     )
         public
         view
@@ -183,14 +183,14 @@ contract NounScoutViewUtils {
      * @return boolean True if the specified Noun ID has the specified trait and the request Noun ID matches the given NounID
      */
     function requestParamsMatchNounParams(
-        NounScout.Traits requestTrait,
+        NounScoutV2.Traits requestTrait,
         uint16 requestTraitId,
         uint16 requestNounId,
         uint16 onChainNounId
     ) public view returns (bool) {
         return
             nounScout.requestMatchesNoun(
-                NounScout.Request({
+                NounScoutV2.Request({
                     recipientId: 0,
                     trait: requestTrait,
                     traitId: requestTraitId,
@@ -211,7 +211,7 @@ contract NounScoutViewUtils {
      * @return amount The amount before fees
      */
     function amountForRecipientByTrait(
-        NounScout.Traits trait,
+        NounScoutV2.Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 recipientId
@@ -229,7 +229,7 @@ contract NounScoutViewUtils {
      * @return pledgeGroupId The amount before fees
      */
     function pledgeGroupIdForRecipientByTrait(
-        NounScout.Traits trait,
+        NounScoutV2.Traits trait,
         uint16 traitId,
         uint16 nounId,
         uint16 recipientId
@@ -258,18 +258,18 @@ contract NounScoutViewUtils {
     }
 
     function _fetchTraitId(
-        NounScout.Traits trait,
+        NounScoutV2.Traits trait,
         uint16 nounId
     ) internal view returns (uint16 traitId) {
-        if (trait == NounScout.Traits.BACKGROUND) {
+        if (trait == NounScoutV2.Traits.BACKGROUND) {
             traitId = uint16(nouns.seeds(nounId).background);
-        } else if (trait == NounScout.Traits.BODY) {
+        } else if (trait == NounScoutV2.Traits.BODY) {
             traitId = uint16(nouns.seeds(nounId).body);
-        } else if (trait == NounScout.Traits.ACCESSORY) {
+        } else if (trait == NounScoutV2.Traits.ACCESSORY) {
             traitId = uint16(nouns.seeds(nounId).accessory);
-        } else if (trait == NounScout.Traits.HEAD) {
+        } else if (trait == NounScoutV2.Traits.HEAD) {
             traitId = uint16(nouns.seeds(nounId).head);
-        } else if (trait == NounScout.Traits.GLASSES) {
+        } else if (trait == NounScoutV2.Traits.GLASSES) {
             traitId = uint16(nouns.seeds(nounId).glasses);
         }
     }
@@ -284,7 +284,7 @@ contract NounScoutViewUtils {
     ) internal view returns (bool[] memory isActive) {
         unchecked {
             isActive = new bool[](recipientsCount);
-            NounScout.Recipient[] memory recipients = nounScout.recipients();
+            NounScoutV2.Recipient[] memory recipients = nounScout.recipients();
             for (uint256 i; i < recipientsCount; i++) {
                 isActive[i] = recipients[i].active;
             }

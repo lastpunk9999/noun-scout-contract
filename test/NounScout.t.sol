@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
-import "../src/NounScout.sol";
+import "../src/NounScoutV2.sol";
 import "./MockContracts.sol";
 import "../src/Interfaces.sol";
 import "./BaseNounScoutTest.sol";
@@ -12,7 +12,7 @@ contract NounScoutTest is BaseNounScoutTest {
     event RequestAdded(
         uint256 requestId,
         address indexed requester,
-        NounScout.Traits trait,
+        NounScoutV2.Traits trait,
         uint16 traitId,
         uint16 recipientId,
         uint16 indexed nounId,
@@ -24,7 +24,7 @@ contract NounScoutTest is BaseNounScoutTest {
     event RequestRemoved(
         uint256 requestId,
         address indexed requester,
-        NounScout.Traits trait,
+        NounScoutV2.Traits trait,
         uint16 traitId,
         uint16 indexed nounId,
         uint16 pledgeGroupId,
@@ -83,7 +83,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        NounScout.Request memory request1 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request1 = nounScout.rawRequestById(
             address(user1),
             requestIdUser1
         );
@@ -94,7 +94,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(request1.nounId, ANY_AUCTION_ID);
         assertEq(request1.amount, minValue, "request1.amount, minValue");
 
-        NounScout.Request[] memory requestsUser1 = nounScout
+        NounScoutV2.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
 
         assertEq(requestsUser1.length, 1);
@@ -147,7 +147,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.prank(user2);
         uint256 requestIdUser2 = nounScout.add{value: minValue}(HEAD, 8, 99, 2);
 
-        NounScout.Request memory request2 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request2 = nounScout.rawRequestById(
             address(user2),
             requestIdUser2
         );
@@ -230,7 +230,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        NounScout.Request memory request1 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request1 = nounScout.rawRequestById(
             address(user1),
             requestId1
         );
@@ -265,7 +265,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        NounScout.Request memory request2 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request2 = nounScout.rawRequestById(
             address(user1),
             requestId2
         );
@@ -314,7 +314,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        NounScout.Request memory request3 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request3 = nounScout.rawRequestById(
             address(user1),
             requestId3
         );
@@ -331,14 +331,14 @@ contract NounScoutTest is BaseNounScoutTest {
 
     function test_ADD_failsBelowMinValue() public {
         vm.prank(user1);
-        vm.expectRevert(NounScout.ValueTooLow.selector);
+        vm.expectRevert(NounScoutV2.ValueTooLow.selector);
         nounScout.add{value: minValue - 1}(HEAD, 9, ANY_AUCTION_ID, 1);
     }
 
     function test_ADD_failsInactiveRecipient() public {
         nounScout.setRecipientActive(1, false);
         vm.prank(user1);
-        vm.expectRevert(NounScout.InactiveRecipient.selector);
+        vm.expectRevert(NounScoutV2.InactiveRecipient.selector);
         nounScout.add{value: minValue}(HEAD, 9, ANY_AUCTION_ID, 1);
     }
 
@@ -368,7 +368,7 @@ contract NounScoutTest is BaseNounScoutTest {
             value: pledge + messageValue
         }(HEAD, 9, ANY_AUCTION_ID, 1, "hello");
 
-        NounScout.Request memory request1 = nounScout.rawRequestById(
+        NounScoutV2.Request memory request1 = nounScout.rawRequestById(
             address(user1),
             requestIdUser1
         );
@@ -379,7 +379,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(request1.nounId, ANY_AUCTION_ID);
         assertEq(request1.amount, pledge);
 
-        NounScout.Request[] memory requestsUser1 = nounScout
+        NounScoutV2.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
 
         assertEq(requestsUser1.length, 1);
@@ -393,7 +393,7 @@ contract NounScoutTest is BaseNounScoutTest {
     }
 
     function test_ADDWITHMESSAGE_failsWhenValueTooLow() public {
-        vm.expectRevert(NounScout.ValueTooLow.selector);
+        vm.expectRevert(NounScoutV2.ValueTooLow.selector);
         vm.prank(user1);
 
         nounScout.addWithMessage{value: minValue}(
@@ -429,7 +429,7 @@ contract NounScoutTest is BaseNounScoutTest {
             true,
             new uint16[](0)
         );
-        NounScout.Request[] memory requestsUser1 = nounScout
+        NounScoutV2.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
 
         // Sanity check
@@ -520,7 +520,7 @@ contract NounScoutTest is BaseNounScoutTest {
             true,
             new uint16[](0)
         );
-        NounScout.Request[] memory requestsUser1 = nounScout
+        NounScoutV2.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
 
         // Sanity check
@@ -585,7 +585,7 @@ contract NounScoutTest is BaseNounScoutTest {
             true,
             new uint16[](0)
         );
-        NounScout.Request[] memory requestsUser1 = nounScout
+        NounScoutV2.Request[] memory requestsUser1 = nounScout
             .rawRequestsByAddress(address(user1));
 
         // Sanity check
@@ -639,7 +639,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        vm.expectRevert(NounScout.AuctionEndingSoon.selector);
+        vm.expectRevert(NounScoutV2.AuctionEndingSoon.selector);
         nounScout.remove(requestId1);
     }
 
@@ -655,7 +655,7 @@ contract NounScoutTest is BaseNounScoutTest {
             1
         );
 
-        vm.expectRevert(NounScout.AuctionEndingSoon.selector);
+        vm.expectRevert(NounScoutV2.AuctionEndingSoon.selector);
         nounScout.remove(requestId1);
     }
 
@@ -673,7 +673,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         nounScout.remove(requestId1);
 
-        vm.expectRevert(NounScout.AlreadyRemoved.selector);
+        vm.expectRevert(NounScoutV2.AlreadyRemoved.selector);
         nounScout.remove(requestId1);
     }
 
@@ -730,12 +730,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 103);
         mockAuctionHouse.setNounId(103);
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 103)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 103)
         );
         nounScout.remove(requestId1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 103)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 103)
         );
         nounScout.remove(requestId2);
 
@@ -781,12 +781,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 99);
         mockAuctionHouse.setNounId(101);
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 99)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 99)
         );
         nounScout.remove(requestId1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 99)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 99)
         );
         nounScout.remove(requestId2);
 
@@ -832,12 +832,12 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 101);
         mockAuctionHouse.setNounId(102);
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 101)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 101)
         );
         nounScout.remove(requestId1);
 
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 101)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 101)
         );
         nounScout.remove(requestId2);
 
@@ -885,7 +885,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 100);
         mockAuctionHouse.setNounId(102);
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 100)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 100)
         );
         nounScout.remove(requestId1);
 
@@ -939,7 +939,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seed, 100);
         mockAuctionHouse.setNounId(102);
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 100)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 100)
         );
         nounScout.remove(requestId1);
 
@@ -976,13 +976,13 @@ contract NounScoutTest is BaseNounScoutTest {
         nounScout.settle(HEAD, false, allRecipientIds);
 
         vm.startPrank(user1);
-        vm.expectRevert(NounScout.PledgeSent.selector);
+        vm.expectRevert(NounScoutV2.PledgeSent.selector);
 
         nounScout.remove(requestId1);
 
         mockAuctionHouse.setNounId(103);
 
-        vm.expectRevert(NounScout.PledgeSent.selector);
+        vm.expectRevert(NounScoutV2.PledgeSent.selector);
 
         nounScout.remove(requestId1);
     }
@@ -1143,7 +1143,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // requestId2 cannot be removed
         vm.startPrank(user1);
-        vm.expectRevert(NounScout.PledgeSent.selector);
+        vm.expectRevert(NounScoutV2.PledgeSent.selector);
 
         nounScout.remove(requestId2);
     }
@@ -1212,7 +1212,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // recipient1, now active, matches Noun 100, cannot be removed
         vm.expectRevert(
-            abi.encodeWithSelector(NounScout.MatchFound.selector, 100)
+            abi.encodeWithSelector(NounScoutV2.MatchFound.selector, 100)
         );
         nounScout.remove(requestId2);
         (recipient1Amount, ) = nounScout.pledgeGroups(
@@ -1256,17 +1256,17 @@ contract NounScoutTest is BaseNounScoutTest {
 
         uint256 requestId = nounScout.add{value: minValue}(HEAD, 9, 100, 1);
 
-        vm.expectRevert(NounScout.AuctionEndingSoon.selector);
+        vm.expectRevert(NounScoutV2.AuctionEndingSoon.selector);
         nounScout.remove(requestId);
         vm.stopPrank();
 
         nounScout.pause();
-        NounScout.RequestWithStatus[] memory requests = nounScout
+        NounScoutV2.RequestWithStatus[] memory requests = nounScout
             .requestsByAddress(user1);
         assertEq(requests.length, 1);
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         nounScout.unpause();
@@ -1274,7 +1274,7 @@ contract NounScoutTest is BaseNounScoutTest {
         assertEq(requests.length, 1);
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.AUCTION_ENDING_SOON)
+            uint8(NounScoutV2.RequestStatus.AUCTION_ENDING_SOON)
         );
 
         nounScout.pause();
@@ -1320,27 +1320,27 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.prank(user2);
         nounScout.add{value: minValue}(HEAD, 0, 0, 0);
 
-        NounScout.RequestWithStatus[] memory requestsUser2 = nounScout
+        NounScoutV2.RequestWithStatus[] memory requestsUser2 = nounScout
             .requestsByAddress(user2);
         assertEq(requestsUser2.length, 1);
         assertEq(
             uint8(requestsUser2[0].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE),
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE),
             "user2 request status"
         );
 
         // User 1 should have no active requests
-        NounScout.RequestWithStatus[] memory requestsUser1 = nounScout
+        NounScoutV2.RequestWithStatus[] memory requestsUser1 = nounScout
             .requestsByAddress(user1);
         assertEq(requestsUser1.length, 1, "user1 requests length");
         assertEq(
             uint8(requestsUser1[0].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT),
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT),
             "user1 request status"
         );
         // User 1 should not be able to remove funds
         vm.startPrank(user1);
-        vm.expectRevert(NounScout.PledgeSent.selector);
+        vm.expectRevert(NounScoutV2.PledgeSent.selector);
         nounScout.remove(user1RequestId);
     }
 
@@ -1366,7 +1366,7 @@ contract NounScoutTest is BaseNounScoutTest {
         vm.warp(timestamp);
         mockAuctionHouse.setEndTime(timestamp + 24 hours);
 
-        NounScout.RequestWithStatus[] memory requests = nounScout
+        NounScoutV2.RequestWithStatus[] memory requests = nounScout
             .requestsByAddress(user1);
 
         assertEq(requests.length, 5);
@@ -1380,7 +1380,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // Sanity check last request
@@ -1392,7 +1392,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // Case 2
@@ -1401,11 +1401,11 @@ contract NounScoutTest is BaseNounScoutTest {
         requests = nounScout.requestsByAddress(user1);
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.AUCTION_ENDING_SOON)
+            uint8(NounScoutV2.RequestStatus.AUCTION_ENDING_SOON)
         );
         assertEq(
             uint8(requests[4].status),
-            uint8(NounScout.RequestStatus.AUCTION_ENDING_SOON)
+            uint8(NounScoutV2.RequestStatus.AUCTION_ENDING_SOON)
         );
 
         // Set recipient2 inactive
@@ -1417,11 +1417,11 @@ contract NounScoutTest is BaseNounScoutTest {
         requests = nounScout.requestsByAddress(user1);
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.AUCTION_ENDING_SOON)
+            uint8(NounScoutV2.RequestStatus.AUCTION_ENDING_SOON)
         );
         assertEq(
             uint8(requests[4].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // Create matchable Noun
@@ -1444,11 +1444,11 @@ contract NounScoutTest is BaseNounScoutTest {
         requests = nounScout.requestsByAddress(user1);
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.MATCH_FOUND)
+            uint8(NounScoutV2.RequestStatus.MATCH_FOUND)
         );
         assertEq(
             uint8(requests[4].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // User2 performs the match; request 1 and 2 should match
@@ -1465,12 +1465,12 @@ contract NounScoutTest is BaseNounScoutTest {
         // Request 1,2 Matched
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         assertEq(
             uint8(requests[1].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         // Request 3,4 Did Not Match
@@ -1483,7 +1483,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[2].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         assertEq(uint8(requests[3].trait), uint8(HEAD));
@@ -1494,7 +1494,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[3].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // Request 5 would have matched, but is inactive
@@ -1506,7 +1506,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[4].status),
-            uint8(NounScout.RequestStatus.CAN_REMOVE)
+            uint8(NounScoutV2.RequestStatus.CAN_REMOVE)
         );
 
         // User removes request 3
@@ -1522,12 +1522,12 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         assertEq(
             uint8(requests[1].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));
@@ -1555,12 +1555,12 @@ contract NounScoutTest is BaseNounScoutTest {
 
         assertEq(
             uint8(requests[0].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         assertEq(
             uint8(requests[1].status),
-            uint8(NounScout.RequestStatus.PLEDGE_SENT)
+            uint8(NounScoutV2.RequestStatus.PLEDGE_SENT)
         );
 
         assertEq(uint8(requests[2].trait), uint8(HEAD));
@@ -1665,7 +1665,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // ANY_AUCTION_ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1680,7 +1680,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // ANY_NON_AUCTION_ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1695,7 +1695,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // == auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1710,7 +1710,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // != auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1725,7 +1725,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // == non-auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1750,7 +1750,7 @@ contract NounScoutTest is BaseNounScoutTest {
         mockNouns.setSeed(seedNonAuctioned, nonAuctionedId);
         // ANY_AUCTION_ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 8,
                 recipientId: 0,
@@ -1765,7 +1765,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // ANY_NON_AUCTION_ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 8,
                 recipientId: 0,
@@ -1780,7 +1780,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // == auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 8,
                 recipientId: 0,
@@ -1795,7 +1795,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // != auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 9,
                 recipientId: 0,
@@ -1810,7 +1810,7 @@ contract NounScoutTest is BaseNounScoutTest {
 
         // == non-auctioned ID
         matched = nounScout.requestMatchesNoun(
-            NounScout.Request({
+            NounScoutV2.Request({
                 trait: HEAD,
                 traitId: 8,
                 recipientId: 0,

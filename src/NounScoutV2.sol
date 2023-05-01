@@ -5,7 +5,7 @@ import "./Interfaces.sol";
 import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/security/Pausable.sol";
 
-contract NounScout is Ownable2Step, Pausable {
+contract NounScoutV2 is Ownable2Step, Pausable {
     /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * ERRORS
@@ -1255,14 +1255,14 @@ contract NounScout is Ownable2Step, Pausable {
     }
 
     /**
-     * @notice Pauses the NounScout contract. Pausing can be reversed by unpausing.
+     * @notice Pauses the NounScoutV2 contract. Pausing can be reversed by unpausing.
      */
     function pause() external onlyOwner {
         _pause();
     }
 
     /**
-     * @notice Unpauses (resumes) the NounScout contract. Unpausing can be reversed by pausing.
+     * @notice Unpauses (resumes) the NounScoutV2 contract. Unpausing can be reversed by pausing.
      */
     function unpause() external onlyOwner {
         _unpause();
