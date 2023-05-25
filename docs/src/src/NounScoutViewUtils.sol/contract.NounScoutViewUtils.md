@@ -1,12 +1,12 @@
 # NounScoutViewUtils
-[Git Source](https://github.com/lastpunk9999/noun-scout-contract/blob/4931ca85f3f8c4a5eb8112a354fc4bbc71b200a3/src/NounScoutViewUtils.sol)
+[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/NounScoutViewUtils.sol)
 
 
 ## State Variables
 ### nounScout
 
 ```solidity
-NounScoutV2 public immutable nounScout;
+NounScout public immutable nounScout;
 ```
 
 
@@ -43,14 +43,14 @@ uint16 private constant UINT16_MAX = type(uint16).max;
 
 
 ```solidity
-constructor(NounScoutV2 _nounScout);
+constructor(NounScout _nounScout);
 ```
 
 ### pledgesForUpcomingNounByTrait
 
 
 ```solidity
-function pledgesForUpcomingNounByTrait(NounScoutV2.Traits trait)
+function pledgesForUpcomingNounByTrait(NounScout.Traits trait)
     public
     view
     returns (
@@ -65,7 +65,7 @@ function pledgesForUpcomingNounByTrait(NounScoutV2.Traits trait)
 
 
 ```solidity
-function pledgesForNounOnAuctionByTrait(NounScoutV2.Traits trait)
+function pledgesForNounOnAuctionByTrait(NounScout.Traits trait)
     public
     view
     returns (
@@ -80,7 +80,7 @@ function pledgesForNounOnAuctionByTrait(NounScoutV2.Traits trait)
 
 
 ```solidity
-function pledgesForMatchableNounByTrait(NounScoutV2.Traits trait)
+function pledgesForMatchableNounByTrait(NounScout.Traits trait)
     public
     view
     returns (
@@ -119,7 +119,7 @@ Evaluate if the provided Request parameters matches the specified Noun
 
 ```solidity
 function requestParamsMatchNounParams(
-    NounScoutV2.Traits requestTrait,
+    NounScout.Traits requestTrait,
     uint16 requestTraitId,
     uint16 requestNounId,
     uint16 onChainNounId
@@ -129,9 +129,9 @@ function requestParamsMatchNounParams(
 
 |Name|Type|Description|
 |----|----|-----------|
-|`requestTrait`|`Traits.NounScoutV2`|The trait type to compare the given Noun ID with|
+|`requestTrait`|`Traits.NounScout`|The trait type to compare the given Noun ID with|
 |`requestTraitId`|`uint16`|The ID of the provided trait type to compare the given Noun ID with|
-|`requestNounId`|`uint16`|The NounID parameter from a Noun Scout Request (may be ANY_AUCTION_ID)|
+|`requestNounId`|`uint16`|The NounID parameter from a Noun Seek Request (may be ANY_AUCTION_ID)|
 |`onChainNounId`|`uint16`|Noun ID to fetch the attributes of to compare against the given request properties|
 
 **Returns**
@@ -147,7 +147,7 @@ The amount a given recipient will receive (before fees) if a Noun with specific 
 
 
 ```solidity
-function amountForRecipientByTrait(NounScoutV2.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId)
+function amountForRecipientByTrait(NounScout.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId)
     public
     view
     returns (uint256 amount);
@@ -156,7 +156,7 @@ function amountForRecipientByTrait(NounScoutV2.Traits trait, uint16 traitId, uin
 
 |Name|Type|Description|
 |----|----|-----------|
-|`trait`|`Traits.NounScoutV2`|The trait enum|
+|`trait`|`Traits.NounScout`|The trait enum|
 |`traitId`|`uint16`|The ID of the trait|
 |`nounId`|`uint16`|The Noun ID|
 |`recipientId`|`uint16`|The recipient ID|
@@ -174,7 +174,7 @@ The current pledge group ID for a given recipient
 
 
 ```solidity
-function pledgeGroupIdForRecipientByTrait(NounScoutV2.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId)
+function pledgeGroupIdForRecipientByTrait(NounScout.Traits trait, uint16 traitId, uint16 nounId, uint16 recipientId)
     public
     view
     returns (uint16 pledgeGroupId);
@@ -183,7 +183,7 @@ function pledgeGroupIdForRecipientByTrait(NounScoutV2.Traits trait, uint16 trait
 
 |Name|Type|Description|
 |----|----|-----------|
-|`trait`|`Traits.NounScoutV2`|The trait enum|
+|`trait`|`Traits.NounScout`|The trait enum|
 |`traitId`|`uint16`|The ID of the trait|
 |`nounId`|`uint16`|The Noun ID|
 |`recipientId`|`uint16`|The recipient ID|
@@ -217,7 +217,7 @@ function _isAuctionedNoun(uint16 nounId) internal pure returns (bool);
 
 
 ```solidity
-function _fetchTraitId(NounScoutV2.Traits trait, uint16 nounId) internal view returns (uint16 traitId);
+function _fetchTraitId(NounScout.Traits trait, uint16 nounId) internal view returns (uint16 traitId);
 ```
 
 ### _mapRecipientActive
