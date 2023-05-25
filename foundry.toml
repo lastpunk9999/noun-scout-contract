@@ -3,8 +3,7 @@ solc = "0.8.17"
 src = 'src'
 out = 'out'
 libs = ['lib']
-gas_reports = ['NounScoutV2']
-# via_ir = true
+gas_reports = ['NounScout']
 optimizer = true
 optimizer_runs = 10000
 [rpc_endpoints]

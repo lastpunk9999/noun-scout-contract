@@ -3,13 +3,13 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import "../src/NounScoutV2.sol";
+import "../src/NounScout.sol";
 import "../test/MockContracts.sol";
 import "../src/Interfaces.sol";
 
 /* Add Mock Requets */
 contract TestnetDeploy4 is Script {
-    NounScoutV2 nounScout = NounScoutV2(0x8622C77d8fC1c0Cc593AAD46db53d4C8fB138bd3);
+    NounScout nounScout = NounScout(0x8622C77d8fC1c0Cc593AAD46db53d4C8fB138bd3);
     MockNouns mockNouns = MockNouns(0x84dF24AcbB4eB6ffC1e8E2F281bB43feee7E4254);
     MockAuctionHouse mockAuctionHouse =
         MockAuctionHouse(0x37B8e93b956D4271a05A30CB56cfd2D1550ea816);
@@ -29,7 +29,7 @@ contract TestnetDeploy4 is Script {
             uint16 nounId,
             uint16 recipientId*/
             nounScout.addWithMessage{value: value}(
-                NounScoutV2.Traits.HEAD,
+                NounScout.Traits.HEAD,
                 i,
                 0,
                 i % 4,
@@ -44,7 +44,7 @@ contract TestnetDeploy4 is Script {
             uint16 nounId,
             uint16 recipientId*/
             nounScout.addWithMessage{value: value}(
-                NounScoutV2.Traits.HEAD,
+                NounScout.Traits.HEAD,
                 i + 10,
                 100,
                 i % 4,
@@ -59,7 +59,7 @@ contract TestnetDeploy4 is Script {
             uint16 nounId,
             uint16 recipientId*/
             nounScout.addWithMessage{value: value}(
-                NounScoutV2.Traits.HEAD,
+                NounScout.Traits.HEAD,
                 i + 20,
                 101,
                 i % 4,
@@ -84,7 +84,7 @@ contract TestnetDeploy4 is Script {
             if (trait == 3) {
                 trait = 4;
             }
-            NounScoutV2.Traits traitEnum = NounScoutV2.Traits(trait);
+            NounScout.Traits traitEnum = NounScout.Traits(trait);
             nounScout.addWithMessage{value: value}(
                 traitEnum,
                 traitId,

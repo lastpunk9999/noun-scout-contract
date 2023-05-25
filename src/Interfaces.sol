@@ -41,9 +41,10 @@ interface INounsDescriptorLike {
 interface INounsTokenLike {
     function descriptor() external view returns (address);
 
-    function seeds(
-        uint256 nounId
-    ) external view returns (INounsSeederLike.Seed memory);
+    function seeds(uint256 nounId)
+        external
+        view
+        returns (INounsSeederLike.Seed memory);
 }
 
 interface IWETH {

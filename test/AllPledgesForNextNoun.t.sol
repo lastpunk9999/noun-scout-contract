@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 // import "forge-std/Test.sol";
 // import "forge-std/console2.sol";
-// import "../src/NounScoutV2.sol";
+// import "../src/NounScout.sol";
 // import "./MockContracts.sol";
 // import "../src/Interfaces.sol";
 // import "./BaseNounScoutTest.sol";

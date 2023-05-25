@@ -3,13 +3,13 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 import "forge-std/console2.sol";
-import "../src/NounScoutV2.sol";
+import "../src/NounScout.sol";
 import "../test/MockContracts.sol";
 import "../src/Interfaces.sol";
 
 /* Add Mock Recipients */
 contract TestnetDeploy2 is Script {
-    NounScoutV2 nounScout = NounScoutV2(0x8622C77d8fC1c0Cc593AAD46db53d4C8fB138bd3);
+    NounScout nounScout = NounScout(0x8622C77d8fC1c0Cc593AAD46db53d4C8fB138bd3);
     MockNouns mockNouns = MockNouns(0x84dF24AcbB4eB6ffC1e8E2F281bB43feee7E4254);
     MockAuctionHouse mockAuctionHouse =
         MockAuctionHouse(0x37B8e93b956D4271a05A30CB56cfd2D1550ea816);
