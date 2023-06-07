@@ -1,5 +1,5 @@
 # NounScout
-[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/NounScout.sol)
+[Git Source](https://github.com/lastpunk9999/noun-scout-contract/blob/35d91103a3dce165da6a021dcddb4dd110704601/src/NounScout.sol)
 
 **Inherits:**
 Ownable2Step, Pausable
@@ -190,7 +190,7 @@ uint16 public glassesCount;
 
 
 ### pledgeGroups
-Cumulative funds to be sent to a specific recipient scoped to trait type, trait ID, and  Noun ID.
+Cumulative funds to be sent to a specific recipient scoped to trait type, Trait ID, and  Noun ID.
 
 *The first mapping key is can be generated with the `traitsHash` function
 and the second is recipientId.
@@ -345,7 +345,10 @@ Calling `pledgesForNounId(101)` returns cumulative matching pledges for each Tra
 
 
 ```solidity
-function pledgesForNounId(uint16 nounId, bool includeAnyId) public view returns (uint256[][][5] memory pledges);
+function pledgesForNounId(uint16 nounId, bool includeAnyId, INounsSeederLike.Seed[] memory excludeSeeds)
+    public
+    view
+    returns (uint256[][][5] memory pledges);
 ```
 **Parameters**
 
@@ -353,6 +356,7 @@ function pledgesForNounId(uint16 nounId, bool includeAnyId) public view returns 
 |----|----|-----------|
 |`nounId`|`uint16`|The ID of the Noun requests should match.|
 |`includeAnyId`|`bool`|If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`|
+|`excludeSeeds`|`Seed.INounsSeederLike[]`|Filters out pledges for any Trait in the array of Noun Seeds. This is useful when fetching pledges that have not been matched by the previously auctioned Nouns (See `pledgesForUpcomingNoun()` for why that is needed). A special case exists to accomediate `pledgesForUpcomingNoun()`: if `nounId` is not an open ID (ANY_AUCTION_ID, ANY_NON_AUCTION_ID) and `includeAnyId` is true, only open ID pledges will be filtered and specific ID pledges for `nounId` will be included.|
 
 **Returns**
 
@@ -370,7 +374,7 @@ The returned value in `pledges[5][2]` is in the total amount that has been pledg
 
 
 ```solidity
-function pledgesForNounIdByTrait(Traits trait, uint16 nounId, bool includeAnyId)
+function pledgesForNounIdByTrait(Traits trait, uint16 nounId, bool includeAnyId, uint16[] memory excludeTraitIds)
     public
     view
     returns (uint256[][] memory pledgesByTraitId);
@@ -382,6 +386,7 @@ function pledgesForNounIdByTrait(Traits trait, uint16 nounId, bool includeAnyId)
 |`trait`|`Traits`|The trait type to scope requests to (See `Traits` Enum)|
 |`nounId`|`uint16`|The Noun ID to scope requests to|
 |`includeAnyId`|`bool`|If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`|
+|`excludeTraitIds`|`uint16[]`|The pledges for any Trait ID in the array will not be added to `pledgesByTraitId`. A special case exists: if `nounId` is not an open ID (ANY_AUCTION_ID, ANY_NON_AUCTION_ID) and `includeAnyId` is true, only open ID pledges will be excluded, while the specific Id pledges for `nounId` will not. Example: If there two pledges for HEAD 7, one with `nounId` set to `ANY_AUCTION_ID` and the other set to the specific Noun Id 99, when calling `pledgesForNounIdByTrait(3, 99, true, [7])` (get HEAD pledges for Noun 99 including open Id pledges), only the specific Noun ID pledge will be returned for HEAD 7  (the open ID pledge will be filtered out).|
 
 **Returns**
 
@@ -408,7 +413,7 @@ function pledgesForNounIdByTraitId(Traits trait, uint16 traitId, uint16 nounId, 
 |Name|Type|Description|
 |----|----|-----------|
 |`trait`|`Traits`|The trait type to scope requests to (See `Traits` Enum)|
-|`traitId`|`uint16`|The trait ID  of the trait to scope requests|
+|`traitId`|`uint16`|The Trait ID  of the trait to scope requests|
 |`nounId`|`uint16`|The Noun ID to scope requests to|
 |`includeAnyId`|`bool`|If `true`, sums pledges for the specified `nounId` with pledges for `ANY_AUCTION_ID` (or `ANY_NON_AUCTION_ID` depending on the nounId). If `false` returns only the pledges for the specified `nounId`|
 
@@ -851,6 +856,15 @@ Unpauses (resumes) the NounScout contract. Unpausing can be reversed by pausing.
 function unpause() external onlyOwner;
 ```
 
+### setENSReverseName
+
+Sets reverse ENS name
+
+
+```solidity
+function setENSReverseName(address ensReverseResolver, string memory name) external onlyOwner;
+```
+
 ### _add
 
 Creates a Request
@@ -895,7 +909,7 @@ function _combineAmountsAndDelete(
 |Name|Type|Description|
 |----|----|-----------|
 |`trait`|`Traits`|The trait type requests should match (see `Traits` Enum)|
-|`traitId`|`uint16`|Specific trait ID|
+|`traitId`|`uint16`|Specific Trait ID|
 |`nounId`|`uint16`|Specific Noun ID|
 |`recipientIds`|`uint16[]`|Specific set of recipients|
 |`matchAuctionedNoun`|`bool`|If `true` matching Noun is auctioned. If `false` matching Noun is non-auctioned.|

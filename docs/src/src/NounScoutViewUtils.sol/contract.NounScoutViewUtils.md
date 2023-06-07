@@ -1,5 +1,5 @@
 # NounScoutViewUtils
-[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/NounScoutViewUtils.sol)
+[Git Source](https://github.com/lastpunk9999/noun-scout-contract/blob/35d91103a3dce165da6a021dcddb4dd110704601/src/NounScoutViewUtils.sol)
 
 
 ## State Variables
@@ -131,7 +131,7 @@ function requestParamsMatchNounParams(
 |----|----|-----------|
 |`requestTrait`|`Traits.NounScout`|The trait type to compare the given Noun ID with|
 |`requestTraitId`|`uint16`|The ID of the provided trait type to compare the given Noun ID with|
-|`requestNounId`|`uint16`|The NounID parameter from a Noun Seek Request (may be ANY_AUCTION_ID)|
+|`requestNounId`|`uint16`|The NounID parameter from a Noun Scout Request (may be ANY_AUCTION_ID)|
 |`onChainNounId`|`uint16`|Noun ID to fetch the attributes of to compare against the given request properties|
 
 **Returns**

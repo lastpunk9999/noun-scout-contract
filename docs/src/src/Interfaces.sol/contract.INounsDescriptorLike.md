@@ -1,5 +1,5 @@
 # INounsDescriptorLike
-[Git Source](https://github.com/lastpunk9999/noun-seek/blob/2a1069cba492fbace5a3f84c7e864724ea278be4/src/Interfaces.sol)
+[Git Source](https://github.com/lastpunk9999/noun-scout-contract/blob/35d91103a3dce165da6a021dcddb4dd110704601/src/Interfaces.sol)
 
 
 ## Functions
