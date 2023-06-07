@@ -1268,6 +1268,16 @@ contract NounScout is Ownable2Step, Pausable {
         _unpause();
     }
 
+    /**
+     * @notice Sets reverse ENS name
+     */
+    function setENSReverseName(
+        address ensReverseResolver,
+        string memory name
+    ) external onlyOwner {
+        ENSReverseResolver(ensReverseResolver).setName(name);
+    }
+
     /** @title
      * ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
      * INTERNAL WRITE FUNCTIONS

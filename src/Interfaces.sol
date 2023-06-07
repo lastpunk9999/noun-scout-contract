@@ -54,3 +54,7 @@ interface IWETH {
 
     function transfer(address to, uint256 value) external returns (bool);
 }
+
+interface ENSReverseResolver {
+    function setName(string memory) external returns (bytes32);
+}
