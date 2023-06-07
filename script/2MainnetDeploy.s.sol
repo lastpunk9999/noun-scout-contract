@@ -7,7 +7,7 @@ import "../src/NounScout.sol";
 
 /* Add Recipients */
 contract MainnetDeploy2 is Script {
-    NounScout nounScout = NounScout(0x30Dc2c9F7FC9aFEcd4f8146ba2461D81B7C1De5e);
+    NounScout nounScout = NounScout(0x5D1498A4bEaD02819712261e8a606f6f88533c59);
 
     function setUp() public {}
 
