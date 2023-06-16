@@ -1,4 +1,4 @@
-# NounSeek
+# Noun Scout
 
 ### Summary
 
